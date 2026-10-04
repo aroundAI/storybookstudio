@@ -14,7 +14,7 @@
 // edit-log-runtime.test.mjs. CI fetches the stock commit; the stock tests
 // skip only where git cannot produce it.
 import assert from 'node:assert/strict'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import { createRequire } from 'node:module'
 import os from 'node:os'
@@ -82,10 +82,22 @@ const stockAvailable = (() => {
 })()
 
 // src/ imports a few electron/*.mjs helpers, so both folders come along.
+// The archive goes through a file: piping it to tar's stdin died with EPIPE on
+// the macOS runner. A git or tar failure reports its own stderr.
+const runChecked = (command, args) => {
+  const run = spawnSync(command, args, { maxBuffer: 1 << 30, encoding: 'utf8' })
+  if (run.status !== 0) throw new Error(`${command} ${args.join(' ')} failed (${run.error?.message || `status ${run.status}`}): ${run.stderr}`)
+}
+
 const extractStock = () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'velorn-stock-'))
-  const archive = execFileSync('git', ['-C', root, 'archive', STOCK_VELORN_COMMIT, 'src', 'electron', 'package.json'], { maxBuffer: 1 << 30 })
-  execFileSync('tar', ['-x', '-C', dir], { input: archive })
+  const archive = path.join(dir, '..', `${path.basename(dir)}.tar`)
+  runChecked('git', ['-C', root, 'archive', '--format=tar', '-o', archive, STOCK_VELORN_COMMIT, 'src', 'electron', 'package.json'])
+  try {
+    runChecked('tar', ['-xf', archive, '-C', dir])
+  } finally {
+    fs.rmSync(archive, { force: true })
+  }
   fs.symlinkSync(path.join(root, 'node_modules'), path.join(dir, 'node_modules'), 'dir')
   return dir
 }
