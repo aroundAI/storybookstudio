@@ -172,6 +172,7 @@ Run `node scripts/studio-render-timings.mjs` on each reference machine and paste
 | full render 1080p24, libx264 fast | 27.94 s | 3.5x |
 | QA pass on the 1080p render | 5.52 s | |
 | delivery queue encode 1080p, h264_videotoolbox | 32.78 s | 3.0x |
+| Deliver render path (deliveryPath.js): 94 s cut at 1080p, intermediate + queued h264_videotoolbox | 13.5 s | 7.0x |
 
 The canvas exporter's own throughput is measured by `VELORN_TEST_NATIVE_ENCODE=1 npm run check:export-worker-scheduling` (one still image, 720p24, 6 s): 144 frames in 1.27 s on the same machine.
 
