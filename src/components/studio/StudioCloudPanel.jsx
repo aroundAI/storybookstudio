@@ -48,7 +48,11 @@ export default function StudioCloudPanel() {
       studio.onAuthChanged((status) => patch({ status })),
       studio.onJobProgress((job) => patch((current) => (current.job && current.job.id !== job.id ? {} : { job }))),
       studio.onOpenRequest((link) => patch({ open: true, apiOrigin: link.api, episodeId: link.episodeId, error: link.signedIn ? null : 'Sign in to open this episode.' })),
-      studio.onPlanProposed((plan) => patch({ open: true, plan })),
+      // studio:plan-proposed also carries FILM-2013's capability-tool plan cards
+      // (source 'mcp' or 'in-app'); this panel shows only re-sync proposals.
+      studio.onPlanProposed((plan) => {
+        if (plan?.source === 'resync' && Array.isArray(plan.steps)) patch({ open: true, plan })
+      }),
     ]
     const online = () => studio.networkOnline()
     window.addEventListener('online', online)

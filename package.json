@@ -8,6 +8,7 @@
     "test:media-preparation": "node --test ./tests/mediaPreparation.test.cjs ./tests/mediaPreparationBridge.test.cjs ./tests/mediaPreparationServices.test.mjs ./src/utils/mediaPreparationStatus.test.mjs ./src/utils/mediaPreparationTarget.test.mjs",
     "check:media-preparation": "node ./scripts/check-media-preparation.cjs",
     "test:studio": "node ./scripts/run-studio-tests.mjs",
+    "ai-eval": "node ./scripts/ai-eval.mjs",
     "test:export-scheduler": "node --test ./tests/exportScheduler.test.mjs",
     "check:export-worker-scheduling": "node ./scripts/check-export-worker-scheduling.cjs --serve",
     "test:audio-ducking": "node --test ./src/utils/audioDucking.test.mjs ./src/services/audioDucking.test.mjs ./tests/audioDuckingNative.test.mjs ./src/utils/playAroundStore.test.mjs",

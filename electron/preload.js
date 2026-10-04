@@ -126,6 +126,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       onPullReady: subscribe('studio:pull-ready'),
       onOpenRequest: subscribe('studio:open-request'),
       onPlanProposed: subscribe('studio:plan-proposed'),
+      // FILM-2013: the in-app agent calls the agent profile's capability tools.
+      callCapability: (name, args) => ipcRenderer.invoke('studio:callCapability', name, args),
     }
   })(),
 
@@ -534,6 +536,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // FILM-2010: the bearer-carrying connect commands, for Settings > Agents (MCP).
     getConnectCommand: () => ipcRenderer.invoke('studio:getMcpConnectCommand'),
   },
+
 
   // ============================================
   // Workflow Setup Manager

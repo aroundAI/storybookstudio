@@ -47,6 +47,23 @@ For clients that use an `.mcp.json` file:
 
 The repository root keeps this config for development; export `STORYBOOKSTUDIO_MCP_TOKEN` before starting the client.
 
+### Two profiles: `agent` (the default) and `expert`
+
+The same server and the same bearer serve two tool lists (FILM-2013):
+
+| Profile | URL | Lists | For |
+| --- | --- | --- | --- |
+| `agent` (default) | `http://127.0.0.1:19790/mcp` or `/mcp?profile=agent` | the 18 `studio_*` capability tools ([below](#the-agent-profile-capability-tools)) | editing a StoryBook episode by intent: plan, preview as cards, apply into a version, explain |
+| `expert` | `http://127.0.0.1:19790/mcp?profile=expert` | Velorn's 131 tools plus the 6 `studio_*` lifecycle tools | everything Velorn can do, one primitive at a time |
+
+The profile can also be sent as an `X-MCP-Profile: agent|expert` header; any other value is a `400`. Each profile refuses the other's tools. The bearer is required on both: a missing or wrong one is a `401` before the profile is read.
+
+To connect Claude Code to the expert profile as well:
+
+```bash
+claude mcp add --transport http storybookstudio-expert "http://127.0.0.1:19790/mcp?profile=expert" --header "Authorization: Bearer <secret>"
+```
+
 ## What Agents Can Do
 
 Velorn MCP is useful for five broad workflows:
@@ -125,7 +142,8 @@ Protocol:
 - JSON-RPC endpoint: `POST http://127.0.0.1:19790/mcp`
 - Server-sent-event probe: `GET http://127.0.0.1:19790/mcp`
 - Authentication: `Authorization: Bearer <secret>` on every request (see Quick Start)
-- Server name: `velorn`
+- Server name: `StorybookStudio`
+- Profiles: `?profile=agent` (default) or `?profile=expert`, or the `X-MCP-Profile` header
 - Default protocol version: `2024-11-05`
 
 The server starts with the desktop app. If the port is not available, check `Settings > Agents (MCP)` for the current status/error.
@@ -162,7 +180,105 @@ curl -s http://127.0.0.1:19790/mcp \
   -d "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"get_project\",\"arguments\":{}}}"
 ```
 
+## The Agent Profile: Capability Tools
+
+The model sees capability tools, not primitives. Each editing tool is an **intent compiler**: deterministic code (`src/studio/intents/`) that turns `(context, scope, params, policy)` into a `run_mcp_action_plan` plan with one reason per step. The model chooses the intent and the scope; the compiler chooses the primitives. The design is [AI_EDITOR_CONTRACT.md](AI_EDITOR_CONTRACT.md).
+
+**Every capability tool previews by default.** An edit is always:
+
+1. `studio_get_context` (once): the screenplay with dialogue text, the scene map, the policy, the brand, the timeline, versions, the clips the user edited by hand since the last AI plan, the last QA result.
+2. `studio_edit {intent, scope, params}`: nothing changes. The compiler runs its reads (for example `get_audio_analysis` on the scene's dialogue), every step goes through its own primitive's `previewOnly` path, and the answer carries plan cards, a draft explain-why report and a `planId`. The cards also reach the AI panel as `studio:plan-proposed`.
+3. Show the user the cards. A card lists anything under `touchesYourEdits`: a plan never changes a clip the user edited since the last plan unless `params.includeUserEdits` is true, and then it says so.
+4. `studio_edit {same intent, scope, params, previewOnly: false, planId}` after approval: the compiler runs again on the current timeline; if it changed since the preview the answer is `TARGET_CHANGED` and nothing is applied. Otherwise a version is created (its snapshot is the timeline before the plan), the steps run through `run_mcp_action_plan` with a checkpoint first, each applied step is one line in `edits/oplog.jsonl` with its reason, scene and the plan's session, and the explain-why report is written to `edits/reports/<versionId>.json`.
+5. `studio_restore_version {versionId}` undoes the whole plan.
+
+A plan card:
+
+```json
+{
+  "scene": 3,
+  "heading": "INT. RESEARCH LAB - NIGHT (3)",
+  "durationBefore": 21,
+  "durationAfter": 13.917,
+  "targetDuration": 12,
+  "changes": [{ "text": "Cut 1.4 s of silence at 0:44.0 (S3.1 / S3.2)", "reason": "Dead air of 1.4 s between line 18 and line 19; pauses over 0.6 s are cut; toward the 12.0 s target", "tool": "extract_range", "step": 5 }],
+  "touchesYourEdits": [],
+  "notes": ["Scene 3: 21.0 s -> 13.9 s; the 12.0 s target is not reached without cutting dialogue: 8 lines run 12.7 s and the pauses left are under the 0.6 s limit"]
+}
+```
+
+The card with `scene: null` is the whole timeline (caption re-timing, beds, markers).
+
+### Tools
+
+| Tool | Profiles | Does | Status |
+| --- | --- | --- | --- |
+| `studio_get_context` | agent | Script, scene map, policy, brand, timeline summary, versions, user edits, last QA. `{scope?}` | built |
+| `studio_search_assets` | agent | Ranks assets by name, transcript and semantic fields. `{query, role?, scene?, durationRange?, limit?}` | built |
+| `studio_edit` | agent | Intent → plan cards → apply into a version. `{intent, scope?, params?, previewOnly?, planId?, autoRepair?}` | built |
+| `studio_edit_audio` | agent | `balance`, `duck`, `normalize`, `fade` over the buses, same preview/apply flow | built: FILM-2016's `intents/audio.js` compiles, FILM-2013 previews and applies; `balance` and `normalize` need measured loudness |
+| `studio_add_captions` | agent | Brand-styled captions inside the aspect's safe area. `{language, style?}` | built over FILM-2016's `intents/captions.js`; styles the cues on the language's captions clip (a StoryBook rough cut has them); with none, transcribe first |
+| `studio_add_graphic` | agent | Brand graphics | not available yet (FILM-2018) |
+| `studio_create_variant` | agent | `short`, `hook`, `language` variants | not available yet (FILM-2017, FILM-2019) |
+| `studio_review` | agent | QA, then the critic | not available yet (FILM-2014) |
+| `studio_repair` | agent | One plan for QA issues | not available yet (FILM-2014) |
+| `studio_render_preview` | agent | Preview render and QA | not available yet (FILM-2014) |
+| `studio_check_updates` | agent | Has the episode changed in StoryBook? Proposes a replacement plan | built over FILM-2011's re-sync |
+| `studio_apply_updates` | agent | Previews and applies that plan into a "Sync from StoryBook" version | built |
+| `studio_open_episode` | agent, expert | Starts the FILM-2011 pull; returns a `jobId`. `{episodeId}` | built over FILM-2011 |
+| `studio_get_job_status` | agent, expert | `{jobId}` → the job's phase and progress | built over FILM-2011 |
+| `studio_check_readiness` | agent, expert | Package, policy, target, media present and probed, codecs, captions, coverage, media health, export readiness → pass or issues | built |
+| `studio_create_version` | agent, expert | `{name, prompt?}` | built |
+| `studio_restore_version` | agent, expert | `{versionId, reason?}` | built |
+| `studio_deliver` | agent, expert | `confirm: false` (default): what would be rendered and sent, no side effects. `confirm: true` | summary built; sending is FILM-2017's and needs the Deliver screen's confirmation |
+
+A tool another spec builds answers `isError` with `{"error": {"code": "VALIDATION_FAILED", "message": "<tool> is not available yet: <spec> builds it.", "details": {"availableAfter": "<spec>"}}}`, never a partial result. Every error uses `{error: {code, message, details?}}` with `code` one of `VALIDATION_FAILED`, `TARGET_CHANGED`, `NOT_FOUND`, `FORBIDDEN`, `UNAUTHORIZED`. Arguments are checked against the tool's JSON schema first (required keys, unknown keys, types, enums). Every capability tool declares MCP `annotations`.
+
+### `studio_edit` intents
+
+| Intent | Scope | Params | Compiles to |
+| --- | --- | --- | --- |
+| `tighten_pacing` | scenes | `targetSeconds?`, `minSilenceSeconds` (0.6), `keepPauseSeconds` (0.25), `allowJumpCuts` (true), `includeUserEdits` | `get_audio_analysis` read → ripple `extract_range` cuts of the silence between lines (shot boundaries first, then inside a shot) and of repeated shots with no dialogue, tails over `maxShotLength`; `update_transition` to `transitions.maxDuration`; captions, beds and scene markers re-timed |
+| `remove_dead_air` | scenes or range | as above | only spans with no voiced dialogue |
+| `hit_duration` | episode or scenes | `targetSeconds` (default: the policy's or the episode's target) | silence first, then whole shots with no dialogue; every scene keeps a shot; within 5% or the card says why not |
+| `open_with_strongest_line` | scenes | `lineId` or `sequenceNumber` | the highest-importance line and its shot moved to 0:00 (`move_clips`); beds stay; the report's `style.hookType` is `strongest_line` |
+| `keep_music_under_dialogue` | episode | | no primitive: reports the music bus ducking FILM-2016 renders |
+| `add_broll` | scenes | `query`, `perScene`, `durationSeconds` | `add_track` "B-roll" + `add_asset_to_timeline` after each scene's first line |
+| `emphasize` | scene | `clipId` or `lineId`, `zoomPercent`, `text` | `set_clip_keyframes` punch-in (110% cap while `visual.avoidExtremeZoom`), optional `add_text_clip` |
+| `add_cta` | episode | `text` (or the brand's outro asset) | `add_text_clip` in the last 10 s from the end of the final line, brand heading font |
+| `match_brand` | scenes | | `add_transition` / `add_dip_to_black` / `remove_transitions` at scene changes, by `brand.transitionStyle` |
+| `reorder_scenes` | episode | `order` (every scene once) | `move_clips` per scene block |
+| `recut_around_drops` | episode | | silence cuts within 5 s of each measured drop in `analyticsHints.retention`; none when unmeasured, and it says so |
+
+Bounds come from `storybook/policy.json` (StoryBook's edit policy, else its defaults); no compiler hard-codes a policy bound. A cut is a ripple `extract_range` because Velorn's `trim_clips` does not ripple: a trim alone leaves a gap and slips dialogue off its picture. Cuts run latest first, so each step's times are those of the timeline it was planned on.
+
+`autoRepair: true` runs apply → QA → repair up to 3 rounds inside the one version and returns only the final cards; until FILM-2014 provides QA and repair it runs one round and says why.
+
+The in-app agent (the Agent tab, `src/services/agentTools.js`) lists the same 18 tools and calls them through `studio:callCapability`, the same handler an MCP client reaches, so both get the same cards.
+
+### Nightly AI eval
+
+`scripts/ai-eval.mjs` runs 10 fixture episodes (`tests/studio/fixtures/ai-eval/episodes.json`, derived from the FILM-2001 packages) against 5 instructions (`instructions.json`, including the north-star "tighten scene 3 to 12 s and fix the audio") over MCP in the headless harness, with no human touch: the agent previews and applies. It scores each run on duration hit rate (within 5% of the asked target), QA pass rate, script coverage (lines and scenes still on the timeline), revisions (versions per run) and cost, writes `results.json` and `summary.md`, and with `--baseline` fails when the QA pass rate falls or the cost rises more than 20%.
+
+```bash
+npm run ai-eval -- --agent oracle                      # the compilers alone: a scripted agent, no model, no cost
+npm i -D @anthropic-ai/sdk                             # once, for a model-driven run
+STUDIO_EVAL_MODEL=claude-opus-5-5 ANTHROPIC_API_KEY=... npm run ai-eval -- --agent model --out .ai-eval/today --baseline .ai-eval/last/results.json
+```
+
+Which model drives the agent is the owner's choice (phase 20 open question 2); any model id works, and the cost table in the script covers the current Claude models. QA counts once FILM-2014 provides it; until then the QA pass rate is reported as unmeasured and the gate compares cost only.
+
 ## Recommended Workflows
+
+### StoryBook Rough Cut (agent profile)
+
+Use the `storybook-rough-cut` recipe from `get_mcp_recipes` (expert profile) or simply:
+
+```text
+Call studio_get_context. Tighten scene 3 to 12 seconds: preview with studio_edit (intent tighten_pacing, scope {"scene": 3}, params {"targetSeconds": 12}), show me the cards, and apply with the planId when I say so. Then show me the report.
+```
+
+`get_ai_review_passes` carries a `script-fidelity` pass: scenes with no clip, lines not on the timeline, scenes far off their planned length.
 
 ### Timeline Health
 
@@ -261,7 +377,7 @@ For interchange, preview `export_fcpxml` before writing a file. Use `format: "fc
 
 ## Tool Catalog
 
-Velorn currently exposes 125 MCP tools.
+Velorn exposes 131 MCP tools in the `expert` profile (130 upstream, plus FILM-2016's `set_audio_buses`) (`node scripts/capability-matrix.mjs` counts them); the `agent` profile serves the 18 capability tools above instead.
 
 StorybookStudio's AI editor builds on these tools: [AI_EDITOR_CONTRACT.md](AI_EDITOR_CONTRACT.md) defines what an agent may do, and [CAPABILITY_MATRIX.md](CAPABILITY_MATRIX.md) maps every tool onto it.
 

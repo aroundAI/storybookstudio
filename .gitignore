@@ -50,3 +50,6 @@ __pycache__/
 # Electron
 release/
 .runtime/
+
+# FILM-2013 AI eval output (scripts/ai-eval.mjs --out default)
+.ai-eval/

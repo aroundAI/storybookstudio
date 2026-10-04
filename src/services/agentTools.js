@@ -62,6 +62,66 @@ const WRITE_TOOL_NAMES = new Set([
   'export_fcpxml',
 ])
 
+// FILM-2013: the agent profile. The in-app agent sees the same capability
+// tools an MCP client sees at /mcp?profile=agent and calls them through the
+// same main-process handler (window.electronAPI.studio.callCapability), so
+// both produce the same plan cards. tests/studio/agent-profile.test.mjs keeps
+// these names equal to electron/studio/mcpCapabilities.js.
+export const CAPABILITY_AGENT_TOOLS = [
+  { name: 'studio_get_context', mode: 'read', description: 'Call first. Screenplay with dialogue, scene map (planned/actual/target duration per scene), edit policy, brand, timeline summary, versions, clips the user edited by hand.', arguments: '{ "scope": { "scene": 3 } }' },
+  { name: 'studio_search_assets', mode: 'read', description: 'Rank assets by semantic fields and transcript; returns asset ids.', arguments: '{ "query": "rain window", "role": "broll" }' },
+  { name: 'studio_edit', mode: 'write', description: 'Plan an edit by intent (hit_duration, tighten_pacing, remove_dead_air, open_with_strongest_line, keep_music_under_dialogue, add_broll, emphasize, add_cta, match_brand, reorder_scenes, recut_around_drops). Preview returns plan cards and a planId; apply with previewOnly false and that planId after the user approves.', arguments: '{ "intent": "tighten_pacing", "scope": { "scene": 3 }, "params": { "targetSeconds": 12 }, "previewOnly": true }' },
+  { name: 'studio_edit_audio', mode: 'write', description: 'Audio intents balance, duck, normalize, fade (not available yet: FILM-2016).', arguments: '{ "intent": "duck", "previewOnly": true }' },
+  { name: 'studio_add_captions', mode: 'write', description: 'Brand-styled captions in the safe area (not available yet: FILM-2016).', arguments: '{ "language": "en", "previewOnly": true }' },
+  { name: 'studio_add_graphic', mode: 'write', description: 'Brand graphics (not available yet: FILM-2018).', arguments: '{ "kind": "lower_third", "text": "Maya", "at": 4, "duration": 3 }' },
+  { name: 'studio_create_variant', mode: 'write', description: 'Short, hook or language variant (not available yet: FILM-2017).', arguments: '{ "kind": "short" }' },
+  { name: 'studio_review', mode: 'read', description: 'QA and critic findings (not available yet: FILM-2014).', arguments: '{}' },
+  { name: 'studio_repair', mode: 'write', description: 'One plan fixing QA issues (not available yet: FILM-2014).', arguments: '{ "issues": [] }' },
+  { name: 'studio_render_preview', mode: 'write', description: 'Preview render and QA (not available yet: FILM-2014).', arguments: '{ "scope": { "scene": 3 } }' },
+  { name: 'studio_check_updates', mode: 'read', description: 'Changed shots in StoryBook since the pull (needs FILM-2011).', arguments: '{}' },
+  { name: 'studio_apply_updates', mode: 'write', description: 'Replace changed shots into a new version (needs FILM-2011).', arguments: '{ "previewOnly": true }' },
+  { name: 'studio_open_episode', mode: 'write', description: 'Pull a StoryBook episode; returns a jobId (needs FILM-2011).', arguments: '{ "episodeId": "..." }' },
+  { name: 'studio_get_job_status', mode: 'read', description: 'Progress of a pull, render or deliver job.', arguments: '{ "jobId": "..." }' },
+  { name: 'studio_check_readiness', mode: 'read', description: 'Media, codecs, captions, policy and target checks: pass or issues.', arguments: '{}' },
+  { name: 'studio_create_version', mode: 'write', description: 'Save the timeline as a named version.', arguments: '{ "name": "Before music pass" }' },
+  { name: 'studio_restore_version', mode: 'write', description: 'Go back to a version (undoes a plan).', arguments: '{ "versionId": "v2" }' },
+  { name: 'studio_deliver', mode: 'write', description: 'Summary of what would be rendered and sent (confirm false); sending needs the Deliver screen.', arguments: '{ "presets": ["youtube_16x9"], "confirm": false }' },
+]
+
+const CAPABILITY_TOOL_NAMES = new Set(CAPABILITY_AGENT_TOOLS.map((tool) => tool.name))
+
+let capabilityBridge = null
+// Tests point the agent at a server without Electron; the app uses the preload.
+export function setCapabilityBridge(bridge) {
+  capabilityBridge = typeof bridge === 'function' ? bridge : null
+}
+
+async function callCapability(name, args) {
+  const bridge = capabilityBridge || globalThis.window?.electronAPI?.studio?.callCapability
+  if (typeof bridge !== 'function') throw new Error('The capability tools need the StorybookStudio desktop app.')
+  const response = await bridge(name, args || {})
+  let parsed = null
+  try {
+    parsed = JSON.parse(response?.content?.[0]?.text ?? 'null')
+  } catch {
+    parsed = { text: response?.content?.[0]?.text ?? '' }
+  }
+  return response?.isError ? { isError: true, ...(parsed && typeof parsed === 'object' ? parsed : { error: parsed }) } : parsed
+}
+
+// The cards, planId, notes and report text are what the agent needs; the
+// raw steps and the report JSON stay in the panel, so a long plan is not
+// truncated mid-card by the result limit.
+export function compactCapabilityResult(result) {
+  if (!result || typeof result !== 'object' || !Array.isArray(result.cards)) return result
+  const { plan, report, stepPreviews, ...rest } = result
+  return {
+    ...rest,
+    plan: plan ? { stepCount: plan.steps?.length ?? 0, tools: [...new Set((plan.steps || []).map((step) => step.tool))] } : undefined,
+    stepPreviews: stepPreviews ? { count: stepPreviews.length, failed: stepPreviews.filter((preview) => !preview.ok).length } : undefined,
+  }
+}
+
 export const AGENT_TOOLS = [
   {
     name: 'get_project',
@@ -476,15 +536,16 @@ function handleAnalyzeTimeline() {
   })
 }
 
-export function getAgentToolInstructions() {
-  const readableTools = AGENT_TOOLS.map((tool) => (
+export function getAgentToolInstructions({ profile = 'agent' } = {}) {
+  const tools = profile === 'expert' ? AGENT_TOOLS : CAPABILITY_AGENT_TOOLS
+  const readableTools = tools.map((tool) => (
     `- ${tool.name} (${tool.mode}): ${tool.description} Example arguments: ${tool.arguments}`
   )).join('\n')
 
   return `You have access to StorybookStudio editor tools. Use them by writing one or more fenced tool blocks exactly like this:
 
 \`\`\`velorn-tool
-{"tool":"get_project","arguments":{}}
+{"tool":"${profile === 'expert' ? 'get_project' : 'studio_get_context'}","arguments":{}}
 \`\`\`
 
 Available tools:
@@ -496,7 +557,8 @@ Important behavior:
 - When a tool is needed, output only the fenced velorn-tool block. StorybookStudio will hide the block from the user and run it.
 - Prefer read tools first when you need context.
 - For clip counts, timeline health, disabled clips, transforms, labels, or markers, prefer analyze_timeline.
-- For write/edit/export tools, use "previewOnly": true first unless the user clearly says to apply, run, do it, export it, delete it, or otherwise confirms the change.
+- For write/edit/export tools, use "previewOnly": true first unless the user clearly says to apply, run, do it, export it, delete it, or otherwise confirms the change.${profile === 'expert' ? '' : `
+- Call studio_get_context before planning. Edit with studio_edit: preview, show the user the plan cards (and anything under "touches your edits"), and apply with previewOnly false and the planId only after the user approves.`}
 - Keep actions scoped to the open StorybookStudio project. You do not have shell, generic filesystem, browser, OS, or network tools through this Agent tab.
 - After a tool result, answer in plain English. Keep it short unless the user asks for details. Do not show raw JSON.`
 }
@@ -504,6 +566,8 @@ Important behavior:
 export async function runAgentTool(name, args = {}) {
   const toolName = normalizeString(name)
   if (!toolName) throw new Error('Missing tool name.')
+
+  if (CAPABILITY_TOOL_NAMES.has(toolName)) return clampResult(compactCapabilityResult(await callCapability(toolName, args)))
 
   switch (toolName) {
     case 'get_project':

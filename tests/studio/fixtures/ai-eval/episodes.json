@@ -1,0 +1,15 @@
+{
+  "$comment": "FILM-2013 nightly AI eval: 10 episodes derived from the FILM-2001 fixture packages (tests/studio/fixtures/edit-package). base = shot count; editPolicy, brand and episode are merged over the package. Instructions are in instructions.json.",
+  "episodes": [
+    { "id": "e20-default", "base": 20 },
+    { "id": "e20-strict-shots", "base": 20, "editPolicy": { "minShotLength": 2, "maxShotLength": 4 } },
+    { "id": "e20-target-80", "base": 20, "episode": { "targetDurationSeconds": 80 } },
+    { "id": "e20-dissolve-brand", "base": 20, "brand": { "transitionStyle": "dissolve" } },
+    { "id": "e20-dip-brand", "base": 20, "brand": { "transitionStyle": "dip" }, "editPolicy": { "transitions": { "preferred": ["cut", "dip"], "maxDuration": 0.4 } } },
+    { "id": "e20-no-music", "base": 20, "editPolicy": { "music": { "enabled": false, "duckUnderDialogue": false, "duckDb": -8 } } },
+    { "id": "e20-avoid-zoom-off", "base": 20, "editPolicy": { "visual": { "avoidRepeatedShots": false, "avoidExtremeZoom": false } } },
+    { "id": "e5-default", "base": 5 },
+    { "id": "e60-default", "base": 60 },
+    { "id": "e60-target-240", "base": 60, "episode": { "targetDurationSeconds": 240 } }
+  ]
+}
