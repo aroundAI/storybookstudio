@@ -10,7 +10,7 @@
    ============================================= */
 
 :root {
-  /* ---- Velorn (default) ---- */
+  /* ---- StorybookStudio (default; theme id stays 'velorn') ---- */
   --sf-dark-950: 3 6 16;
   --sf-dark-900: 8 12 26;
   --sf-dark-800: 17 23 42;
@@ -19,9 +19,9 @@
   --sf-dark-500: 76 66 112;
   --sf-dark-400: 112 98 150;
 
-  --sf-accent: 152 112 0;
-  --sf-accent-hover: 174 130 16;
-  --sf-accent-muted: 116 86 20;
+  --sf-accent: 59 130 246;   /* StoryBook Blue #3B82F6 */
+  --sf-accent-hover: 96 165 250;
+  --sf-accent-muted: 37 99 235;
 
   --sf-blue: 92 155 220;
   --sf-blue-hover: 112 176 240;
@@ -131,9 +131,9 @@
   --sf-dark-500: 76 66 112;
   --sf-dark-400: 112 98 150;
 
-  --sf-accent: 152 112 0;
-  --sf-accent-hover: 174 130 16;
-  --sf-accent-muted: 116 86 20;
+  --sf-accent: 59 130 246;   /* StoryBook Blue #3B82F6 */
+  --sf-accent-hover: 96 165 250;
+  --sf-accent-muted: 37 99 235;
 
   --sf-blue: 92 155 220;
   --sf-blue-hover: 112 176 240;

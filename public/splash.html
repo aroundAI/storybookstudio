@@ -9,7 +9,7 @@
     html, body {
       width: 100%;
       height: 100%;
-      background: #0a0a0b;
+      background: #0B0F1A;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -27,13 +27,33 @@
       -webkit-user-drag: none;
     }
     .splash-status {
+      position: relative;
       flex-shrink: 0;
+      width: 100%;
       padding: 10px 16px;
       font-size: 12px;
-      color: #737373;
+      color: #A5B4FC;
       text-align: center;
-      background: rgba(10, 10, 11, 0.95);
-      border-top: 1px solid #2d2d2d;
+      background: #0B0F1A;
+      border-top: 1px solid #1F2A44;
+    }
+    /* Loading state: a slow Blue → Violet sweep along the status bar's top edge. */
+    .splash-status::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: 0;
+      width: 30%;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(59, 130, 246, 0), #3B82F6, #8B5CF6, rgba(139, 92, 246, 0));
+      animation: splash-sweep 1.8s ease-in-out infinite;
+    }
+    @keyframes splash-sweep {
+      from { transform: translateX(-100%); }
+      to { transform: translateX(340%); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .splash-status::before { animation: none; left: 35%; }
     }
   </style>
 </head>

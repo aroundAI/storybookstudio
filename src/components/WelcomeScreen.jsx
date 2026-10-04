@@ -14,6 +14,7 @@ import {
 } from '../services/comfyPartnerAuth'
 import { resolveThumbnailUrl } from '../utils/projectThumbnail'
 import { useI18n } from '../i18n/I18nContext'
+import StudioMark from '../studio/brand/StudioMark'
 
 const DiscoverModal = lazy(() => import('./DiscoverModal'))
 
@@ -208,8 +209,8 @@ function WelcomeScreen() {
     ? Math.round((mediaPreparationCompleted / mediaPreparationTotal) * 100)
     : 0
   const showMediaPreparation = Boolean(isLoading && mediaPreparation?.active && mediaPreparationTotal > 0)
-  const welcomeHeroVideoSrc = getWelcomeAssetPath('velorn-project-selection-page.mp4')
-  const welcomeHeroPosterSrc = getWelcomeAssetPath('velorn-home-balanced-plate-4.webp')
+  // StoryBook brand plate (build/brand/hero-studio.svg): lockup and tagline baked in.
+  const welcomeHeroImageSrc = getWelcomeAssetPath('storybookstudio-welcome-hero.webp')
   const desktopMode = isElectronMode()
   
   // Keep partner-key status fresh so the chip in the header reflects
@@ -481,6 +482,7 @@ function WelcomeScreen() {
           <div className="max-w-md w-full mx-4">
           {/* Branding */}
           <div className="text-center mb-8">
+            <StudioMark className="mx-auto mb-4 h-16 w-16" />
             <h1 className="text-4xl font-bold text-sf-text-primary">StorybookStudio</h1>
           </div>
           
@@ -658,10 +660,11 @@ function WelcomeScreen() {
                 transformOrigin: 'center top',
               }}
             >
-              <HeroVideoLoop
-                src={welcomeHeroVideoSrc}
-                poster={welcomeHeroPosterSrc}
-                fadeSeconds={2}
+              <img
+                src={welcomeHeroImageSrc}
+                alt=""
+                aria-hidden="true"
+                draggable={false}
                 className="absolute inset-0 h-full w-full object-cover"
               />
               <div
@@ -674,17 +677,6 @@ function WelcomeScreen() {
                   ].join(', '),
                 }}
               />
-              <div
-                className="absolute whitespace-nowrap text-right font-semibold uppercase tracking-[0.22em] text-[#f2d590]/90 pointer-events-none"
-                style={{
-                  top: '31.6%',
-                  right: '35%',
-                  fontSize: 'clamp(7px, 0.39vw, 9.4px)',
-                  textShadow: '0 0 14px rgba(247, 210, 132, 0.5), 0 0 5px rgba(255, 231, 176, 0.22), 0 1px 8px rgba(0, 0, 0, 0.72)',
-                }}
-              >
-                Generate shots. Shape edits. Deliver stories.
-              </div>
             </div>
           </div>
           {/* Subtle attribution */}
