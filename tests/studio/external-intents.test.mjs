@@ -50,7 +50,7 @@ test('a build without FILM-2016 registers nothing; with its modules, audio:<inte
   assert.deepEqual(plan.reasons, ['Music masks dialogue', 'Fade the bed out'])
   assert.deepEqual(plan.scenes, [null, 5])
   assert.equal(plan.changes[0], 'Buses music duckDb -10')
-  assert.match(plan.changes[1], /fade out 0\.5 s/)
+  assert.match(plan.changes[1], /fade out 0\.50 s/)
   assert.equal(plan.expected.durationAfter, 99)
   assert.throws(() => compileIntent({ intent: 'audio:duck', context, scope: {}, params: {}, writable: ['set_clip_audio'] }), /set_audio_buses is not a plan-writable tool/)
 

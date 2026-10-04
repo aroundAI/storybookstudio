@@ -7,7 +7,7 @@
 // simulator, notes. capabilityRuntime.js passes the modules it finds with
 // import.meta.glob, so neither merge order breaks the other. Pure module.
 import { CompileError, registerIntentCompiler } from './compile.js'
-import { finishPlan, seconds, shotLabel } from './intents/shared.js'
+import { finishPlan, shotLabel } from './intents/shared.js'
 
 export const AUDIO_MODULE = './intents/audio.js'
 export const CAPTIONS_MODULE = './intents/captions.js'
@@ -37,7 +37,8 @@ function describe(tool, args, clips) {
       return `Buses ${Object.entries(args.buses || {}).map(([bus, patch]) => `${bus} ${Object.entries(patch || {}).map(([key, value]) => `${key} ${value}`).join(', ')}`).join('; ')}`
     case 'set_clip_audio': {
       const ids = args.clipIds || (args.clipId ? [args.clipId] : [])
-      const parts = [args.gainDb != null ? `gain ${args.gainDb} dB` : null, args.fadeInSeconds != null ? `fade in ${seconds(args.fadeInSeconds)}` : null, args.fadeOutSeconds != null ? `fade out ${seconds(args.fadeOutSeconds)}` : null].filter(Boolean)
+      const fade = (value) => `${Number(value).toFixed(2)} s`
+      const parts = [args.gainDb != null ? `gain ${args.gainDb} dB` : null, args.fadeInSeconds != null ? `fade in ${fade(args.fadeInSeconds)}` : null, args.fadeOutSeconds != null ? `fade out ${fade(args.fadeOutSeconds)}` : null].filter(Boolean)
       return `${ids.length === 1 ? shotLabel(clips.get(ids[0])) : `${ids.length} clips`}: ${parts.join(', ')}`
     }
     case 'set_master_audio':
@@ -70,7 +71,7 @@ export function adaptExternalResult(intent, result, context) {
   })
   const notes = [
     ...(result.notes || []).map((note) => (typeof note === 'string' ? { scene: null, text: note } : note)),
-    ...(entries.length === 0 ? [{ scene: null, text: 'Nothing to change: the audio already meets the policy' }] : []),
+    ...(entries.length === 0 ? [{ scene: null, text: `The ${intent} compiler proposed no change${result.expected ? ` (${JSON.stringify(result.expected).slice(0, 300)})` : ''}` }] : []),
   ]
   const plan = finishPlan(context, { intent, entries, notes })
   plan.compilerExpected = result.expected ?? null
