@@ -1,5 +1,6 @@
 import { getSupportedMogMimeType } from './mogRenderer'
 import { quoteCssFontFamily } from './fontFamily'
+import { layoutCue } from '../studio/captions/layout.js'
 
 function clamp(v, min, max) { return Math.max(min, Math.min(max, v)) }
 function lerp(a, b, t) { return a + (b - a) * t }
@@ -817,6 +818,13 @@ function renderTraditionalSubtitle(ctx, width, height, style, cues, time) {
   const sizeScale = Number(g.sizeScale)
   const sizeMultiplier = Number.isFinite(sizeScale) ? clamp(sizeScale, 0.3, 2) : 1
 
+  // FILM-2016: a StorybookStudio cue carries its aspect's safe rectangle;
+  // its layout is the one the QA caption check measures.
+  if (g.safeArea && typeof g.safeArea === 'object') {
+    drawSafeAreaSubtitle(ctx, width, height, style, g, activeCue, time, { textColor, textStyle, fontFamily })
+    return
+  }
+
   const fontSize = clamp(Math.round(Math.min(width, height) * 0.045 * sizeMultiplier), 16, 96)
   const lineHeight = fontSize * 1.3
   const padding = fontSize * normalizePercent(g.backgroundPadding, 60, 10, 90) / 100
@@ -915,6 +923,58 @@ function renderTraditionalSubtitle(ctx, width, height, style, cues, time) {
     ctx.fillText(line, centerX, y)
   })
 
+  ctx.restore()
+}
+
+// FILM-2016: the subtitle block laid out by src/studio/captions/layout.js,
+// inside the safe rectangle, wrapped at maxCharsPerLine, emphasis words in
+// the brand colour (or larger). Same fade and box look as the path above.
+function drawSafeAreaSubtitle(ctx, width, height, style, g, activeCue, time, { textColor, textStyle, fontFamily }) {
+  const measure = (text, size) => {
+    setFont(ctx, size, fontFamily, style.fontWeight)
+    return ctx.measureText(text).width
+  }
+  const layout = layoutCue({ text: String(activeCue.text || '').trim(), globalOverrides: g }, { width, height, measure })
+  const cueAge = time - (Number(activeCue.start) || 0)
+  const cueRemaining = (Number(activeCue.end) || 0) - time
+  let opacity = 1
+  if (cueAge < 0.15) opacity = clamp(cueAge / 0.15, 0, 1)
+  if (cueRemaining < 0.15) opacity = clamp(cueRemaining / 0.15, 0, 1)
+
+  ctx.save()
+  ctx.globalAlpha = opacity
+  if (textStyle === 'background') {
+    const { x, y, width: w, height: h } = layout.box
+    const radius = Math.min(h / 2, Math.round(layout.fontSize * normalizePercent(g.backgroundRadius, 30, 0, 80) / 100))
+    ctx.fillStyle = colorWithOpacity(g.backgroundColor || '#000000', normalizePercent(g.backgroundOpacity, 65))
+    ctx.beginPath()
+    ctx.moveTo(x + radius, y)
+    ctx.lineTo(x + w - radius, y)
+    ctx.quadraticCurveTo(x + w, y, x + w, y + radius)
+    ctx.lineTo(x + w, y + h - radius)
+    ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h)
+    ctx.lineTo(x + radius, y + h)
+    ctx.quadraticCurveTo(x, y + h, x, y + h - radius)
+    ctx.lineTo(x, y + radius)
+    ctx.quadraticCurveTo(x, y, x + radius, y)
+    ctx.closePath()
+    ctx.fill()
+  }
+  ctx.textBaseline = 'alphabetic'
+  ctx.textAlign = 'left'
+  for (const line of layout.lines) {
+    for (const word of line.words) {
+      setFont(ctx, word.size, fontFamily, word.emphasized && g.emphasisStyle === 'scale' ? '800' : style.fontWeight)
+      if (textStyle === 'outline') {
+        ctx.strokeStyle = colorWithOpacity(g.outlineColor || '#000000', 100)
+        ctx.lineWidth = Math.max(0, Math.round(word.size * normalizePercent(g.outlineThickness, 9, 0, 22) / 100))
+        ctx.lineJoin = 'round'
+        ctx.strokeText(word.text, word.x, line.baseline)
+      }
+      ctx.fillStyle = word.emphasized && g.emphasisStyle === 'color' && g.emphasisColor ? g.emphasisColor : textColor
+      ctx.fillText(word.text, word.x, line.baseline)
+    }
+  }
   ctx.restore()
 }
 
