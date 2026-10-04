@@ -133,6 +133,8 @@ Captions can be generated from edited timeline audio and styled in-app.
 - Live preview with play/scrub controls and safe-zone overlays.
 - Export-ready caption renders.
 
+> **macOS: the caption engine does not download yet.** On first use, captions download a whisper-cli build from this repository's releases. That release has not been published, so on macOS the first download fails (HTTP 404) until it is. Windows and Linux download from whisper.cpp's own releases and are unaffected. A machine that already has the engine keeps working. The release is built by `.github/workflows/whisper-mac-engine.yml`, run by hand with `publish` set.
+
 ### Export
 
 The Export tab includes practical render presets, hardware-accelerated options where available, numbered PNG image sequence export, queue controls, and project-aware output settings.
