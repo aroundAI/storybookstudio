@@ -250,3 +250,10 @@ test('cards and the draft report are deterministic and the report parses as Expl
   assert.match(one.reportText, /Scene 3 {2}21\.0 s -> 13\.9 s/)
   assert.match(one.reportText, /Trimmed {2}S3\.1 .* 6\.0 s -> 3\.6 s {2}Dead air of 1\.4 s between line 17 and line 18/)
 })
+
+test('the report\'s durations are where the picture ends, not a captions clip that outlasts it', () => {
+  const context = contextFor({ mutate: (project) => { project.timelines[0].clips.find((clip) => clip.type === 'captions').duration = 120 } })
+  const { report, text } = buildDraftReport(compileIntent({ intent: 'tighten_pacing', context, scope: { scene: 3 }, params: { targetSeconds: 12 } }), context)
+  assert.equal(report.explain.durationBefore, 99)
+  assert.match(text, /Duration: 99\.0 s -> 91\.9 s/)
+})
