@@ -112,6 +112,8 @@ const studioMain = createStudioMain({
   getFfmpegPath: () => ffmpegPath,
   // FILM-2014: delivery encodes wait their turn in the media-preparation queue.
   getMediaPreparation: () => mediaPreparation,
+  // StoryBook brand: dock icon (unpackaged runs) and the About panel.
+  iconPath,
 })
 let downloadSaveDialogHandlerInstalled = false
 let downloadCounter = 0
