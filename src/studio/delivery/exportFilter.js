@@ -1,4 +1,4 @@
-// FILM-2017: what a delivery preset changes in Velorn's own export
+// FILM-2017: what a delivery preset changes in the upstream editor's own export
 // (src/services/exporter.js, reached by export_timeline and
 // export_delivery_batch with a preset): captions clips are drawn only when
 // the preset burns them, and only the render's language is heard and shown

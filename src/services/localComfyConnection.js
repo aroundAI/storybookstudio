@@ -1,6 +1,6 @@
 export const COMFY_CONNECTION_SETTING_KEY = 'comfyConnection'
-export const COMFY_CONNECTION_LOCAL_KEY = 'comfystudio-comfy-connection'
-export const COMFY_CONNECTION_CHANGED_EVENT = 'comfystudio-comfy-connection-changed'
+export const COMFY_CONNECTION_LOCAL_KEY = 'storybookstudio-comfy-connection'
+export const COMFY_CONNECTION_CHANGED_EVENT = 'storybookstudio-comfy-connection-changed'
 
 export const LOCAL_COMFY_HOST = '127.0.0.1'
 export const DEFAULT_COMFY_PORT = 8188

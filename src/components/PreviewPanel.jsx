@@ -33,7 +33,7 @@ import { landPlaybackJumpVideo } from '../utils/playbackJumpVideo.mjs'
 import { getPreviewFrameSnapshot } from '../services/previewFrameTap'
 import { useI18n } from '../i18n/I18nContext'
 
-const SPACE_MODIFIER_USED_EVENT = 'comfystudio-space-modifier-used'
+const SPACE_MODIFIER_USED_EVENT = 'storybookstudio-space-modifier-used'
 
 function notifySpaceModifierUsed() {
   if (typeof window === 'undefined') return
@@ -532,7 +532,7 @@ function PreviewPanel({ reviewOnly = false, playbackRange = null } = {}) {
     }
 
     // Expose preview scale so downstream layers (e.g. text) can match output framing.
-    style['--comfystudio-preview-scale'] = String(previewScaleUniform)
+    style['--storybookstudio-preview-scale'] = String(previewScaleUniform)
     
     return style
   }
@@ -2025,7 +2025,7 @@ function PreviewPanel({ reviewOnly = false, playbackRange = null } = {}) {
           setCapturingFrameForAI(false)
           if (result) {
             setFrameForAI({ ...result, mode: 'extend' })
-            window.dispatchEvent(new CustomEvent('comfystudio-open-generate-with-frame'))
+            window.dispatchEvent(new CustomEvent('storybookstudio-open-generate-with-frame'))
           }
         })
         break
@@ -2040,7 +2040,7 @@ function PreviewPanel({ reviewOnly = false, playbackRange = null } = {}) {
           setCapturingFrameForAI(false)
           if (result) {
             setFrameForAI({ ...result, mode: 'keyframe' })
-            window.dispatchEvent(new CustomEvent('comfystudio-open-generate-with-frame'))
+            window.dispatchEvent(new CustomEvent('storybookstudio-open-generate-with-frame'))
           }
         })
         break

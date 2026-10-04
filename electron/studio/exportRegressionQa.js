@@ -1,4 +1,4 @@
-// FILM-2014 AC8: the QA pass of Velorn's export regression runner
+// FILM-2014 AC8: the QA pass of the upstream editor's export regression runner
 // (scripts/check-export-worker-scheduling.cjs → tests/fixtures/
 // export-scheduler-electron.cjs). After a fixture render is encoded and
 // decoded, the same deterministic QA as studio_review runs on it, so a

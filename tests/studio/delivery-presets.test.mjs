@@ -78,7 +78,7 @@ test('an unknown preset is VALIDATION_FAILED, and sizes scale with bitrate and d
   assert.equal(estimateBytes('youtube_16x9', 120), sixty * 2)
 })
 
-test('export settings carry the preset into Velorn\'s export_timeline', () => {
+test('export settings carry the preset into the upstream editor\'s export_timeline', () => {
   const settings = exportSettingsForPreset('reels_9x16', { timeline: { width: 1920, height: 1080, fps: 24 }, language: 'hi' })
   assert.deepEqual(settings, {
     width: 1080, height: 1920, fps: 30, videoCodec: 'h264', audioCodec: 'aac', qualityMode: 'bitrate', bitrateKbps: 8000, audioBitrateKbps: 192,

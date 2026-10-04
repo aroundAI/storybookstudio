@@ -61,7 +61,7 @@ export function assetFile(asset, projectDir, { preferProxy = false } = {}) {
   return resolve(asset.path)
 }
 
-// Picture tracks, top layer first: Velorn lists video tracks top to bottom.
+// Picture tracks, top layer first: the upstream editor lists video tracks top to bottom.
 function pictureTracks(timeline) {
   return (timeline?.tracks || []).filter((track) => track.type === 'video' && !isCaptionTrack(track) && track.visible !== false)
 }
@@ -126,7 +126,7 @@ export function pictureSegments(project, { timelineId = null, projectDir = null,
       color: top.type === 'solid' ? top.color || '#000000' : null,
       file: top.type === 'solid' ? null : assetFile(asset, projectDir, { preferProxy }),
       offline: top.type !== 'solid' && !assetFile(asset, projectDir),
-      // Source seconds at the segment start; Velorn's trimStart is in source time.
+      // Source seconds at the segment start; the upstream editor's trimStart is in source time.
       sourceStart: num(top.trimStart) + (start - clipStart(top)) * speed,
       speed,
       scene: sceneOfClip(top),

@@ -3,7 +3,7 @@ const fs = require('fs')
 const path = require('path')
 const { spawnSync } = require('child_process')
 
-const RIFE_RUNTIME_ENV_KEY = 'VELORN_RIFE_RUNTIME_DIR'
+const RIFE_RUNTIME_ENV_KEY = 'STORYBOOKSTUDIO_RIFE_RUNTIME_DIR'
 const RIFE_MODEL_NAME = 'rife-v4.6'
 const RIFE_PROVENANCE_SCHEMA_VERSION = 1
 const RIFE_WRAPPER_SOURCE_COMMIT = 'a7532fc3f9f8f008cd6eecd6f2ffe2a9698e0cf7'
@@ -296,9 +296,9 @@ function readWindowsSigningIdentities(targetPath, hostExecutablePath) {
     '    issuer = [string]$signature.SignerCertificate.Issuer',
     '  }',
     '}',
-    '$result = [pscustomobject]@{ target = Read-Signature $env:VELORN_RIFE_SIGNATURE_TARGET }',
-    'if ($env:VELORN_RIFE_SIGNATURE_HOST) {',
-    '  $result | Add-Member -NotePropertyName host -NotePropertyValue (Read-Signature $env:VELORN_RIFE_SIGNATURE_HOST)',
+    '$result = [pscustomobject]@{ target = Read-Signature $env:STORYBOOKSTUDIO_RIFE_SIGNATURE_TARGET }',
+    'if ($env:STORYBOOKSTUDIO_RIFE_SIGNATURE_HOST) {',
+    '  $result | Add-Member -NotePropertyName host -NotePropertyValue (Read-Signature $env:STORYBOOKSTUDIO_RIFE_SIGNATURE_HOST)',
     '}',
     '$result | ConvertTo-Json -Compress -Depth 4',
   ].join('\n')
@@ -311,8 +311,8 @@ function readWindowsSigningIdentities(targetPath, hostExecutablePath) {
   ], {
     env: {
       ...windowsSignatureEnvironment(),
-      VELORN_RIFE_SIGNATURE_TARGET: targetPath,
-      VELORN_RIFE_SIGNATURE_HOST: hostExecutablePath || '',
+      STORYBOOKSTUDIO_RIFE_SIGNATURE_TARGET: targetPath,
+      STORYBOOKSTUDIO_RIFE_SIGNATURE_HOST: hostExecutablePath || '',
     },
   })
   try {

@@ -6,7 +6,7 @@
 // dialogue. The design's `detect_silence` step is get_audio_analysis (G5),
 // read before compiling; every cut is a ripple extract_range over all but the
 // captions tracks, so a trim never leaves a gap or slips dialogue off its
-// picture (Velorn's trim_clips does not ripple), and the captions and scene
+// picture (the upstream editor's trim_clips does not ripple), and the captions and scene
 // markers after the cut are re-timed in the same plan.
 import {
   DEFAULT_KEEP_PAUSE_SECONDS, DEFAULT_MIN_SILENCE_SECONDS, EPS, clipEnd, clipStart, clipsCutBy, cutSteps, cutTrackIds, finishPlan,

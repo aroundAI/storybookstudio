@@ -139,6 +139,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
       setPendingWork: (args) => ipcRenderer.invoke('studio:setPendingWork', args),
       confirmQuit: () => ipcRenderer.invoke('studio:confirmQuit'),
       onCloseRequested: subscribe('studio:close-requested'),
+      // Help > Open-source licenses.
+      getLicenses: () => ipcRenderer.invoke('studio:getLicenses'),
+      onShowLicenses: subscribe('studio:show-licenses'),
     }
   })(),
 
@@ -442,7 +445,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // ============================================
   
   /**
-   * Get a URL for a local file (using the legacy comfystudio:// protocol)
+   * Get a URL for a local file (using the legacy storybookstudio-file:// protocol)
    * @param {string} filePath 
    * @returns {Promise<string>}
    */
@@ -457,7 +460,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   /**
    * Extract audio waveform peaks via ffmpeg (Electron only)
-   * @param {string} mediaInput - file:// URL, legacy comfystudio:// URL, or absolute path
+   * @param {string} mediaInput - file:// URL, legacy storybookstudio-file:// URL, or absolute path
    * @param {object} options - { sampleCount?: number, sampleRate?: number }
    * @returns {Promise<{success: boolean, peaks?: number[], duration?: number, error?: string}>}
    */
@@ -583,7 +586,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   // ============================================
-  // Velorn Bridge
+  // Studio Bridge
   // ============================================
 
   comfyBridge: {

@@ -49,7 +49,7 @@ export function attachSourceTransportKeyboard({ windowTarget = globalThis.window
   listen(windowTarget, 'keydown', down, true)
   listen(windowTarget, 'keyup', up, true)
   listen(windowTarget, 'blur', reset)
-  listen(windowTarget, 'comfystudio-space-modifier-used', reset)
+  listen(windowTarget, 'storybookstudio-space-modifier-used', reset)
   for (const name of ['focusin', 'pointerdown', 'mousedown', 'visibilitychange']) listen(documentTarget, name, reset, true)
   return () => { disposed = true; reset(); listeners.forEach(remove => remove()) }
 }

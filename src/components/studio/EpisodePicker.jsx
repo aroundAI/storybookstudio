@@ -1,7 +1,7 @@
 // FILM-2015 Episode picker (R-11): projects → seasons → episodes from
 // list_projects / list_episodes (FILM-2011 IPC), with status, duration, last
 // changed, size when the episode is already on this machine, and "On this
-// machine". A velorn://open link pre-selects its episode. "Open" starts the
+// machine". A storybookstudio://open link pre-selects its episode. "Open" starts the
 // pull; progress shows phase, files and bytes; the editor opens when the
 // rough cut is built (studio:job-progress done).
 import { useEffect, useMemo, useState } from 'react'

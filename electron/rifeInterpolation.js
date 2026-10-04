@@ -23,14 +23,14 @@ const {
 
 const RIFE_ENGINE = 'rife-ncnn-vulkan'
 const RIFE_ENGINE_VERSION = '20221029'
-const RIFE_SECURE_BUILD_MARKER = 'Velorn secure build: PNG input and output only; WebP is disabled.'
+const RIFE_SECURE_BUILD_MARKER = 'StorybookStudio secure build: PNG input and output only; WebP is disabled.'
 // Omitting -g lets pinned ncnn prefer a discrete Vulkan GPU before falling
 // back to an integrated device. Vulkan device 0 is not guaranteed to be the
 // high-performance adapter on multi-GPU laptops and workstations.
 const DEFAULT_RIFE_GPU_ID = null
 const DEFAULT_RIFE_THREADS = '2:4:2'
 const DEFAULT_SCENE_CUT_THRESHOLD = 0.25
-const RIFE_WORK_MARKER = '.velorn-rife-'
+const RIFE_WORK_MARKER = '.storybookstudio-rife-'
 const RIFE_WORK_SUFFIX = '.work'
 const STALE_RIFE_WORK_AGE_MS = 24 * 60 * 60 * 1000
 const MIN_FREE_DISK_RESERVE_BYTES = 512 * 1024 * 1024

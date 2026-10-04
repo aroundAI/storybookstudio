@@ -83,7 +83,7 @@ export function estimateBytes(presetName, durationSeconds) {
   return Math.round(((bitrate + audioBitrate) * 1000 * seconds) / 8 * 1.01)
 }
 
-// The settings Velorn's export_timeline takes for this preset (the
+// The settings the upstream editor's export_timeline takes for this preset (the
 // renderer's export worker), used by export_delivery_batch.
 export function exportSettingsForPreset(name, { timeline = null, policy = null, language = DEFAULT_LANGUAGE } = {}) {
   const resolved = resolvePreset(name, { timeline, policy })

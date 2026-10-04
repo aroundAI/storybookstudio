@@ -9,7 +9,7 @@ import { buildSequentialRoughCut } from './sequentialRoughCut.js'
 async function openSequential({ package: pkg, probedAssets, projectDir }, api) {
   const { default: useProjectStore } = await import('../stores/projectStore')
   const project = buildSequentialRoughCut({ package: pkg, probedAssets })
-  const target = await api.pathJoin(projectDir, 'project.comfystudio')
+  const target = await api.pathJoin(projectDir, 'project.storybookstudio')
   const written = await api.writeFile(target, `${JSON.stringify(project, null, 2)}\n`)
   if (!written?.success) throw new Error(`Could not write the project: ${written?.error || 'unknown error'}`)
   const opened = await useProjectStore.getState().openProject(projectDir)

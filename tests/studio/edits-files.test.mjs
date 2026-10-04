@@ -31,7 +31,7 @@ test('paths outside <project>/edits/ are refused', async () => {
   const { api } = makeBridge()
   const dir = await mkdtemp(path.join(os.tmpdir(), 'studio-edits-'))
   try {
-    for (const bad of ['project.comfystudio', 'edits/../project.comfystudio', 'edits', 'edits//x', '../edits/x', 'edits/a\\..\\b', 'edits/./x']) {
+    for (const bad of ['project.storybookstudio', 'edits/../project.storybookstudio', 'edits', 'edits//x', '../edits/x', 'edits/a\\..\\b', 'edits/./x']) {
       const result = await api.write(dir, bad, 'x')
       assert.equal(result.success, false, bad)
     }

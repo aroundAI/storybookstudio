@@ -16,7 +16,7 @@ import {
   wrapMcpActionRunner,
 } from '../../src/studio/oplog.js'
 
-const sample = () => JSON.parse(readFileSync(new URL('./fixtures/velorn-sample-project.json', import.meta.url), 'utf8'))
+const sample = () => JSON.parse(readFileSync(new URL('./fixtures/storybookstudio-sample-project.json', import.meta.url), 'utf8'))
 const fixedClock = () => {
   let t = Date.parse('2026-10-03T10:41:12Z')
   return () => new Date((t += 1000))
@@ -39,7 +39,7 @@ const makeDocumentHolder = () => {
 const readLines = (sink) => (sink.files.get(OPLOG_PATH) || '').split('\n').filter(Boolean).map((line) => JSON.parse(line))
 
 // A stand-in for handleMcpAction: each write tool mutates the document the
-// way Velorn's handler would; previewOnly returns a plan and mutates nothing.
+// way the upstream editor's handler would; previewOnly returns a plan and mutates nothing.
 const makeFakeRunner = (holder) => {
   const writes = {
     trim_clips: ({ clipIds, trimEnd }) => holder.updateTimeline((t) => ({
@@ -118,7 +118,7 @@ test('preview-only calls and reads append nothing', async () => {
 
   for (const tool of fake.writeTools) {
     await runAction(tool, { ...writeArgs[tool], previewOnly: true })
-    await runAction(tool, writeArgs[tool]) // previewOnly defaults to true in Velorn
+    await runAction(tool, writeArgs[tool]) // previewOnly defaults to true in the upstream editor
   }
   await runAction('get_timeline', {})
   assert.equal(sink.files.get(OPLOG_PATH), undefined)
@@ -198,7 +198,7 @@ test('without an op log the wrapper only strips studioMeta', async () => {
 })
 
 // A minimal zustand-like store: getState/setState with merge semantics and
-// actions that call set(), so wrapping behaves as on Velorn's stores.
+// actions that call set(), so wrapping behaves as on the upstream editor's stores.
 const makeStore = (holder) => {
   let state
   const set = (partial) => { state = { ...state, ...(typeof partial === 'function' ? partial(state) : partial) } }

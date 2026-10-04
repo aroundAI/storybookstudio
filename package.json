@@ -1,5 +1,6 @@
 {
-  "name": "velorn",
+  "name": "storybookstudio",
+  "productName": "StorybookStudio",
   "version": "0.3.36",
   "description": "AI-native video editing built around real creative timelines, generative workflows, and local agent control.",
   "main": "electron/main.js",
@@ -96,14 +97,14 @@
     "video-editing",
     "electron"
   ],
-  "author": "Velorn contributors",
+  "author": "aroundAI",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/VelornLabs/velorn.git"
+    "url": "git+https://github.com/aroundAI/storybookstudio.git"
   },
-  "homepage": "https://velorn.ai",
+  "homepage": "https://github.com/aroundAI/storybookstudio",
   "bugs": {
-    "url": "https://github.com/VelornLabs/velorn/issues"
+    "url": "https://github.com/aroundAI/storybookstudio/issues"
   },
   "license": "GPL-3.0-only",
   "dependencies": {
@@ -141,9 +142,9 @@
     "wait-on": "^7.2.0"
   },
   "build": {
-    "appId": "com.comfystudio.app",
+    "appId": "co.aroundai.storybookstudio",
     "productName": "StorybookStudio",
-    "copyright": "Copyright © 2024-2026",
+    "copyright": "Copyright © 2026 aroundAI",
     "beforePack": "scripts/electron-builder-before-pack.cjs",
     "afterPack": "scripts/electron-builder-after-pack.cjs",
     "directories": {
@@ -168,6 +169,8 @@
       "src/studio/critic/**/*",
       "build/icon.png",
       "package.json",
+    "LICENSE",
+    "src/studio/legacyNames.json",
       "!node_modules/ffmpeg-static/ffmpeg*",
       "!node_modules/@derhuerst/ffprobe-static/ffprobe*"
     ],
@@ -233,17 +236,17 @@
       "icon": "build/icon.ico",
       "artifactName": "${productName}-${version}-windows-${arch}.${ext}",
       "azureSignOptions": {
-        "publisherName": "Jaime Aguirre",
+        "publisherName": "aroundAI",
         "endpoint": "https://eus.codesigning.azure.net",
-        "codeSigningAccountName": "velorn-signing",
-        "certificateProfileName": "velorn-public"
+        "codeSigningAccountName": "storybookstudio-signing",
+        "certificateProfileName": "storybookstudio-public"
       }
     },
     "protocols": [
       {
         "name": "StorybookStudio",
         "schemes": [
-          "velorn"
+          "storybookstudio"
         ]
       }
     ],
@@ -278,7 +281,7 @@
       ],
       "icon": "build/icons",
       "category": "Video",
-      "maintainer": "Velorn contributors <opensource@velorn.ai>",
+      "maintainer": "aroundAI <opensource@aroundai.co>",
       "artifactName": "${productName}-${version}-linux-${arch}.${ext}"
     },
     "nsis": {

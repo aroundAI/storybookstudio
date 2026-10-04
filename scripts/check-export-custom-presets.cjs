@@ -5,14 +5,14 @@ const fs = require('node:fs')
 const os = require('node:os')
 const path = require('node:path')
 const { chromium, _electron } = require(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright')
-const base = process.env.VELORN_TEST_URL || 'http://127.0.0.1:5196'
-const native = process.env.VELORN_TEST_ELECTRON === '1'
-const output = fs.mkdtempSync(path.join(os.tmpdir(), 'velorn-custom-presets-'))
-const libraryKey = 'velorn-custom-export-presets'
+const base = process.env.STORYBOOKSTUDIO_TEST_URL || 'http://127.0.0.1:5196'
+const native = process.env.STORYBOOKSTUDIO_TEST_ELECTRON === '1'
+const output = fs.mkdtempSync(path.join(os.tmpdir(), 'storybookstudio-custom-presets-'))
+const libraryKey = 'storybookstudio-custom-export-presets'
 
 async function main() {
   const browser = native ? await _electron.launch({ executablePath: require('electron'),
-    args: [path.resolve(__dirname, '../tests/fixtures/inspector-electron.cjs')], env: { ...process.env, VELORN_TEST_URL: base } })
+    args: [path.resolve(__dirname, '../tests/fixtures/inspector-electron.cjs')], env: { ...process.env, STORYBOOKSTUDIO_TEST_URL: base } })
     : await chromium.launch({ executablePath: process.env.CHROME_PATH || undefined, headless: true })
   let page
   const errors = [], reports = []
@@ -28,7 +28,7 @@ async function main() {
     const saved = () => page.evaluate(key => JSON.parse(localStorage.getItem(key) || '{"presets":[]}').presets, libraryKey)
     const settings = () => page.evaluate(() => {
       const state = window.exportWorkspaceTest.project.getState()
-      const key = `comfystudio-export-settings-v1:${String(state.currentProjectHandle || state.currentProject.name).replace(/[^\w.-]+/g, '_').slice(-120)}`
+      const key = `storybookstudio-export-settings-v1:${String(state.currentProjectHandle || state.currentProject.name).replace(/[^\w.-]+/g, '_').slice(-120)}`
       return JSON.parse(localStorage.getItem(key) || 'null')
     })
     const snapshot = () => page.evaluate(() => window.exportWorkspaceTest.snapshot())

@@ -5,7 +5,7 @@
 // position keyframes. Pure module: no Electron, no stores.
 //
 // Coordinates: a subject's cx/cy and the crop path are fractions of the
-// source frame (0..1, from the top-left). Velorn draws a clip "fit" inside
+// source frame (0..1, from the top-left). The upstream editor draws a clip "fit" inside
 // the canvas (exporter getBaseDrawRect), then applies transform.scaleX/Y
 // (percent) and positionX/Y (canvas pixels) about the clip's centre; the
 // keyframes below are in those units.

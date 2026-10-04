@@ -24,7 +24,7 @@ import {
   SHORT_FILM_VIDEO_RESOLUTION_OPTIONS,
 } from '../../config/shortFilmConfig'
 
-const DRAFT_STORAGE_KEY = 'comfystudio-short-film-easy-mode-draft-v1'
+const DRAFT_STORAGE_KEY = 'storybookstudio-short-film-easy-mode-draft-v1'
 
 const STEPS = [
   { id: 'story', label: 'Story', number: '1' },

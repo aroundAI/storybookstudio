@@ -1,4 +1,4 @@
-const YOUTUBE_EMBED_APP_REFERER = 'https://com.comfystudio.app/'
+const YOUTUBE_EMBED_APP_REFERER = 'https://co.aroundai.storybookstudio/'
 
 const REQUEST_HEADER_REWRITE_URLS = Object.freeze([
   'http://127.0.0.1/*',

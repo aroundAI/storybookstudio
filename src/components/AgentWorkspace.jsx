@@ -17,10 +17,10 @@ import {
 import lmstudio from '../services/lmstudio'
 import { getAgentToolInstructions, runAgentTool } from '../services/agentTools'
 
-const ACCEPTED_STORAGE_KEY = 'velorn-agent-disclaimer-accepted'
-const CHAT_STORAGE_KEY = 'velorn-agent-chat-history'
-const MODEL_STORAGE_KEY = 'velorn-agent-selected-model'
-const ENDPOINT_STORAGE_KEY = 'velorn-agent-endpoint'
+const ACCEPTED_STORAGE_KEY = 'storybookstudio-agent-disclaimer-accepted'
+const CHAT_STORAGE_KEY = 'storybookstudio-agent-chat-history'
+const MODEL_STORAGE_KEY = 'storybookstudio-agent-selected-model'
+const ENDPOINT_STORAGE_KEY = 'storybookstudio-agent-endpoint'
 const DEFAULT_ENDPOINT = 'http://localhost:1234'
 
 const BASE_AGENT_PROMPT = `You are StorybookStudio Agent, an AI assistant built into StorybookStudio.
@@ -95,7 +95,7 @@ function formatToolResultForChat(toolName, result, summary = '') {
 
 function parseAgentToolCalls(text) {
   const calls = []
-  const blockPattern = /```(?:velorn-tool|velorn_tool)\s*([\s\S]*?)```/gi
+  const blockPattern = /```(?:storybookstudio-tool|storybookstudio_tool)\s*([\s\S]*?)```/gi
   let match
   while ((match = blockPattern.exec(text || '')) !== null) {
     const body = match[1].trim()
@@ -115,7 +115,7 @@ function parseAgentToolCalls(text) {
 
 function cleanAssistantText(text) {
   let cleaned = String(text || '')
-  cleaned = cleaned.replace(/```(?:velorn-tool|velorn_tool)\s*[\s\S]*?```/gi, '')
+  cleaned = cleaned.replace(/```(?:storybookstudio-tool|storybookstudio_tool)\s*[\s\S]*?```/gi, '')
   cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '')
   cleaned = cleaned.replace(/<\|(?:analysis|thought|reasoning)\|>[\s\S]*?(?=<\|(?:final|answer|assistant)\|>|$)/gi, '')
   cleaned = cleaned.replace(/<\|(?:final|answer|assistant)\|>/gi, '')
@@ -128,7 +128,7 @@ function cleanAssistantText(text) {
   cleaned = cleaned.replace(/StorybookStudio tool result for [\s\S]*$/gi, '')
   cleaned = cleaned.replace(/^\s*(?:tool call|tool use)\s*:?.*$/gim, '')
   cleaned = cleaned.replace(/^\s*\d+\.\s*\*\*Tool Call\*\*[\s\S]*$/gim, '')
-  cleaned = cleaned.replace(/^\s*["']?velorn-tool["']?\s*$/gim, '')
+  cleaned = cleaned.replace(/^\s*["']?storybookstudio-tool["']?\s*$/gim, '')
   cleaned = cleaned.replace(/^\s*["']?tool["']?\s*:\s*["'][^"']+["'].*$/gim, '')
   cleaned = cleaned.replace(/^\s*["']?arguments["']?\s*:\s*\{.*$/gim, '')
   cleaned = cleaned.replace(/^\s*(?:I should|I need to|The user is asking|The user asked|I have the result|The summary states|I will state|We need to).*$/gim, '')

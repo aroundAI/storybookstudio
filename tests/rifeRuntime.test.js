@@ -14,7 +14,7 @@ function createRuntime(root, platform = 'linux') {
 }
 
 test('resolves a complete development runtime', (t) => {
-  const appRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'velorn-rife-runtime-'))
+  const appRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'storybookstudio-rife-runtime-'))
   t.after(() => fs.rmSync(appRoot, { recursive: true, force: true }))
   const runtimeRoot = path.join(appRoot, '.runtime', 'rife')
   createRuntime(runtimeRoot)
@@ -26,7 +26,7 @@ test('resolves a complete development runtime', (t) => {
 })
 
 test('uses the packaged Windows executable name, ignores overrides, and rejects an unproven runtime', (t) => {
-  const resourcesPath = fs.mkdtempSync(path.join(os.tmpdir(), 'velorn-rife-resources-'))
+  const resourcesPath = fs.mkdtempSync(path.join(os.tmpdir(), 'storybookstudio-rife-resources-'))
   t.after(() => fs.rmSync(resourcesPath, { recursive: true, force: true }))
   const runtimeRoot = path.join(resourcesPath, 'bin', 'rife')
   createRuntime(runtimeRoot, 'win32')
@@ -45,7 +45,7 @@ test('uses the packaged Windows executable name, ignores overrides, and rejects 
 })
 
 test('reports a missing model or executable without guessing another path', (t) => {
-  const appRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'velorn-rife-missing-'))
+  const appRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'storybookstudio-rife-missing-'))
   t.after(() => fs.rmSync(appRoot, { recursive: true, force: true }))
 
   const result = resolveRifeRuntime({ appRoot, platform: 'linux' })
@@ -59,9 +59,9 @@ test('Windows signature checks discard incompatible inherited PowerShell module 
     Path: 'C:\\Windows\\System32',
     PSModulePath: 'C:\\Program Files\\PowerShell\\Modules',
     pSmOdUlEpAtH: 'C:\\another-inherited-module-path',
-    VELORN_TEST_VALUE: 'preserved',
+    STORYBOOKSTUDIO_TEST_VALUE: 'preserved',
   })
   assert.equal(environment.Path, 'C:\\Windows\\System32')
-  assert.equal(environment.VELORN_TEST_VALUE, 'preserved')
+  assert.equal(environment.STORYBOOKSTUDIO_TEST_VALUE, 'preserved')
   assert.equal(Object.keys(environment).some((key) => key.toLowerCase() === 'psmodulepath'), false)
 })

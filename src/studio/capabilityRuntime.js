@@ -250,7 +250,7 @@ async function resyncPlan({ writable } = {}) {
           : `${raw.tool}`
     return { step: { tool: raw.tool, arguments: args }, reason: raw.reason || studioMeta?.reason || 'StoryBook changed', scene: studioMeta?.scene ?? null, text, touches: targets.filter((id) => userEdited.has(id)) }
   })
-  // Velorn will not replace an audio clip with a video asset, so a regenerated
+  // The upstream editor will not replace an audio clip with a video asset, so a regenerated
   // shot's own sound comes back unresolved: the old take is removed rather than
   // left playing under the new picture.
   for (const item of proposal.unresolved || []) {

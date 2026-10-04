@@ -91,7 +91,7 @@ test('Source Enter uses bounded transport off buttons; mark/step grammar keeps i
 test('Source Space cancels on focus, mouse, pointer, blur, hidden, modifier use and unmount', () => {
   const f = fixture()
   for (const [target, event] of [[f.doc, 'focusin'], [f.doc, 'pointerdown'], [f.doc, 'mousedown'], [f.doc, 'visibilitychange'],
-    [f.win, 'blur'], [f.win, 'comfystudio-space-modifier-used']]) {
+    [f.win, 'blur'], [f.win, 'storybookstudio-space-modifier-used']]) {
     f.key('keydown', ' '); target.dispatch(event); f.key('keyup', ' ')
   }
   f.key('keydown', ' '); f.stop(); f.key('keyup', ' ')

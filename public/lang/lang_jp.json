@@ -854,7 +854,7 @@
       "theme": "テーマ",
       "active": "使用中",
       "themes": {
-        "velorn": "深い青と紫を基調に、読みやすい古金色をアクセントにした標準テーマ",
+        "storybook": "深い青と紫を基調に、読みやすい古金色をアクセントにした標準テーマ",
         "midnight": "DaVinci Resolveを参考にしたニュートラルなダークグレー",
         "soft-dark": "控えめな寒色系の紫を加えた、柔らかなコントラスト",
         "high-contrast": "鮮やかな青をアクセントに、視認性を最大限に高めたテーマ",
@@ -895,7 +895,7 @@
       "custom": "カスタム",
       "active": "使用中",
       "presetDescriptions": {
-        "comfystudio": "StorybookStudio標準のキー割り当てです。",
+        "storybookstudio": "StorybookStudio標準のキー割り当てです。",
         "premiere": "Ctrl+Kで分割、Ctrl+Shift+Kですべて分割、Mでマーカー、Sでスナップを切り替えます。",
         "resolve": "Ctrl+\\で分割、Ctrl+Shift+\\ですべて分割、Mでマーカー、Nでスナップを切り替えます。",
         "final-cut": "Ctrl+Bで分割、Ctrl+Shift+Bですべて分割、Mでマーカー、Nでスナップを切り替えます。"
@@ -1076,9 +1076,7 @@
   "feedback": {
     "title": "フィードバックを送信",
     "description": "不具合、足りない機能、ちょっとしたご意見をチームへ直接送信できます。アカウントやGitHubは不要です。",
-    "discordTitle": "より早い回答が必要ですか？Discordにご参加ください。",
-    "discordBody": "チームや他のクリエイターから、同じ問題の解決策が見つかるかもしれません。",
-    "join": "参加",
+    "notConfigured": "このビルドではフィードバックはまだ設定されていません。",
     "thanks": "ありがとうございます。受け付けました。",
     "thanksBody": "フィードバックはチームへ直接送信されました。メールアドレスを入力した場合はご連絡することがあります。",
     "sendAnother": "別の内容を送る",

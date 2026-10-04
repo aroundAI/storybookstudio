@@ -1,7 +1,7 @@
 // keep_music_under_dialogue (contract §5): music-bus ducking at
 // policy.music.duckDb, never ducking the dialogue bus. Ducking is a bus
 // parameter (project.studio.audioBuses.music) that FILM-2016 renders; no
-// Velorn primitive writes it (G4). Until FILM-2016's compiler is registered
+// the upstream editor primitive writes it (G4). Until FILM-2016's compiler is registered
 // (compile.js registerIntentCompiler), this compiler returns no steps and
 // says what the bus is set to.
 import { finishPlan, sceneNote } from './shared.js'

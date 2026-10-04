@@ -68,7 +68,7 @@ import { canRevealAssetInFileManager, getRevealInFileManagerLabel, revealAssetIn
 import { useI18n } from '../i18n/I18nContext'
 import { quoteCssFontFamily } from '../utils/fontFamily'
 
-const TRANSITION_DEFAULT_DURATION_KEY = 'comfystudio-transition-default-duration-frames'
+const TRANSITION_DEFAULT_DURATION_KEY = 'storybookstudio-transition-default-duration-frames'
 const TRANSITION_TYPE_IDS = TRANSITION_TYPES.map(type => type.id)
 const DEFAULT_WAVEFORM_SAMPLES = 8192
 const MARQUEE_DRAG_THRESHOLD_PX = 6
@@ -123,7 +123,7 @@ const captureRippleTrimState = state => Object.fromEntries(RIPPLE_TRIM_STATE_KEY
 const AUDIO_WAVEFORM_CACHE = new Map()
 const AUDIO_WAVEFORM_PENDING = new Map()
 let audioWaveformContext = null
-const TIMELINE_TOOL_STORAGE_KEY = 'comfystudio-timeline-active-tool-v1'
+const TIMELINE_TOOL_STORAGE_KEY = 'storybookstudio-timeline-active-tool-v1'
 const TIMELINE_TOOLS = Object.freeze({
   AUTO: 'auto',
   SELECT: 'select',
@@ -296,7 +296,7 @@ const buildWaveformPeaks = (audioBuffer, sampleCount = DEFAULT_WAVEFORM_SAMPLES)
   }
 }
 
-const isNativeMediaUrl = (url) => /^file:\/\//i.test(url) || /^comfystudio:\/\//i.test(url)
+const isNativeMediaUrl = (url) => /^file:\/\//i.test(url) || /^storybookstudio-file:\/\//i.test(url)
 const isAbsoluteMediaPath = (value) => (
   /^[a-zA-Z]:[\\/]/.test(String(value || ''))
   || String(value || '').startsWith('/')
@@ -632,14 +632,14 @@ function Timeline({ onActiveToolChange, onStatusChange }) {
   // Track headers width (resizable) — default wide enough to read labels; persisted
   const TRACK_HEADERS_MIN = 100
   const TRACK_HEADERS_MAX = 400
-  const TRACK_HEADERS_STORAGE_KEY = 'comfystudio-timeline-track-headers-width'
+  const TRACK_HEADERS_STORAGE_KEY = 'storybookstudio-timeline-track-headers-width'
   const VIDEO_TRACK_HEIGHT_DEFAULT = 48
   const AUDIO_TRACK_HEIGHT_MONO_DEFAULT = 40
   const AUDIO_TRACK_HEIGHT_STEREO_DEFAULT = 80
   const TRACK_HEIGHT_MIN = 32
   const TRACK_HEIGHT_MAX = 220
-  const TRACK_HEIGHTS_STORAGE_KEY = 'comfystudio-timeline-track-heights-v1'
-  const TRACK_HEIGHT_PRESET_STORAGE_KEY = 'comfystudio-timeline-track-height-preset'
+  const TRACK_HEIGHTS_STORAGE_KEY = 'storybookstudio-timeline-track-heights-v1'
+  const TRACK_HEIGHT_PRESET_STORAGE_KEY = 'storybookstudio-timeline-track-height-preset'
   // Per-type heights for each preset. 'normal' matches the classic defaults;
   // compact flattens everything to the minimum so dense timelines fit on
   // screen; new tracks follow the active preset via getDefaultTrackHeight.
@@ -1241,7 +1241,7 @@ function Timeline({ onActiveToolChange, onStatusChange }) {
     if (!isRevealableClip(targetClip)) return false
     const asset = useAssetsStore.getState().getAssetById(targetClip.assetId)
     if (!asset) return false
-    window.dispatchEvent(new CustomEvent('comfystudio-reveal-asset', { detail: { assetId: asset.id } }))
+    window.dispatchEvent(new CustomEvent('storybookstudio-reveal-asset', { detail: { assetId: asset.id } }))
     return true
   }, [])
 
@@ -2704,7 +2704,7 @@ function Timeline({ onActiveToolChange, onStatusChange }) {
       gesture.scheduler.finish(event.clientX)
       if (!isCurrent()) { cancelTimelineScrub(); return }
       cancelTimelineScrub()
-      window.dispatchEvent(new CustomEvent('comfystudio:timeline-scrub-end'))
+      window.dispatchEvent(new CustomEvent('storybookstudio:timeline-scrub-end'))
     }
     const cancel = () => cancelTimelineScrub()
     const escape = event => {
@@ -3768,11 +3768,11 @@ function Timeline({ onActiveToolChange, onStatusChange }) {
       setAssetDropPreview(null)
       clearActiveSnap()
     }
-    window.addEventListener('comfystudio-assets-drag-start', handleAssetDragStart)
-    window.addEventListener('comfystudio-assets-drag-end', handleAssetDragEnd)
+    window.addEventListener('storybookstudio-assets-drag-start', handleAssetDragStart)
+    window.addEventListener('storybookstudio-assets-drag-end', handleAssetDragEnd)
     return () => {
-      window.removeEventListener('comfystudio-assets-drag-start', handleAssetDragStart)
-      window.removeEventListener('comfystudio-assets-drag-end', handleAssetDragEnd)
+      window.removeEventListener('storybookstudio-assets-drag-start', handleAssetDragStart)
+      window.removeEventListener('storybookstudio-assets-drag-end', handleAssetDragEnd)
     }
   }, [clearActiveSnap, cancelPendingAssetDragOver])
 
@@ -3929,7 +3929,7 @@ function Timeline({ onActiveToolChange, onStatusChange }) {
     if (Array.isArray(draggedAssetIds) && draggedAssetIds.length > 0) return draggedAssetIds
     if (!dataTransfer) return draggedAssetIds
     const directId = dataTransfer.getData('assetId')
-    const customPayload = dataTransfer.getData('application/x-comfystudio-asset-ids')
+    const customPayload = dataTransfer.getData('application/x-storybookstudio-asset-ids')
     const plainText = dataTransfer.getData('text/plain')
     const raw = customPayload || plainText
     if (!raw) {
@@ -4284,7 +4284,7 @@ function Timeline({ onActiveToolChange, onStatusChange }) {
       // Tell the assets panel to release its selection and focus: after a
       // drop it still owns both, which hijacks the next Delete press into
       // "delete asset?" instead of deleting the just-placed clip.
-      try { window.dispatchEvent(new Event('comfystudio-timeline-assets-dropped')) } catch (_) { /* non-browser */ }
+      try { window.dispatchEvent(new Event('storybookstudio-timeline-assets-dropped')) } catch (_) { /* non-browser */ }
     }
   }
 
@@ -5749,7 +5749,7 @@ function Timeline({ onActiveToolChange, onStatusChange }) {
   }
 
   const parseEffectDrop = (e) => {
-    const raw = e.dataTransfer.getData('application/x-comfystudio-effect')
+    const raw = e.dataTransfer.getData('application/x-storybookstudio-effect')
     if (!raw) return null
     try {
       return JSON.parse(raw)
@@ -5766,8 +5766,8 @@ function Timeline({ onActiveToolChange, onStatusChange }) {
         setDefaultTransitionFrames(Math.round(next))
       }
     }
-    window.addEventListener('comfystudio-transition-default-duration-changed', handler)
-    return () => window.removeEventListener('comfystudio-transition-default-duration-changed', handler)
+    window.addEventListener('storybookstudio-transition-default-duration-changed', handler)
+    return () => window.removeEventListener('storybookstudio-transition-default-duration-changed', handler)
   }, [])
   
   // Cancel on outside pointer-down (including children that stop bubbling),

@@ -125,7 +125,7 @@ test('captions: cues not placed for the 9:16 safe rectangle fail with move_capti
     { id: 'c2', start: 3.5, end: 6, text: 'And a second line of the same' },
   ]
   const shot = { start: 0, duration: 8, path: files.vertical }
-  // Velorn's default subtitle box: bottom 6% of the frame, 88% wide.
+  // The upstream editor's default subtitle box: bottom 6% of the frame, 88% wide.
   const bad = miniProject({ aspect: '9:16', shots: [shot], captions: { duration: 8, cues } })
   const render = await createPreviewRenderer({ ffmpegPath: FFMPEG, ffprobePath: FFPROBE }).renderVideo({ project: bad, projectDir: dir, fullSize: true, output: path.join(dir, 'captions-bad.mp4') })
   const result = await qa.runQa({ file: render.file, project: bad, projectDir: dir, preset: 'shorts_9x16', policy: { ...POLICY, targetDurationSeconds: null } })

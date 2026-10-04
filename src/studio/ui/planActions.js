@@ -3,7 +3,7 @@
 // handlers (window.electronAPI.studio.proposePlan / applyPlan / rejectPlan /
 // repair) are used when present. Until FILM-2013 lands, a plan that carries
 // its steps (a re-sync proposal, or a plan an MCP client sent with steps) is
-// applied here: a new version first, then each step through Velorn's MCP
+// applied here: a new version first, then each step through the upstream editor's MCP
 // action runner with previewOnly:false, so every step is one op-log line with
 // its reason (FILM-2012) and the version before the plan stays restorable.
 import { stepsForScenes } from './planCards.js'

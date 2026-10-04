@@ -1,5 +1,5 @@
 // Renderer wiring for the Studio op log and versions (FILM-2012). It binds the
-// pure modules (oplog.js, versions.js) to Velorn's stores and to the preload
+// pure modules (oplog.js, versions.js) to the upstream editor's stores and to the preload
 // bridge (window.electronAPI.studioEdits). It imports the stores, so it is not
 // a pure module; tests load it through Vite's SSR loader
 // (tests/studio/edit-log-runtime.test.mjs).

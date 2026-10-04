@@ -1,6 +1,6 @@
-// EditGraph v1 (FILM-2012): Velorn's project.comfystudio plus additive Studio
+// EditGraph v1 (FILM-2012): the upstream editor's project file (project.storybookstudio) plus additive Studio
 // fields. Every object is passthrough so validating a project never strips a
-// Velorn field, and every Studio field is optional so a stock Velorn project
+// the upstream editor field, and every Studio field is optional so a stock upstream project
 // validates unchanged. Pure module: no Electron, no stores.
 import { z } from 'zod'
 
@@ -155,7 +155,7 @@ export const EditGraphProjectSchema = z
   .object({
     version: z.string().optional(),
     timelines: z.array(StudioTimelineSchema).optional(),
-    // Velorn 1.0 projects hold one `timeline`; normalizeOpenedProjectData migrates it.
+    // Upstream 1.0 projects hold one `timeline`; normalizeOpenedProjectData migrates it.
     timeline: StudioTimelineSchema.optional(),
     assets: z.array(StudioAssetSchema).optional(),
     studio: ProjectStudioSchema.optional(),

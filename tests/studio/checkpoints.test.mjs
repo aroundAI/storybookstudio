@@ -99,9 +99,9 @@ test('the oldest files are pruned past the limit', async (t) => {
 
 test('an id that is not a checkpoint id never reaches the filesystem', async (t) => {
   const project = projectDir(t)
-  fs.writeFileSync(path.join(project, 'project.comfystudio'), '{"id":"../../project.comfystudio"}')
+  fs.writeFileSync(path.join(project, 'project.storybookstudio'), '{"id":"../../project.storybookstudio"}')
   const store = await freshProcess()
-  assert.equal(await store.load(project, '../../project.comfystudio'), null)
+  assert.equal(await store.load(project, '../../project.storybookstudio'), null)
   assert.equal(await store.load(project, 'checkpoint-1-a/../../x'), null)
   await assert.rejects(store.save(project, { ...snapshot(project, 1), id: '../escape' }), /malformed/)
 })

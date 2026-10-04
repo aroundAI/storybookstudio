@@ -26,7 +26,7 @@ import { loadFixture, probesFor } from './rough-cut.mjs'
 const root = fileURLToPath(new URL('../../../', import.meta.url))
 const require = createRequire(import.meta.url)
 const editsFiles = require('../../../electron/studio/editsFiles.js')
-const { createComfyStudioMcpServer } = require('../../../electron/mcpServer.js')
+const { createStorybookStudioMcpServer } = require('../../../electron/mcpServer.js')
 
 const noop = () => {}
 
@@ -94,7 +94,7 @@ export async function startStudioHarness(m, { shots = 20, runRead = silentLinesA
     await mkdir(path.dirname(path.join(dir, relative)), { recursive: true })
     await writeFile(path.join(dir, relative), text)
   }
-  await writeFile(path.join(dir, 'project.comfystudio'), `${JSON.stringify(project, null, 2)}\n`)
+  await writeFile(path.join(dir, 'project.storybookstudio'), `${JSON.stringify(project, null, 2)}\n`)
   if (media) await (await import('./review-media.mjs')).writeMediaFor(project, dir)
   if (beforeOpen) await beforeOpen({ dir, project, pkg })
 
@@ -120,7 +120,7 @@ export async function startStudioHarness(m, { shots = 20, runRead = silentLinesA
   }
   const restoreSeams = m.capability.configureStudioRuntime({ runRead, publishSnapshot })
 
-  const opened = m.projectStore.normalizeOpenedProjectData(JSON.parse(await readFile(path.join(dir, 'project.comfystudio'), 'utf8')))
+  const opened = m.projectStore.normalizeOpenedProjectData(JSON.parse(await readFile(path.join(dir, 'project.storybookstudio'), 'utf8')))
   m.timelineStore.useTimelineStore.getState().loadFromProject(opened.currentTimeline, opened.projectData.assets, opened.currentTimeline.fps || 24)
   m.assetsStore.useAssetsStore.setState({ assets: opened.projectData.assets, folders: opened.projectData.folders || [] })
   m.projectStore.useProjectStore.setState({ currentProject: opened.projectData, currentTimelineId: opened.currentTimelineId, currentProjectHandle: dir })
@@ -128,7 +128,7 @@ export async function startStudioHarness(m, { shots = 20, runRead = silentLinesA
   await m.runtime.startStudioEditLog({ projectPath: dir, projectStore: m.projectStore.useProjectStore, api: studioEdits, timers })
   const roughCut = await m.runtime.createStudioVersion('Rough cut', { by: 'ai', prompt: null })
 
-  server = createComfyStudioMcpServer({
+  server = createStorybookStudioMcpServer({
     port,
     authSecret: secret,
     version: 'harness',

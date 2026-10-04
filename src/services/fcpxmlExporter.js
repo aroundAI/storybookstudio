@@ -216,7 +216,7 @@ function buildClipElement(item, timebase, timelineHeight) {
     : ''
   const enabledAttr = clip.enabled === false ? ' enabled="0"' : ''
   const laneAttr = lane ? ` lane="${lane}"` : ''
-  const note = `comfystudio:clipId=${clip.id};assetId=${asset.id};trackId=${track?.id || 'unknown'}`
+  const note = `storybookstudio:clipId=${clip.id};assetId=${asset.id};trackId=${track?.id || 'unknown'}`
   const adjustTransform = item.mediaRole === 'video' || item.mediaRole === 'image'
     ? buildAdjustTransformElement(clip, timelineHeight)
     : ''
@@ -279,7 +279,7 @@ export function buildFcpXml({
     ...buildResourceEntries(exportClips, timebase, formatId),
   ]
   const clipElements = exportClips.map((item) => buildClipElement(item, timebase, height))
-  const safeProjectId = sanitizeId(projectName, 'comfystudio_project')
+  const safeProjectId = sanitizeId(projectName, 'storybookstudio_project')
 
   return [
     '<?xml version="1.0" encoding="UTF-8"?>',

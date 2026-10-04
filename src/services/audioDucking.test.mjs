@@ -33,7 +33,7 @@ test('portable project-relative paths take precedence over stale absolute fallba
 
 test('absolute POSIX, Windows, UNC and native protocol paths are not joined under a project', async () => {
   for (const path of ['/media/speech.wav', 'C:\\Media\\speech.wav', '\\\\server\\share\\speech.wav',
-    'file:///media/speech.wav', 'comfystudio:///media/speech.wav']) {
+    'file:///media/speech.wav', 'storybookstudio-file:///media/speech.wav']) {
     assert.equal(await resolveDuckingSource({ path }, '/project', { pathJoin() { throw new Error('Must not join') } }), path)
   }
   assert.equal(await resolveDuckingSource({ absolutePath: '\\\\server\\share\\speech.wav' }, null, null), '\\\\server\\share\\speech.wav')

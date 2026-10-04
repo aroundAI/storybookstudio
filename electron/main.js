@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, protocol, net, shell, screen, session, safeStorage } = require('electron')
+const { app, BrowserWindow, Menu, ipcMain, dialog, protocol, net, shell, screen, session, safeStorage } = require('electron')
 const crypto = require('crypto')
 const path = require('path')
 const os = require('os')
@@ -11,6 +11,9 @@ const { fileURLToPath, pathToFileURL } = require('url')
 const yaml = require('js-yaml')
 const ffmpegStaticPath = require('ffmpeg-static')
 const ffprobeStaticPath = require('@derhuerst/ffprobe-static')
+// Before anything reads userData: move the folder the app used under its
+// earlier name (electron/studio/legacyUserData.js).
+require('./studio/legacyUserData').carryOverUserData({ app })
 const {
   appendAlphaCacheEncoderArgs,
   HARDWARE_EXPORT_FFMPEG_ENV_KEY,
@@ -44,7 +47,7 @@ const {
 } = require('./comfyLauncher')
 const {
   DEFAULT_MCP_PORT,
-  createComfyStudioMcpServer,
+  createStorybookStudioMcpServer,
 } = require('./mcpServer')
 const { createStudioMain } = require('./studio/studioMain')
 const { createReviewTools } = require('./studio/reviewTools')
@@ -77,8 +80,9 @@ const COMFY_CONNECTION_SETTING_KEY = 'comfyConnection'
 const DEFAULT_LOCAL_COMFY_PORT = 8188
 const COMFY_CLOUD_CREDITS_PER_USD = 211
 const MAIN_WINDOW_STATE_SETTING_KEY = 'mainWindowState'
-const COMFYSTUDIO_BRIDGE_DIR_NAME = 'comfystudio_bridge'
-const COMFYSTUDIO_BRIDGE_VERSION = '0.1.0'
+const STORYBOOKSTUDIO_BRIDGE_DIR_NAME = 'storybookstudio_bridge'
+const LEGACY_NAMES = require('../src/studio/legacyNames.json')
+const STORYBOOKSTUDIO_BRIDGE_VERSION = '0.1.0'
 const EXTRA_MODEL_PATH_CONFIG_NAMES = Object.freeze(['extra_model_paths.yaml', 'extra_model_paths.yml'])
 const COMMON_MODEL_SEARCH_KEYS = Object.freeze([
   'checkpoints',
@@ -112,8 +116,10 @@ const studioMain = createStudioMain({
   getFfmpegPath: () => ffmpegPath,
   // FILM-2014: delivery encodes wait their turn in the media-preparation queue.
   getMediaPreparation: () => mediaPreparation,
-  // StoryBook brand: dock icon (unpackaged runs) and the About panel.
+  // StoryBook brand: dock icon (unpackaged runs) and the About panel; the
+  // app menu adds Open-source licenses.
   iconPath,
+  Menu,
 })
 let downloadSaveDialogHandlerInstalled = false
 let downloadCounter = 0
@@ -1210,7 +1216,7 @@ async function copyDirectoryTree(sourceDir, targetDir) {
   return { copied }
 }
 
-async function getComfyStudioBridgeStatusInternal() {
+async function getStorybookStudioBridgeStatusInternal() {
   const root = await resolveComfyBridgeRoot()
   if (!root?.success || !root?.isValid) {
     return {
@@ -1225,29 +1231,29 @@ async function getComfyStudioBridgeStatusInternal() {
     }
   }
 
-  const targetDir = path.join(root.customNodesPath, COMFYSTUDIO_BRIDGE_DIR_NAME)
-  const manifest = await readJsonFileSafe(path.join(targetDir, 'comfystudio_bridge.json'))
+  const targetDir = path.join(root.customNodesPath, STORYBOOKSTUDIO_BRIDGE_DIR_NAME)
+  const manifest = await readJsonFileSafe(path.join(targetDir, 'storybookstudio_bridge.json'))
   const initExists = await pathExists(path.join(targetDir, '__init__.py'))
-  const frontendExists = await pathExists(path.join(targetDir, 'web', 'js', 'comfystudio_bridge.js'))
+  const frontendExists = await pathExists(path.join(targetDir, 'web', 'js', 'storybookstudio_bridge.js'))
   const version = String(manifest?.version || '').trim()
-  const installed = initExists && frontendExists && version === COMFYSTUDIO_BRIDGE_VERSION
+  const installed = initExists && frontendExists && version === STORYBOOKSTUDIO_BRIDGE_VERSION
 
   return {
     success: true,
     state: installed ? 'installed' : 'not_installed',
     installed,
     version,
-    expectedVersion: COMFYSTUDIO_BRIDGE_VERSION,
+    expectedVersion: STORYBOOKSTUDIO_BRIDGE_VERSION,
     targetDir,
     comfyRootPath: root.normalizedPath,
     customNodesPath: root.customNodesPath,
     message: installed
-      ? 'Velorn Bridge is installed. Restart ComfyUI if the Send button is not visible yet.'
-      : 'Velorn Bridge is not installed yet.',
+      ? 'Studio Bridge is installed. Restart ComfyUI if the Send button is not visible yet.'
+      : 'Studio Bridge is not installed yet.',
   }
 }
 
-async function installComfyStudioBridgeInternal() {
+async function installStorybookStudioBridgeInternal() {
   const root = await resolveComfyBridgeRoot()
   if (!root?.success || !root?.isValid) {
     return {
@@ -1258,27 +1264,29 @@ async function installComfyStudioBridgeInternal() {
     }
   }
 
-  const sourceDir = path.join(__dirname, 'comfyui-injected', COMFYSTUDIO_BRIDGE_DIR_NAME)
+  const sourceDir = path.join(__dirname, 'comfyui-injected', STORYBOOKSTUDIO_BRIDGE_DIR_NAME)
   if (!(await isDirectoryPath(sourceDir))) {
     return {
       success: false,
       state: 'unavailable',
       installed: false,
-      error: `Bundled Velorn Bridge files are missing: ${sourceDir}`,
+      error: `Bundled Studio Bridge files are missing: ${sourceDir}`,
     }
   }
 
-  const targetDir = path.join(root.customNodesPath, COMFYSTUDIO_BRIDGE_DIR_NAME)
+  const targetDir = path.join(root.customNodesPath, STORYBOOKSTUDIO_BRIDGE_DIR_NAME)
   const copied = await copyDirectoryContents(sourceDir, targetDir)
-  const status = await getComfyStudioBridgeStatusInternal()
+  // The bridge under its earlier folder name would add a second Send button.
+  await fs.rm(path.join(root.customNodesPath, LEGACY_NAMES.comfyBridgeDir), { recursive: true, force: true })
+  const status = await getStorybookStudioBridgeStatusInternal()
   return {
     ...status,
     success: status.success && status.installed,
     copied,
     restartRequired: true,
     message: copied > 0
-      ? `Installed Velorn Bridge (${copied} file${copied === 1 ? '' : 's'} updated). Restart ComfyUI to load it.`
-      : 'Velorn Bridge is already up to date. Restart ComfyUI if the Send button is not visible.',
+      ? `Installed Studio Bridge (${copied} file${copied === 1 ? '' : 's'} updated). Restart ComfyUI to load it.`
+      : 'Studio Bridge is already up to date. Restart ComfyUI if the Send button is not visible.',
   }
 }
 
@@ -2884,7 +2892,7 @@ function buildWorkflowNodeHints(classTypes = [], hintManifest = {}) {
   })
 }
 
-async function listComfyStudioWorkflowsInternal(options = {}) {
+async function listStorybookStudioWorkflowsInternal(options = {}) {
   const catalog = await loadMcpWorkflowCatalog({ refresh: options?.refresh === true })
   if (!catalog.success) return catalog
   const runtime = String(options?.runtime || '').trim().toLowerCase()
@@ -2910,7 +2918,7 @@ async function listComfyStudioWorkflowsInternal(options = {}) {
   }
 
   return {
-    action: 'list_velorn_workflows',
+    action: 'list_storybookstudio_workflows',
     success: true,
     workflowsDir: catalog.workflowsDir,
     myWorkflowsDir: catalog.myWorkflowsDir,
@@ -2969,7 +2977,7 @@ async function listComfyStudioWorkflowsInternal(options = {}) {
   }
 }
 
-async function inspectComfyStudioWorkflowInternal(options = {}) {
+async function inspectStorybookStudioWorkflowInternal(options = {}) {
   const resolved = await resolveMcpWorkflowReference(options)
   if (!resolved.success) return resolved
 
@@ -3041,7 +3049,7 @@ async function inspectComfyStudioWorkflowInternal(options = {}) {
   }
 
   return {
-    action: 'inspect_velorn_workflow',
+    action: 'inspect_storybookstudio_workflow',
     success: true,
     workflow: {
       id: resolved.workflow.id,
@@ -3532,10 +3540,10 @@ ipcMain.handle('window:toggleFullScreen', () => {
 
 // Register custom protocol for serving local files
 function registerFileProtocol() {
-  protocol.handle('comfystudio', async (request) => {
+  protocol.handle('storybookstudio-file', async (request) => {
     try {
       // FILM-2010: serves only files under the open project folder, userData and
-      // Velorn's temp caches, plus exact files this app asked a URL for through
+      // StorybookStudio's temp caches, plus exact files this app asked a URL for through
       // media:getFileUrl. Symlinks are resolved first; anything else is 403.
       const allowedPath = studioMain.resolveProtocolUrl(request.url)
       if (!allowedPath) return new Response('Forbidden', { status: 403 })
@@ -3834,7 +3842,7 @@ async function createWindow(restoredWindowState = null) {
       // Detached preview ("clean feed") window — an about:blank child the
       // renderer scripts directly (see src/hooks/usePreviewPopout.js). No
       // parent option: it must be free to sit on any display independently.
-      if (frameName === 'velorn-preview-popout') {
+      if (frameName === 'storybookstudio-preview-popout') {
         return {
           action: 'allow',
           overrideBrowserWindowOptions: {
@@ -4314,10 +4322,10 @@ ipcMain.handle('path:exists', (event, filePath) => {
 // ============================================
 
 ipcMain.handle('media:getFileUrl', (event, filePath) => {
-  // Convert file path to comfystudio:// protocol URL
+  // Convert file path to storybookstudio-file:// protocol URL
   studioMain.grantFile(filePath)
   const encodedPath = encodeURIComponent(filePath)
-  return `comfystudio://${encodedPath}`
+  return `storybookstudio-file://${encodedPath}`
 })
 
 ipcMain.handle('media:getFileUrlDirect', (event, filePath) => {
@@ -4353,8 +4361,11 @@ const audioWaveformCache = new Map()
 
 function resolveMediaInputPath(mediaInput) {
   if (!mediaInput || typeof mediaInput !== 'string') return null
-  if (mediaInput.startsWith('comfystudio://')) {
-    return decodeURIComponent(mediaInput.replace('comfystudio://', ''))
+  if (mediaInput.startsWith('storybookstudio-file://')) {
+    return decodeURIComponent(mediaInput.replace('storybookstudio-file://', ''))
+  }
+  if (mediaInput.startsWith(LEGACY_NAMES.fileUrlPrefix)) {
+    return decodeURIComponent(mediaInput.slice(LEGACY_NAMES.fileUrlPrefix.length))
   }
   if (mediaInput.startsWith('file://')) {
     try {
@@ -4542,7 +4553,7 @@ ipcMain.handle('media:trimAudioSegment', async (event, options = {}) => {
     return { success: false, error: `Audio file not found: ${err.message}` }
   }
 
-  const tempDir = path.join(app.getPath('temp'), 'comfystudio-shot-audio')
+  const tempDir = path.join(app.getPath('temp'), 'storybookstudio-shot-audio')
   try {
     await fs.mkdir(tempDir, { recursive: true })
   } catch (err) {
@@ -4820,7 +4831,7 @@ ipcMain.handle('captions:mixTimelineAudio', async (event, options = {}) => {
     return { success: false, error: 'No audible clips on audio tracks — captions transcribe the same mix you hear. Unmute or solo an audio track, or add the audio to an audio track first.' }
   }
 
-  const tempDir = path.join(app.getPath('temp'), 'comfystudio-caption-audio')
+  const tempDir = path.join(app.getPath('temp'), 'storybookstudio-caption-audio')
   try {
     await fs.mkdir(tempDir, { recursive: true })
   } catch (err) {
@@ -5286,31 +5297,31 @@ ipcMain.handle('comfyLauncher:pickMacApp', async () => {
 })
 
 // ============================================
-// Velorn Bridge IPC
+// Studio Bridge IPC
 // ============================================
 
 ipcMain.handle('comfyBridge:getStatus', async () => {
   try {
-    return await getComfyStudioBridgeStatusInternal()
+    return await getStorybookStudioBridgeStatusInternal()
   } catch (error) {
     return {
       success: false,
       state: 'unavailable',
       installed: false,
-      error: error?.message || 'Could not check the Velorn Bridge.',
+      error: error?.message || 'Could not check the Studio Bridge.',
     }
   }
 })
 
 ipcMain.handle('comfyBridge:install', async () => {
   try {
-    return await installComfyStudioBridgeInternal()
+    return await installStorybookStudioBridgeInternal()
   } catch (error) {
     return {
       success: false,
       state: 'unavailable',
       installed: false,
-      error: error?.message || 'Could not install the Velorn Bridge.',
+      error: error?.message || 'Could not install the Studio Bridge.',
     }
   }
 })
@@ -5797,7 +5808,7 @@ ipcMain.handle('export:runInWorker', async (event, payload) => {
   // temp directory and says so, instead of failing silently while crash
   // messages point at a log that never updates.
   const workerLogPrimaryPath = path.join(app.getPath('userData'), 'export-worker.log')
-  const workerLogFallbackPath = path.join(app.getPath('temp'), 'velorn-export-worker.log')
+  const workerLogFallbackPath = path.join(app.getPath('temp'), 'storybookstudio-export-worker.log')
   let workerLogActivePath = workerLogPrimaryPath
   let workerLogWarned = false
   const noteWorkerLogFailure = (err) => {
@@ -7818,7 +7829,7 @@ app.whenReady().then(async () => {
   registerFileProtocol()
   installRequestHeaderRewrite()
   studioMain.onReady()
-  mcpServer = createComfyStudioMcpServer({
+  mcpServer = createStorybookStudioMcpServer({
     port: DEFAULT_MCP_PORT,
     authSecret: studioMain.getMcpSecret(),
     version: app.getVersion(),
@@ -7828,8 +7839,8 @@ app.whenReady().then(async () => {
     controlComfyLauncher: controlComfyLauncherInternal,
     getComfyLauncherLogs: getComfyLauncherLogsInternal,
     validateComfyUINodes: validateComfyUINodesInternal,
-    listComfyStudioWorkflows: listComfyStudioWorkflowsInternal,
-    inspectComfyStudioWorkflow: inspectComfyStudioWorkflowInternal,
+    listStorybookStudioWorkflows: listStorybookStudioWorkflowsInternal,
+    inspectStorybookStudioWorkflow: inspectStorybookStudioWorkflowInternal,
     // FILM-2013: the agent profile's cloud tools and the plan-card event.
     getStudioCloud: () => studioMain.cloud,
     getStudioDeliver: () => studioMain.deliver,

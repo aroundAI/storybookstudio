@@ -185,8 +185,8 @@ function verifyRifeExecutable(options = {}) {
     allowedStatuses: [0],
   })
   if (!/Usage:\s*rife-ncnn-vulkan/i.test(help.output)) throw new Error('RIFE executable did not print its expected help')
-  if (!/Velorn secure build:\s*PNG input and output only; WebP is disabled\./i.test(help.output)) {
-    throw new Error('RIFE executable is not the Velorn PNG-only/WebP-disabled build')
+  if (!/StorybookStudio secure build:\s*PNG input and output only; WebP is disabled\./i.test(help.output)) {
+    throw new Error('RIFE executable is not the StorybookStudio PNG-only/WebP-disabled build')
   }
   return validation
 }
@@ -206,7 +206,7 @@ function writeSmokeFrame(ffmpegPath, outputPath, color) {
 function smokeRifeInterpolation(options = {}) {
   const validation = verifyRifeExecutable(options)
   const ffmpegPath = path.resolve(options.ffmpegPath || resolveDependencyBinary(options.projectRoot || PROJECT_ROOT, 'ffmpeg-static'))
-  const scratchRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'velorn-rife-package-smoke-'))
+  const scratchRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'storybookstudio-rife-package-smoke-'))
   const inputPath = path.join(scratchRoot, 'input')
   const outputPath = path.join(scratchRoot, 'output')
   fs.mkdirSync(inputPath)
@@ -242,7 +242,7 @@ function smokeRifeInterpolation(options = {}) {
 
 function packagedResourcesPath(context) {
   if (normalizePlatform(context.electronPlatformName) === 'darwin') {
-    const productFilename = context.packager?.appInfo?.productFilename || 'Velorn'
+    const productFilename = context.packager?.appInfo?.productFilename || 'StorybookStudio'
     return path.join(context.appOutDir, `${productFilename}.app`, 'Contents', 'Resources')
   }
   return path.join(context.appOutDir, 'resources')

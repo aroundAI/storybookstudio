@@ -5,7 +5,7 @@ const SAMPLES = 32768
 const SAMPLE_RATE = 8000
 const MAX_SOURCE_SECONDS = 1800
 const absolute = value => /^(?:[a-z]:[\\/]|\/|\\\\)/i.test(value || '')
-const nativeUrl = value => /^(?:file|comfystudio):\/\//i.test(value || '')
+const nativeUrl = value => /^(?:file|storybookstudio-file):\/\//i.test(value || '')
 let pendingNative = null
 
 export function duckingWaveformSamples(duration) {

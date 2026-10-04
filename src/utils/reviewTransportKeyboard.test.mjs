@@ -260,7 +260,7 @@ test('visibility, session, and visible modal guards prevent transport without st
 
 test('blur, visibility, focus, pointer, mouse, and modifier-use events cancel pending Space and K', () => {
   for (const [target, name] of [['win', 'blur'], ['doc', 'visibilitychange'], ['doc', 'focusin'],
-    ['doc', 'pointerdown'], ['doc', 'mousedown'], ['win', 'comfystudio-space-modifier-used']]) {
+    ['doc', 'pointerdown'], ['doc', 'mousedown'], ['win', 'storybookstudio-space-modifier-used']]) {
     const f = fixture()
     f.key('keydown', ' ')
     f[target].dispatch(name)

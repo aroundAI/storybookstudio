@@ -109,9 +109,9 @@ const DOPE_SHEET_GROUP_LABELS = {
 // Shape keyframes hold whole point arrays, so the row is timing-only:
 // diamonds, drag, copy, easing — no value label and no graph.
 const MASK_SHAPE_ROW = { id: 'shapeMask.points', label: 'Mask Shape', group: 'mask', unit: '', timingOnly: true }
-const SHOW_ALL_STORAGE_KEY = 'comfystudio-dopesheet-show-all-v1'
-const COLLAPSED_GROUPS_STORAGE_KEY = 'comfystudio-dopesheet-collapsed-groups-v1'
-const LOOP_CLIP_PLAY_STORAGE_KEY = 'comfystudio-dopesheet-loop-v1'
+const SHOW_ALL_STORAGE_KEY = 'storybookstudio-dopesheet-show-all-v1'
+const COLLAPSED_GROUPS_STORAGE_KEY = 'storybookstudio-dopesheet-collapsed-groups-v1'
+const LOOP_CLIP_PLAY_STORAGE_KEY = 'storybookstudio-dopesheet-loop-v1'
 
 const readStoredJson = (key, fallback) => {
   try {

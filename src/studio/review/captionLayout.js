@@ -2,7 +2,7 @@
 // fractions of the frame (x, y from the top-left), for the preview burn-in.
 // A cue FILM-2016 placed is laid out by captions/layout.js layoutCue, the
 // layout the renderer and the QA check use; an unplaced cue by the model of
-// Velorn's own subtitle box below. The traditional subtitle box follows
+// the upstream editor's own subtitle box below. The traditional subtitle box follows
 // src/utils/kineticCaptionRenderer.js renderTraditionalSubtitle (font size,
 // padding, 88% wrap width, action-safe/title-safe/center, verticalOffset,
 // 4% clamp); kinetic presets are approximated by their anchor and two lines.

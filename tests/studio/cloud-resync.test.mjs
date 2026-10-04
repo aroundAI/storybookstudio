@@ -37,7 +37,7 @@ function project(t, pkg) {
     currentTimelineId: 't1',
     timelines: [{ id: 't1', tracks: [{ id: 'video-1', type: 'video' }], clips: pkg.shots.map((s) => ({ id: `clip-${s.sequenceNumber}`, trackId: 'video-1', type: 'video', metadata: { semantic: { shotId: s.id, scene: 1 } } })) }],
   }
-  fs.writeFileSync(path.join(dir, 'project.comfystudio'), JSON.stringify(projectFile))
+  fs.writeFileSync(path.join(dir, 'project.storybookstudio'), JSON.stringify(projectFile))
   return dir
 }
 
@@ -59,7 +59,7 @@ test('changed: the new video lands under a new name, a plan is proposed, the pro
   const m = await media(t)
   const stored = { etag: 'v1', shots: [{ id: uuid(1), sequenceNumber: 1, sceneNumber: 1, video: { ...m.ref('s/1.mp4'), url: m.ref('s/1.mp4').url.split('?')[0] } }], dialogue: [] }
   const dir = project(t, stored)
-  const before = fs.readFileSync(path.join(dir, 'project.comfystudio'), 'utf8')
+  const before = fs.readFileSync(path.join(dir, 'project.storybookstudio'), 'utf8')
   const next = { etag: 'v2', shots: [{ id: uuid(1), sequenceNumber: 1, sceneNumber: 1, video: m.ref('s/1-v2.mp4') }], dialogue: [], audioTracks: [], characters: [], dubbed: [] }
   const plans = []
   const client = { getEditPackage: async () => next }
@@ -72,7 +72,7 @@ test('changed: the new video lands under a new name, a plan is proposed, the pro
   const imported = plans[0].steps[0].arguments.path
   assert.ok(fs.existsSync(imported))
   assert.match(path.basename(imported), /^shot-001-[0-9a-f]{8}\.mp4$/)
-  assert.equal(fs.readFileSync(path.join(dir, 'project.comfystudio'), 'utf8'), before, 'nothing applied')
+  assert.equal(fs.readFileSync(path.join(dir, 'project.storybookstudio'), 'utf8'), before, 'nothing applied')
   assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'storybook', 'package.json'), 'utf8')).etag, 'v1', 'still the package the project was built from')
   const waiting = fs.readFileSync(path.join(dir, 'storybook', 'package.next.json'), 'utf8')
   assert.equal(JSON.parse(waiting).etag, 'v2')

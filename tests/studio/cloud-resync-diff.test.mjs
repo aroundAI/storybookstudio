@@ -162,7 +162,7 @@ test('a removed shot takes its shot-audio clip with it; a regenerated shot names
   const { steps, unresolved } = buildResyncPlan({ diff, next: after, project: project(before.shots, before.dialogue), assetPaths })
   const deleted = steps.find((s) => s.tool === 'delete_clips' && /shot 3/.test(s.reason))
   assert.deepEqual(deleted.arguments.clipIds, ['clip-shot-3', 'clip-shotaudio-3'])
-  // Velorn replaces an audio clip only with an audio asset, so the old take's
+  // The upstream editor replaces an audio clip only with an audio asset, so the old take's
   // sound is reported, not silently left playing.
   assert.ok(steps.every((s) => s.arguments.clipId !== 'clip-shotaudio-2'))
   assert.deepEqual(unresolved.filter((u) => u.kind === 'shot_audio').map((u) => [u.id, u.clipIds]), [[uuid(102), ['clip-shotaudio-2']]])

@@ -8,7 +8,7 @@ import { enqueueProxyTranscode, isProxyPlaybackEnabled } from '../services/proxy
 import { getPexelsApiKey } from '../services/pexelsSettings'
 import {
   PEXELS_DEFAULT_PER_PAGE,
-  VELORN_OPEN_STOCK_EVENT,
+  STORYBOOKSTUDIO_OPEN_STOCK_EVENT,
   buildPexelsAssetRecord,
   downloadPexelsMediaItem,
   getBestPexelsVideoFile,
@@ -74,8 +74,8 @@ function StockPanel() {
       setError(null)
       setPreviewVideo(null)
     }
-    window.addEventListener(VELORN_OPEN_STOCK_EVENT, handler)
-    return () => window.removeEventListener(VELORN_OPEN_STOCK_EVENT, handler)
+    window.addEventListener(STORYBOOKSTUDIO_OPEN_STOCK_EVENT, handler)
+    return () => window.removeEventListener(STORYBOOKSTUDIO_OPEN_STOCK_EVENT, handler)
   }, [])
 
   // Fetch trending/popular content when no search query (first visit or cleared search)

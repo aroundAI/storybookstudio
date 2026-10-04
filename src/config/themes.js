@@ -1,8 +1,8 @@
-export const THEME_STORAGE_KEY = 'comfystudio-theme'
+export const THEME_STORAGE_KEY = 'storybookstudio-theme'
 
 export const THEMES = [
   {
-    id: 'velorn',
+    id: 'storybook',
     label: 'StorybookStudio',
     description: 'Default StoryBook theme: deep midnight blues and violet with a blue accent',
     preview: { bg: '#030610', surface: '#11172a', accent: '#3B82F6', text: '#f4eef8' },
@@ -39,7 +39,7 @@ export const THEMES = [
   },
 ]
 
-export const DEFAULT_THEME_ID = 'velorn'
+export const DEFAULT_THEME_ID = 'storybook'
 
 export function getStoredThemeId() {
   try {

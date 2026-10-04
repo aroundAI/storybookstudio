@@ -1,4 +1,4 @@
-// FILM-2010 AC5: comfystudio:// serves only the project, userData and cache roots.
+// FILM-2010 AC5: storybookstudio-file:// serves only the project, userData and cache roots.
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
@@ -7,7 +7,7 @@ import path from 'node:path'
 import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
-const { resolveAllowedPath, comfystudioUrlToPath, createGrantedFileSet } = require('../../electron/studio/protocolAllowlist.js')
+const { resolveAllowedPath, storybookstudioUrlToPath, createGrantedFileSet } = require('../../electron/studio/protocolAllowlist.js')
 
 function layout(t) {
   const base = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'sbs-protocol-')))
@@ -83,17 +83,17 @@ test('the granted set is bounded', () => {
   assert.deepEqual(granted.list(), ['/b', '/c'])
 })
 
-test('comfystudio:// URLs decode to paths without their cache-buster', () => {
-  assert.equal(comfystudioUrlToPath(`comfystudio://${encodeURIComponent('/Users/me/P/thumb.png')}?t=123`), '/Users/me/P/thumb.png')
-  assert.equal(comfystudioUrlToPath(`comfystudio://${encodeURIComponent('/a/b#c.png')}#frag`), '/a/b#c.png')
-  assert.equal(comfystudioUrlToPath('comfystudio://%E0%A4%A'), null)
-  assert.equal(comfystudioUrlToPath('file:///etc/passwd'), null)
-  assert.equal(comfystudioUrlToPath(`comfystudio://${encodeURIComponent('/C:/x.png')}`, { platform: 'win32' }), 'C:/x.png')
+test('storybookstudio-file:// URLs decode to paths without their cache-buster', () => {
+  assert.equal(storybookstudioUrlToPath(`storybookstudio-file://${encodeURIComponent('/Users/me/P/thumb.png')}?t=123`), '/Users/me/P/thumb.png')
+  assert.equal(storybookstudioUrlToPath(`storybookstudio-file://${encodeURIComponent('/a/b#c.png')}#frag`), '/a/b#c.png')
+  assert.equal(storybookstudioUrlToPath('storybookstudio-file://%E0%A4%A'), null)
+  assert.equal(storybookstudioUrlToPath('file:///etc/passwd'), null)
+  assert.equal(storybookstudioUrlToPath(`storybookstudio-file://${encodeURIComponent('/C:/x.png')}`, { platform: 'win32' }), 'C:/x.png')
 })
 
 test('end to end: an encoded traversal URL resolves to nothing', (t) => {
   const l = layout(t)
-  const url = `comfystudio://${encodeURIComponent(`${l.project}/../../outside/secret.txt`)}`
-  assert.equal(resolveAllowedPath(comfystudioUrlToPath(url), l.roots), null)
-  assert.equal(resolveAllowedPath(comfystudioUrlToPath('comfystudio://%2Fetc%2Fpasswd'), l.roots), null)
+  const url = `storybookstudio-file://${encodeURIComponent(`${l.project}/../../outside/secret.txt`)}`
+  assert.equal(resolveAllowedPath(storybookstudioUrlToPath(url), l.roots), null)
+  assert.equal(resolveAllowedPath(storybookstudioUrlToPath('storybookstudio-file://%2Fetc%2Fpasswd'), l.roots), null)
 })

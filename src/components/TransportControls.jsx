@@ -9,7 +9,7 @@ import { getShuttleKeyAction } from '../utils/shuttlePlayback'
 import { formatTimecode, getSafeTimelineFps, stepTimeByFrames } from '../utils/timelineFrames'
 import { DEFAULT_EDITOR_HOTKEYS, EDITOR_HOTKEY_IDS, EDITOR_HOTKEYS_CHANGED_EVENT, getEditorHotkeys, matchEditorHotkey, formatEditorHotkey } from '../services/editorHotkeys'
 
-const SPACE_MODIFIER_USED_EVENT = 'comfystudio-space-modifier-used'
+const SPACE_MODIFIER_USED_EVENT = 'storybookstudio-space-modifier-used'
 
 // Playback mode options
 const PLAYBACK_MODES = [

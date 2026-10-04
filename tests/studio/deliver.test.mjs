@@ -229,7 +229,7 @@ test('Export to file: the same presets and a QA report in a folder, with no sign
 // hash must survive that and change only with what the render shows. And a
 // summary is a read: through FILM-2012's op-log wrapper it adds no line.
 function liveEditor(dir) {
-  const file = path.join(dir, 'project.comfystudio')
+  const file = path.join(dir, 'project.storybookstudio')
   let reads = 0
   let document = JSON.parse(fs.readFileSync(file, 'utf8'))
   // The renderer's mcp:action handler, as src/services/mcpActions.js runs it.

@@ -1,5 +1,5 @@
 // FILM-2014 AC7: the delivery render FILM-2017's deliver.js takes as `render`
-// goes through Velorn's media-preparation queue (VideoToolbox on macOS, x264
+// goes through the upstream editor's media-preparation queue (VideoToolbox on macOS, x264
 // fallback), lands at the preset's frame with its loudness, and the delivery
 // QA (`qa`) passes it; a planted fault fails it.
 import assert from 'node:assert/strict'

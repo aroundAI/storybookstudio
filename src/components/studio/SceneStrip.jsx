@@ -2,7 +2,7 @@
 // scene with its heading and target vs actual duration, red when over the
 // tolerance. Clicking (or Enter) selects the scene's clips, moves the playhead
 // to its start and scopes the next AI instruction to it ("tighten this").
-// Arrow keys move between scenes. Renders nothing for a plain Velorn project.
+// Arrow keys move between scenes. Renders nothing for a plain upstream project.
 import { useMemo, useRef } from 'react'
 import useTimelineStore from '../../stores/timelineStore'
 import { studioUiStore } from '../../studio/ui/studioStore'

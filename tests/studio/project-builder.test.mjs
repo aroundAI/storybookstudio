@@ -170,7 +170,7 @@ test('captions: one live captions clip per language on a role:captions track, th
     assert.equal(clip.metadata.semantic.role, 'caption')
     assert.equal(clip.metadata.languageDependency, 'language')
   }
-  // The first role:captions track is the one Velorn's placeLiveCaptions reuses.
+  // The first role:captions track is the one the upstream editor's placeLiveCaptions reuses.
   assert.equal(project.timelines[0].tracks.find((track) => track.role === 'captions').language, pkg.episode.language)
 
   const plain = clone(pkg)
@@ -309,7 +309,7 @@ test('a shot whose file is shorter than planned ends at the file, on a frame, an
   const pkg = loadFixture(5)
   const shot = pkg.shots[0]
   // 2.83 s after the trim is 67.92 frames: the nearest frame (68) would run
-  // past the file, so the clip ends on the frame before, as Velorn's clamp does.
+  // past the file, so the clip ends on the frame before, as the upstream editor's clamp does.
   const duration = new Map([[shot.video.key, 3.03]])
   const { project, warnings } = buildProject({ package: pkg, probedAssets: probesFor(pkg, { duration }) })
   const [clip] = clipsOn(project, (candidate) => candidate.assetId === `sb-shot-${shot.id}` && candidate.trackId === SHOT_TRACK_ID)
@@ -350,7 +350,7 @@ test('a package that is not an edit package is refused', () => {
   assert.throws(() => buildProject({ package: pkg }), /Not a StoryBook edit package/)
 })
 
-test('aspect ratios map to Velorn frame sizes', () => {
+test('aspect ratios map to the upstream editor frame sizes', () => {
   assert.deepEqual(dimensionsForAspect('16:9'), { width: 1920, height: 1080 })
   assert.deepEqual(dimensionsForAspect('9:16'), { width: 1080, height: 1920 })
   assert.deepEqual(dimensionsForAspect('1:1'), { width: 1080, height: 1080 })

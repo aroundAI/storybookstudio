@@ -7,7 +7,7 @@
 // - OAuth 2.1 with PKCE S256 as the pre-registered public client
 //   `storybookstudio` (FILM-1907, FILM-2005): the system browser opens
 //   /oauth/authorize, the code comes back to a loopback listener on
-//   127.0.0.1:<random port>/callback or to velorn://auth/callback, and is
+//   127.0.0.1:<random port>/callback or to storybookstudio://auth/callback, and is
 //   exchanged at /oauth/token with `client_name=<device name>` so the
 //   connection is named after this computer. Access tokens last an hour; a
 //   refresh runs five minutes before expiry and saves the rotated refresh
@@ -23,7 +23,7 @@ const CLIENT_ID = 'storybookstudio'
 const OAUTH_SCOPE = 'studio:read studio:write studio:render'
 const REFRESH_LEAD_MS = 5 * 60 * 1000
 const CALLBACK_TIMEOUT_MS = 10 * 60 * 1000
-const VELORN_REDIRECT = 'velorn://auth/callback'
+const STORYBOOKSTUDIO_REDIRECT = 'storybookstudio://auth/callback'
 const PAT_PATTERN = /^sbk_pat_[A-Za-z0-9_-]{20,}$/
 const SIGN_IN_AGAIN = 'Sign in again'
 
@@ -62,7 +62,14 @@ function createStudioAuth({
   let pending = null
 
   const read = (origin) => {
-    const raw = secrets.getSecret(secretKeyForOrigin(origin))
+    let raw = null
+    try {
+      raw = secrets.getSecret(secretKeyForOrigin(origin))
+    } catch {
+      // Saved under the app's earlier name, the keychain key differs and the
+      // token no longer decrypts: the user signs in again.
+      return null
+    }
     if (!raw) return null
     try {
       return JSON.parse(raw)
@@ -240,8 +247,8 @@ function createStudioAuth({
     let codePromise
     let redirectUrl
     let viaProtocol = null
-    if (redirect === 'velorn') {
-      redirectUrl = VELORN_REDIRECT
+    if (redirect === 'storybookstudio') {
+      redirectUrl = STORYBOOKSTUDIO_REDIRECT
       codePromise = new Promise((ok, fail) => {
         viaProtocol = { ok, fail }
       })
@@ -301,7 +308,7 @@ function createStudioAuth({
     }
   }
 
-  // velorn://auth/callback, routed here by protocol.js.
+  // storybookstudio://auth/callback, routed here by protocol.js.
   function handleCallback(params) {
     const flow = pending
     if (!flow?.viaProtocol) return false
@@ -323,7 +330,7 @@ function createStudioAuth({
       if (record?.kind !== 'oauth' || !record.refreshToken) return { ok: false, reason: 'not_refreshable' }
       const p = provider({
         origin,
-        redirectUrl: VELORN_REDIRECT,
+        redirectUrl: STORYBOOKSTUDIO_REDIRECT,
         tokens: { access_token: record.accessToken, refresh_token: record.refreshToken, token_type: 'Bearer' },
       })
       let result
@@ -413,7 +420,7 @@ module.exports = {
   OAUTH_SCOPE,
   REFRESH_LEAD_MS,
   SIGN_IN_AGAIN,
-  VELORN_REDIRECT,
+  STORYBOOKSTUDIO_REDIRECT,
   createStudioAuth,
   refreshDelayMs,
   secretKeyForOrigin,

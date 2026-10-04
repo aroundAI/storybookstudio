@@ -24,7 +24,7 @@ export function makePulledProject(t, { episodeVersion = 9 } = {}) {
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }))
   const project = fixture('rough-cut/20-shots.snapshot.json').project
   const pkg = fixture('edit-package/20-shots.json')
-  fs.writeFileSync(path.join(dir, 'project.comfystudio'), JSON.stringify(project))
+  fs.writeFileSync(path.join(dir, 'project.storybookstudio'), JSON.stringify(project))
   fs.mkdirSync(path.join(dir, 'storybook'))
   fs.writeFileSync(path.join(dir, 'storybook', 'package.json'), JSON.stringify(pkg))
   fs.writeFileSync(path.join(dir, 'storybook', 'session.json'), JSON.stringify({ apiOrigin: 'http://storybook.test', episodeId: pkg.episode.id, sessionId: SESSION_ID, episodeVersion }))
@@ -33,7 +33,7 @@ export function makePulledProject(t, { episodeVersion = 9 } = {}) {
 
 // What studio_prepare_delivery returns in the app, from the same pure code.
 export function fakePrepare({ dir }) {
-  const document = JSON.parse(fs.readFileSync(path.join(dir, 'project.comfystudio'), 'utf8'))
+  const document = JSON.parse(fs.readFileSync(path.join(dir, 'project.storybookstudio'), 'utf8'))
   const versions = [
     { id: 'v1', name: 'Rough cut', parent: null, opRange: [1, 3], createdBy: 'ai', createdAt: '2026-10-04T19:00:00.000Z', prompt: null },
     { id: 'v2', name: 'Delivered', parent: 'v1', opRange: [4, null], createdBy: 'user', createdAt: '2026-10-04T19:30:00.000Z', prompt: null },

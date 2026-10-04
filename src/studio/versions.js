@@ -4,7 +4,7 @@
 // closes the previous version's range. Restoring loads one snapshot (no replay,
 // O(1) in the length of the log) and appends a restore op whose inverse names
 // a snapshot of what it replaced, so a restore can itself be undone.
-// Velorn's in-memory undo is not touched. Pure module: no Electron, no stores.
+// The upstream editor's in-memory undo is not touched. Pure module: no Electron, no stores.
 import { CREATE_VERSION_TOOL, RESTORE_SNAPSHOT_TOOL, RESTORE_VERSION_TOOL } from './oplog.js'
 
 export const VERSIONS_PATH = 'edits/versions.json'

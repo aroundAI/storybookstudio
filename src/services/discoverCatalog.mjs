@@ -1,115 +1,23 @@
 export const DISCOVER_CATALOG_SCHEMA_VERSION = 1
-export const DEFAULT_DISCOVER_CATALOG_URL = 'https://raw.githubusercontent.com/VelornLabs/velorn/main/public/discover/catalog.json'
-export const DISCOVER_CATALOG_CACHE_KEY = 'velorn-discover-catalog-v1'
+export const DEFAULT_DISCOVER_CATALOG_URL = 'https://raw.githubusercontent.com/aroundAI/storybookstudio/main/public/discover/catalog.json'
+export const DISCOVER_CATALOG_CACHE_KEY = 'storybookstudio-discover-catalog-v1'
 export const DISCOVER_CATALOG_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 export const DISCOVER_CATALOG_REMOTE_TIMEOUT_MS = 5_000
 
 const YOUTUBE_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/
 const ITEM_ID_PATTERN = /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/
-const TRUSTED_REMOTE_CATALOG_URLS = new Set([
-  DEFAULT_DISCOVER_CATALOG_URL,
-  'https://velorn.ai/discover/catalog.json',
-  'https://www.velorn.ai/discover/catalog.json',
-])
+const TRUSTED_REMOTE_CATALOG_URLS = new Set([DEFAULT_DISCOVER_CATALOG_URL])
 const YOUTUBE_HOSTS = new Set(['youtube.com', 'www.youtube.com', 'm.youtube.com'])
 const ITEM_KINDS = new Set(['showcase', 'tutorial'])
 const MAX_CATALOG_ITEMS = 200
 
 // This mirrors public/discover/catalog.json so a valid starter catalog remains
 // available even if both the network and a file:// asset request are unavailable.
+// Empty until StorybookStudio has its own showcases and tutorials.
 export const DEFAULT_BUNDLED_DISCOVER_CATALOG = Object.freeze({
   schemaVersion: DISCOVER_CATALOG_SCHEMA_VERSION,
-  updatedAt: '2026-08-27T18:11:01.000Z',
-  items: Object.freeze([
-    Object.freeze({
-      id: 'velorn-overview',
-      youtubeId: 'RVuGlRZheps',
-      title: 'Velorn Overview: AI Video Editing Powered by ComfyUI',
-      kind: 'tutorial',
-      creator: 'Velorn',
-      description: 'A guided overview of Velorn editing and AI generation.',
-      category: 'Getting started',
-      tags: Object.freeze(['overview', 'generation']),
-      featured: true,
-    }),
-    Object.freeze({
-      id: 'velorn-mcp-ai-generations',
-      youtubeId: 'AT9usQS3m48',
-      title: 'Velorn MCP AI Generations',
-      kind: 'tutorial',
-      creator: 'Velorn',
-      description: 'See an MCP-connected agent drive AI generation from Velorn.',
-      category: 'MCP and agents',
-      tags: Object.freeze(['mcp', 'generation']),
-      featured: false,
-    }),
-    Object.freeze({
-      id: 'velorn-music-video-tutorial',
-      youtubeId: '8BsFbUsq1kE',
-      title: 'Velorn Music Video Tutorial',
-      kind: 'tutorial',
-      creator: 'Velorn',
-      description: 'Learn the guided workflow for creating a music video in Velorn.',
-      category: 'Music videos',
-      tags: Object.freeze(['music video', 'guided workflow']),
-      featured: false,
-    }),
-    Object.freeze({
-      id: 'motion-graphics-with-an-agent',
-      youtubeId: 'Owel8zkMWkY',
-      title: 'Motion graphics with an agent',
-      kind: 'tutorial',
-      creator: 'Velorn',
-      description: 'A practical example of using an agent to build motion graphics.',
-      category: 'MCP and agents',
-      tags: Object.freeze(['motion graphics', 'showcase']),
-      featured: false,
-    }),
-    Object.freeze({
-      id: 'claude-edits-solar-system-video',
-      youtubeId: '_r4jf7ZDT2o',
-      title: 'Claude Edits a Solar System Info Video',
-      kind: 'showcase',
-      creator: 'Velorn',
-      description: 'An agent-assisted informational edit created in Velorn.',
-      category: 'Agent-assisted editing',
-      tags: Object.freeze(['mcp', 'editing']),
-      featured: true,
-    }),
-    Object.freeze({
-      id: 'music-video-made-with-velorn',
-      youtubeId: 'iX-YdjVMDhg',
-      title: 'Music video made with Velorn',
-      kind: 'showcase',
-      creator: 'Velorn',
-      description: 'A finished music video created with Velorn.',
-      category: 'Music videos',
-      tags: Object.freeze(['music video']),
-      featured: false,
-    }),
-    Object.freeze({
-      id: 'ltx-23-ai-music-video',
-      youtubeId: 'ogJ08d2GlqI',
-      title: 'LTX 2.3 AI Music Video',
-      kind: 'showcase',
-      creator: "j'aime",
-      description: 'An AI-generated music video created with Velorn and LTX 2.3.',
-      category: 'Music videos',
-      tags: Object.freeze(['music video', 'ai generation', 'LTX 2.3']),
-      featured: false,
-    }),
-    Object.freeze({
-      id: 'you-dont-need-saving',
-      youtubeId: 'WcHBs-7_G14',
-      title: "You Don't Need Saving",
-      kind: 'showcase',
-      creator: "j'aime",
-      description: 'An original AI-created music video made with Velorn.',
-      category: 'Music videos',
-      tags: Object.freeze(['music video', 'ai generation']),
-      featured: false,
-    }),
-  ]),
+  updatedAt: '2026-10-05T00:00:00.000Z',
+  items: Object.freeze([]),
 })
 
 function normalizePlainText(value, fieldName, { required = false, maxLength }) {

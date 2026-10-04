@@ -83,7 +83,7 @@ const sourceRange = (clip) => {
   return [start, start + (Number(clip.duration) || 0) * (Number(clip.speed) > 0 ? Number(clip.speed) : 1)]
 }
 
-// A ripple cut splits a clip: Velorn keeps the id on the left piece and gives
+// A ripple cut splits a clip: the upstream editor keeps the id on the left piece and gives
 // the right piece a new one (a head trim removes the left piece). A new clip
 // on the same track, from the same asset, playing part of a clip that was
 // there before, is that clip's remainder: it is folded into the original, so

@@ -854,7 +854,7 @@
       "theme": "Theme",
       "active": "Active",
       "themes": {
-        "velorn": "Default StoryBook theme: deep midnight blues and violet with a blue accent",
+        "storybook": "Default StoryBook theme: deep midnight blues and violet with a blue accent",
         "midnight": "Neutral dark grey inspired by DaVinci Resolve",
         "soft-dark": "Softer contrast with a subtle cool-purple tint",
         "high-contrast": "Maximum readability with vivid blue accent",
@@ -895,7 +895,7 @@
       "custom": "Custom",
       "active": "Active",
       "presetDescriptions": {
-        "comfystudio": "Current default editor bindings.",
+        "storybookstudio": "Current default editor bindings.",
         "premiere": "Ctrl+K split, Ctrl+Shift+K split all, M marker, S snapping.",
         "resolve": "Ctrl+\\ split, Ctrl+Shift+\\ split all, M marker, N snapping.",
         "final-cut": "Ctrl+B split, Ctrl+Shift+B split all, M marker, N snapping."
@@ -1076,9 +1076,7 @@
   "feedback": {
     "title": "Send feedback",
     "description": "Found a bug, missing a feature, or just have a thought? It lands directly with the team — no account, no forms, no GitHub required.",
-    "discordTitle": "Want a faster answer? Join our Discord.",
-    "discordBody": "The team hangs out there — and often another creator has already solved exactly your problem.",
-    "join": "Join",
+    "notConfigured": "Feedback is not set up in this build yet.",
     "thanks": "Thanks — got it.",
     "thanksBody": "Your feedback goes straight to the team. If you left an email, we may follow up.",
     "sendAnother": "Send another",
@@ -1379,6 +1377,11 @@
     "common": {
       "cancel": "Cancel",
       "close": "Close"
+    },
+    "licenses": {
+      "title": "Open-source licenses",
+      "loading": "Loading…",
+      "unavailable": "The license text could not be read."
     },
     "signIn": {
       "title": "Sign in to StoryBook",

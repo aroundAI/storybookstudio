@@ -1,15 +1,16 @@
-// In-app feedback: a small form in Settings posts to a Cloudflare Worker we
-// control, which forwards to a private Discord channel (see
-// infra/feedback-worker). The endpoint URL is public by nature — this repo is
+// In-app feedback: a small form in Settings posts to a Cloudflare Worker,
+// which forwards to a private Discord channel (see infra/feedback-worker).
+// No endpoint ships by default: the upstream project's worker is not ours,
+// so the form says feedback is not set up until one is deployed. The endpoint URL is public by nature — this repo is
 // open source — so all abuse control (rate limits, length caps, honeypot)
 // lives in the worker; the client is never trusted.
 import packageJson from '../../package.json'
 import { checkLocalComfyConnection } from './localComfyConnection'
 
-// Update after deploying infra/feedback-worker (see its README).
-const DEFAULT_FEEDBACK_ENDPOINT = 'https://velorn-feedback.jaime-10b.workers.dev'
+// Set after deploying infra/feedback-worker (see its README).
+const DEFAULT_FEEDBACK_ENDPOINT = ''
 // localStorage override for testing a worker before pointing DNS at it.
-const FEEDBACK_ENDPOINT_OVERRIDE_KEY = 'velorn-feedback-endpoint'
+const FEEDBACK_ENDPOINT_OVERRIDE_KEY = 'storybookstudio-feedback-endpoint'
 
 export const FEEDBACK_CATEGORIES = [
   { id: 'bug', label: 'Bug' },
@@ -18,6 +19,10 @@ export const FEEDBACK_CATEGORIES = [
 ]
 
 export const FEEDBACK_MESSAGE_MAX_LENGTH = 4000
+
+export function isFeedbackConfigured() {
+  return Boolean(getFeedbackEndpoint())
+}
 
 export function getFeedbackEndpoint() {
   try {
@@ -65,6 +70,7 @@ export async function collectFeedbackDiagnostics() {
 
 export async function sendFeedback({ category, message, email, diagnostics }) {
   const trimmed = String(message || '').trim()
+  if (!isFeedbackConfigured()) throw new Error('Feedback is not set up in this build.')
   if (!trimmed) throw new Error('Write a little something first.')
   if (trimmed.length > FEEDBACK_MESSAGE_MAX_LENGTH) {
     throw new Error(`Please keep it under ${FEEDBACK_MESSAGE_MAX_LENGTH} characters.`)

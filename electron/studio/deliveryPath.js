@@ -5,7 +5,7 @@
 //   plan (previewRender.renderVideo, captions placed in the aspect's safe
 //   area when the preset burns them, audio through FILM-2016's bus mix
 //   normalised to the preset's loudness) into a near-lossless intermediate,
-//   then the final encode through Velorn's media-preparation queue as a
+//   then the final encode through the upstream editor's media-preparation queue as a
 //   `delivery` job: VideoToolbox on macOS, NVENC on Windows/Linux, x264 when
 //   the hardware encoder is missing or fails. A sidecar preset gets
 //   FILM-2017's WebVTT. Returns what FILM-2017's renderDelivery returns.

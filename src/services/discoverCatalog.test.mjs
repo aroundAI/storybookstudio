@@ -28,6 +28,16 @@ function makeStorage(initial = {}) {
   }
 }
 
+// A served catalog for the loading tests; the bundled one is empty.
+const SERVED_CATALOG = Object.freeze({
+  schemaVersion: 1,
+  updatedAt: '2026-10-05T00:00:00.000Z',
+  items: [
+    { id: 'first-showcase', youtubeId: 'RVuGlRZheps', title: 'First showcase', kind: 'showcase', featured: true },
+    { id: 'first-tutorial', youtubeId: 'AT9usQS3m48', title: 'First tutorial', kind: 'tutorial' },
+  ],
+})
+
 function response(json, { ok = true, status = 200 } = {}) {
   return { ok, status, json: async () => json }
 }
@@ -39,7 +49,7 @@ test('the public starter catalog matches the embedded, validated fallback', () =
   ))
 
   assert.deepEqual(parseDiscoverCatalog(publicCatalog), parseDiscoverCatalog(DEFAULT_BUNDLED_DISCOVER_CATALOG))
-  assert.equal(publicCatalog.items.length, 8)
+  assert.equal(publicCatalog.items.length, 0)
 })
 
 test('catalog parsing keeps only constrained metadata and rejects unsafe entries', () => {
@@ -95,19 +105,17 @@ test('builds all playback URLs from a validated ID rather than caller-provided U
   assert.throws(() => getYouTubeEmbedUrl('https://attacker.example'), /valid 11-character/)
 })
 
-test('allows only the fixed Velorn catalog endpoint and resolves a relative bundled asset', () => {
+test('allows only the fixed StorybookStudio catalog endpoint and resolves a relative bundled asset', () => {
   assert.equal(isTrustedDiscoverCatalogUrl(DEFAULT_DISCOVER_CATALOG_URL), true)
   assert.equal(
-    isTrustedDiscoverCatalogUrl('https://raw.githubusercontent.com/VelornLabs/velorn/main/public/discover/catalog.json'),
+    isTrustedDiscoverCatalogUrl('https://raw.githubusercontent.com/aroundAI/storybookstudio/main/public/discover/catalog.json'),
     true,
   )
   assert.equal(
-    isTrustedDiscoverCatalogUrl('https://raw.githubusercontent.com/VelornLabs/other/main/public/discover/catalog.json'),
+    isTrustedDiscoverCatalogUrl('https://raw.githubusercontent.com/aroundAI/other/main/public/discover/catalog.json'),
     false,
   )
-  assert.equal(isTrustedDiscoverCatalogUrl('https://velorn.ai/discover/catalog.json'), true)
-  assert.equal(isTrustedDiscoverCatalogUrl('https://www.velorn.ai/discover/catalog.json'), true)
-  assert.equal(isTrustedDiscoverCatalogUrl('https://velorn.ai/discover/catalog.json?redirect=evil'), false)
+  assert.equal(isTrustedDiscoverCatalogUrl(`${DEFAULT_DISCOVER_CATALOG_URL}?redirect=evil`), false)
   assert.equal(isTrustedDiscoverCatalogUrl('https://cdn.example/discover/catalog.json'), false)
   assert.equal(getBundledDiscoverCatalogUrl('./'), './discover/catalog.json')
   assert.equal(getBundledDiscoverCatalogUrl('/app/'), '/app/discover/catalog.json')
@@ -122,7 +130,7 @@ test('loads a validated remote catalog first and caches it', async () => {
     now: 1000,
     fetchImpl: async (url, options) => {
       requested.push({ url, options })
-      return response(DEFAULT_BUNDLED_DISCOVER_CATALOG)
+      return response(SERVED_CATALOG)
     },
   })
 
@@ -132,12 +140,12 @@ test('loads a validated remote catalog first and caches it', async () => {
   assert.equal(requested[0].options.referrerPolicy, 'no-referrer')
   assert.equal(requested[0].options.redirect, 'error')
   assert.ok(storage.values.has(DISCOVER_CATALOG_CACHE_KEY))
-  assert.equal(readDiscoverCatalogCache({ storage, now: 1000 })?.items.length, 8)
+  assert.equal(readDiscoverCatalogCache({ storage, now: 1000 })?.items.length, 2)
 })
 
 test('falls back from a failed remote request to a valid cache', async () => {
   const storage = makeStorage()
-  assert.equal(writeDiscoverCatalogCache(DEFAULT_BUNDLED_DISCOVER_CATALOG, { storage, now: 1000 }), true)
+  assert.equal(writeDiscoverCatalogCache(SERVED_CATALOG, { storage, now: 1000 }), true)
 
   const result = await loadDiscoverCatalog({
     storage,
@@ -162,19 +170,19 @@ test('falls back to the bundled catalog when remote and cache data are invalid',
     fetchImpl: async (url) => {
       requested.push(url)
       if (url === DEFAULT_DISCOVER_CATALOG_URL) return response({}, { ok: false, status: 503 })
-      return response(DEFAULT_BUNDLED_DISCOVER_CATALOG)
+      return response(SERVED_CATALOG)
     },
   })
 
   assert.equal(result.source, 'bundled')
   assert.deepEqual(requested, [DEFAULT_DISCOVER_CATALOG_URL, './discover/catalog.json'])
-  assert.equal(result.catalog.items.length, 8)
+  assert.equal(result.catalog.items.length, 2)
 })
 
 test('uses the embedded bundled catalog if asset fetching is unavailable', async () => {
   const result = await loadDiscoverCatalog({ fetchImpl: null, storage: makeStorage(), remoteUrl: '' })
   assert.equal(result.source, 'bundled')
-  assert.equal(result.catalog.items.length, 8)
+  assert.equal(result.catalog.items.length, 0)
 })
 
 test('an untrusted remote URL is never requested', async () => {
@@ -184,7 +192,7 @@ test('an untrusted remote URL is never requested', async () => {
     storage: makeStorage(),
     fetchImpl: async (url) => {
       requested.push(url)
-      return response(DEFAULT_BUNDLED_DISCOVER_CATALOG)
+      return response(SERVED_CATALOG)
     },
   })
 
@@ -206,12 +214,12 @@ test('bounds a stalled remote request before falling back to the bundled catalog
           options.signal.addEventListener('abort', () => reject(options.signal.reason), { once: true })
         })
       }
-      return response(DEFAULT_BUNDLED_DISCOVER_CATALOG)
+      return response(SERVED_CATALOG)
     },
   })
 
   assert.equal(result.source, 'bundled')
   assert.deepEqual(requested, [DEFAULT_DISCOVER_CATALOG_URL, './discover/catalog.json'])
-  assert.equal(result.catalog.items.length, 8)
+  assert.equal(result.catalog.items.length, 2)
   assert.ok(result.warning)
 })

@@ -7,7 +7,7 @@
 // Each tier is a direct FFmpeg run from the render plan (src/studio/review/):
 // none of them enters the media-preparation queue (electron/mediaPreparation.js),
 // so a long proxy build or delivery encode never blocks a preview. They use
-// the same bundled FFmpeg and hardware-encoder route as Velorn's exporter
+// the same bundled FFmpeg and hardware-encoder route as the upstream editor's exporter
 // (hardwareExportFfmpeg.js). The canvas compositor in the hidden export window
 // stays the delivery path for effects, text and kinetic captions; previews draw
 // the picture cuts, the bus mix and traditional-subtitle boxes, which is what
@@ -144,7 +144,7 @@ function createPreviewRenderer(options = {}) {
   // A Studio project (project.studio.audioBuses) mixes through FILM-2016's
   // bus graph, the export's own: sidechain ducking under dialogue and the
   // loudnorm pass to the master target, so the preview sounds like the
-  // delivery. A plain Velorn project sums its tracks with the master gain.
+  // delivery. A plain upstream project sums its tracks with the master gain.
   async function renderAudioMix({ project, projectDir, timelineId = null, range = null, scene = null, stems = false, output = null, policy = null, language = null, loudnessTargetLufs = null, signal } = {}) {
     const started = Date.now()
     const [plan, graph] = await Promise.all([loadPlan(), loadGraph()])

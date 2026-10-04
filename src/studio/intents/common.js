@@ -78,7 +78,7 @@ export function unavailable(message) {
 // moves with it; a clip spanning segments (a music or ambience bed) stays
 // where it is, so the bed keeps playing under the new order. Captions and
 // markers are mapped the same way. One move_clips step per moved segment,
-// at most 100 clips each (Velorn's move_clips limit).
+// at most 100 clips each (the upstream editor's move_clips limit).
 export function relayoutEntries(context, segments, order, { reasonFor, textFor, sceneFor }) {
   const tracks = new Map((context.timeline?.tracks || []).map((track) => [track.id, track]))
   const starts = []
@@ -155,7 +155,7 @@ export function strongestLine(context, scenes, params = {}) {
 }
 
 // A video track for overlays (b-roll, graphics): an existing track of that
-// name, else an add_track step and the id Velorn will give it (video-N+1).
+// name, else an add_track step and the id the upstream editor will give it (video-N+1).
 export function overlayTrack(context, name) {
   const existing = (context.timeline?.tracks || []).find((track) => track.type === 'video' && track.name === name && !track.locked)
   if (existing) return { trackId: existing.id, entries: [] }

@@ -46,7 +46,7 @@ test('refused: ducking the dialogue bus, an unknown bus, a project without buses
   const store = storeWith({ studio: { audioBuses: defaultAudioBuses(null) } })
   assert.throws(() => handleSetAudioBuses({ buses: { dialogue: { duckUnder: 'music' } }, previewOnly: false }, { projectStore: store }), /dialogue bus is never ducked/)
   assert.throws(() => handleSetAudioBuses({ buses: { choir: { gainDb: 1 } } }, { projectStore: store }), /unknown bus/)
-  assert.throws(() => handleSetAudioBuses({ buses: { music: { gainDb: 1 } } }, { projectStore: storeWith({ name: 'plain velorn' }) }), /no audio buses/)
+  assert.throws(() => handleSetAudioBuses({ buses: { music: { gainDb: 1 } } }, { projectStore: storeWith({ name: 'plain upstream' }) }), /no audio buses/)
   assert.equal(store.getState().currentProject.studio.audioBuses.dialogue.duckUnder, undefined)
 })
 

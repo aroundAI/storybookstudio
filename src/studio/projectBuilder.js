@@ -1,17 +1,17 @@
 // The rough-cut builder (FILM-2012 AC3): a StoryBook edit package plus the
-// probed local media becomes a Velorn project document that opens as a rough
+// probed local media becomes a upstream project document that opens as a rough
 // cut, never an empty timeline. Pure module: no Electron, no stores, no
 // clock. The same inputs always build the same project, so snapshots hold.
 //
 //   buildProject({ package, probedAssets, brand, policy, options })
 //     → { project, files, warnings }
 //
-// `project` is project.comfystudio (version 1.2, EditGraph v1 fields);
+// `project` is project.storybookstudio (version 1.2, EditGraph v1 fields);
 // `files` maps project-relative paths to the text written beside it
 // (storybook/package.json, link.json, brand.json, policy.json); `warnings`
 // lists what the rough cut could not place as planned (offline media first).
 //
-// Layout, in Velorn's own track and clip shapes (timelineStore.addClip,
+// Layout, in the upstream editor's own track and clip shapes (timelineStore.addClip,
 // placeLiveCaptions, add_asset_to_timeline's linked audio):
 //   video tracks: one captions track per language (role 'captions'; the
 //   primary language visible), then video-1 with every shot
@@ -31,7 +31,7 @@ export const MASTER_TIMELINE_ID = 'tl-master'
 export const SHOT_TRACK_ID = 'video-1'
 // The bus model lives in audio/buses.js (FILM-2016); re-exported for callers of the builder.
 export { AUDIO_BUSES, DEFAULT_DUCK_DB, DUCK_ATTACK_MS, DUCK_RELEASE_MS }
-// Velorn's subtitle style: the captions clip stores the preset id and the
+// The upstream editor's subtitle style: the captions clip stores the preset id and the
 // renderer fills in the rest (captionRenderer mergePresetWithOverrides).
 export const ROUGH_CUT_CAPTION_PRESET_ID = 'kinetic-traditional'
 
@@ -71,7 +71,7 @@ export const dimensionsForAspect = (aspect) => {
 }
 
 // audio_tracks.volume (0..2, 1 = unchanged) as clip gain in dB, within
-// Velorn's clip gain range. Silence is the range's floor.
+// the upstream editor's clip gain range. Silence is the range's floor.
 export const volumeToGainDb = (volume) => {
   const linear = Number(volume)
   if (!(linear > 0)) return MIN_AUDIO_CLIP_GAIN_DB
@@ -195,7 +195,7 @@ export function buildProject({ package: input, probedAssets = new Map(), brand: 
         ...(type === 'video' ? { hasAudio: probe.hasAudio !== false, audioEnabled: probe.hasAudio !== false } : {}),
       }
     } else {
-      // Offline: Velorn's media-health check lists it (no local path) and
+      // Offline: the upstream editor's media-health check lists it (no local path) and
       // relink_asset points it at a file later; the clip keeps its slot.
       const reason = media.url === null ? media.mediaReason : 'not_downloaded'
       asset = {
@@ -227,10 +227,10 @@ export function buildProject({ package: input, probedAssets = new Map(), brand: 
     ...extra,
   })
 
-  // A media clip in Velorn's addClip shape. `sourceSeconds` is how much of
+  // A media clip in the upstream editor's addClip shape. `sourceSeconds` is how much of
   // the file plays from `trimStart`; speed changes its timeline length.
   const mediaClip = ({ trackId, asset, startTime, sourceSeconds, sourceDuration, trimStart = 0, speed = 1, type, color, metadata, linkGroupId, gainDb }) => {
-    // Velorn's clampFiniteMediaClipToSource, so loading changes nothing: the
+    // The upstream editor's clampFiniteMediaClipToSource, so loading changes nothing: the
     // nearest frame, unless that runs past the file, then the frame before.
     const available = sourceDuration != null ? Math.max(0, sourceDuration - trimStart) : sourceSeconds
     const playable = Math.min(sourceSeconds, available)
@@ -549,7 +549,7 @@ export function buildProject({ package: input, probedAssets = new Map(), brand: 
     ordered.forEach((item, index) => item.build(laneTrackIds[lanes[index]]))
   }
 
-  // Captions: Velorn's live captions clip, one per language on its own
+  // Captions: the upstream editor's live captions clip, one per language on its own
   // role:'captions' track; the primary language shows, the others wait for
   // a language render (FILM-2019).
   const captionTracks = []

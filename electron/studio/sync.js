@@ -14,6 +14,7 @@ const path = require('path')
 const { diffEditPackages, isEmptyDiff, buildResyncPlan, summarizeDiff, keyOf } = require('./packageDiff')
 const { planDownloads, stripSignedUrls } = require('./pull')
 const { downloadVerified } = require('./download')
+const { projectFilePath } = require('./projectFile')
 
 const RESYNC_INTERVAL_MS = 5 * 60 * 1000
 
@@ -69,7 +70,7 @@ async function checkForUpdates({ client, project, fetchFn = fetch, emitPlan = ()
     else failed.push({ key: item.key, reason: outcome.offlineReason })
   }
 
-  const projectFile = await readJson(path.join(projectDir, 'project.comfystudio'))
+  const projectFile = await readJson(projectFilePath(projectDir))
   const { steps, unresolved } = buildResyncPlan({ diff, project: projectFile, assetPaths, session: sessionId })
   const proposal = {
     source: 'resync',

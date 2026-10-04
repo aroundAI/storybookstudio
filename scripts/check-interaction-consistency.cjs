@@ -5,12 +5,12 @@ const fs = require('node:fs')
 const os = require('node:os')
 const path = require('node:path')
 const { chromium, _electron } = require(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright')
-const base = process.env.VELORN_TEST_URL || 'http://127.0.0.1:5196'
-const native = process.env.VELORN_TEST_ELECTRON === '1'
-const output = fs.mkdtempSync(path.join(os.tmpdir(), 'velorn-interaction-consistency-'))
+const base = process.env.STORYBOOKSTUDIO_TEST_URL || 'http://127.0.0.1:5196'
+const native = process.env.STORYBOOKSTUDIO_TEST_ELECTRON === '1'
+const output = fs.mkdtempSync(path.join(os.tmpdir(), 'storybookstudio-interaction-consistency-'))
 async function main() {
   const browser = native ? await _electron.launch({ executablePath: require('electron'),
-    args: [path.resolve(__dirname, '../tests/fixtures/inspector-electron.cjs')], env: { ...process.env, VELORN_TEST_URL: base } })
+    args: [path.resolve(__dirname, '../tests/fixtures/inspector-electron.cjs')], env: { ...process.env, STORYBOOKSTUDIO_TEST_URL: base } })
     : await chromium.launch({ executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome', headless: true })
   let page
   const errors = [], groups = []
@@ -133,7 +133,7 @@ async function main() {
         if (reason === 'focus') { await page.getByLabel('Typing probe').focus(); await focus() }
         else if (reason === 'pointer') await page.getByRole('heading').click()
         else if (reason === 'blur') await page.evaluate(() => window.dispatchEvent(new Event('blur')))
-        else if (reason === 'pan') await page.evaluate(() => window.dispatchEvent(new Event('comfystudio-space-modifier-used')))
+        else if (reason === 'pan') await page.evaluate(() => window.dispatchEvent(new Event('storybookstudio-space-modifier-used')))
         else if (reason === 'visibility') await page.evaluate(() => {
           Object.defineProperty(document, 'hidden', { configurable: true, value: true }); document.dispatchEvent(new Event('visibilitychange'))
         })
@@ -175,7 +175,7 @@ async function main() {
       await page.getByTestId('actual-timeline').waitFor()
       const before = await snapshot()
       assert.ok(JSON.parse(before.history).length > 0, 'modal Undo probe needs a real undo target')
-      const toolBefore = await page.evaluate(() => localStorage.getItem('comfystudio-timeline-active-tool-v1'))
+      const toolBefore = await page.evaluate(() => localStorage.getItem('storybookstudio-timeline-active-tool-v1'))
       if (kind === 'caption') await page.evaluate(() => window.interactionTest.setCaption(true))
       else await page.evaluate(() => {
         const modal = document.createElement('div'); modal.id = 'synthetic-ducking-dialog'
@@ -189,7 +189,7 @@ async function main() {
         await page.keyboard.press(key)
         preserved(before, await snapshot())
       }
-      assert.equal(await page.evaluate(() => localStorage.getItem('comfystudio-timeline-active-tool-v1')), toolBefore)
+      assert.equal(await page.evaluate(() => localStorage.getItem('storybookstudio-timeline-active-tool-v1')), toolBefore)
       if (kind === 'ducking') await page.evaluate(() => document.getElementById('synthetic-ducking-dialog').remove())
     }
     pass('actual Timeline Delete/cut/Undo/Redo/tools/marks and transport stay inert behind caption and ducking-style modal boundaries')

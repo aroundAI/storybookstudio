@@ -43,7 +43,7 @@ const cbCrOf = (r, g, b) => {
 export default function ScopesPanel() {
   const [mode, setMode] = useState(() => {
     try {
-      return localStorage.getItem('comfystudio-scopes-mode') || 'waveform'
+      return localStorage.getItem('storybookstudio-scopes-mode') || 'waveform'
     } catch (_) {
       return 'waveform'
     }
@@ -56,7 +56,7 @@ export default function ScopesPanel() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('comfystudio-scopes-mode', mode)
+      localStorage.setItem('storybookstudio-scopes-mode', mode)
     } catch (_) { /* ignore */ }
   }, [mode])
 

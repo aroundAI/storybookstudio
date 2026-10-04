@@ -1,12 +1,12 @@
 # StorybookStudio Capability Matrix
 
-This maps every MCP tool Velorn defines in `electron/mcpServer.js` (`createToolDefinitions()`) onto the verbs of [AI_EDITOR_CONTRACT.md](AI_EDITOR_CONTRACT.md). The intent compilers (FILM-2013) build their action plans from the tools marked `exists` or `adapter`. A `build` item is something the contract needs that no Velorn tool provides, with the spec that builds it.
+This maps every MCP tool the upstream editor defines in `electron/mcpServer.js` (`createToolDefinitions()`) onto the verbs of [AI_EDITOR_CONTRACT.md](AI_EDITOR_CONTRACT.md). The intent compilers (FILM-2013) build their action plans from the tools marked `exists` or `adapter`. A `build` item is something the contract needs that no upstream tool provides, with the spec that builds it.
 
 ## Classes
 
 - **exists**: usable as is. For a tool with a contract verb, an intent compiler or capability tool can call it unchanged. For a tool with no verb (generation, ComfyUI, Music Video, stock), it stays in the `expert` profile unchanged and nothing needs building.
 - **adapter**: usable with a thin wrapper or a small change. The note says which, and which spec makes it.
-- **build**: missing. Listed in the second table, since no Velorn tool exists to classify.
+- **build**: missing. Listed in the second table, since no upstream tool exists to classify.
 
 ## Columns
 
@@ -31,7 +31,7 @@ After an upstream merge adds or removes a tool, `--check` fails (and so does `te
 
 **133 tools** in `createToolDefinitions()`; 98 accept `previewOnly`; 82 are in `MCP_ACTION_PLAN_WRITABLE_TOOLS`; 0 carry MCP `annotations`.
 
-### Every Velorn tool
+### Every upstream tool
 
 | # | Tool | Group | Contract verbs | Class | previewOnly | In plans | What it does | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -52,8 +52,8 @@ After an upstream merge adds or removes a tool, `--check` fails (and so does `te
 | 15 | `control_comfyui_launcher` | comfyui | — | exists | yes, default | — | Preview or apply ComfyUI launcher actions through StorybookStudio: start, stop, or restart. | Generation layer; expert profile only. |
 | 16 | `get_comfyui_launcher_logs` | comfyui | — | exists | — | — | Return recent ComfyUI launcher log lines from StorybookStudio, with a lightweight summary of common support issues like port conflicts, i… | Generation layer; expert profile only. |
 | 17 | `validate_comfyui_nodes` | comfyui | — | exists | — | — | Check whether specific ComfyUI node class names are available from /object_info. | Generation layer; expert profile only. |
-| 18 | `list_velorn_workflows` | generation | — | exists | — | — | List bundled StorybookStudio workflows and graphs saved under Generate > My Workflows. | Generation layer; expert profile only. |
-| 19 | `inspect_velorn_workflow` | generation | — | exists | — | — | Inspect a bundled, My Workflows, or explicit StorybookStudio workflow JSON. | Generation layer; expert profile only. |
+| 18 | `list_storybookstudio_workflows` | generation | — | exists | — | — | List bundled StorybookStudio workflows and graphs saved under Generate > My Workflows. | Generation layer; expert profile only. |
+| 19 | `inspect_storybookstudio_workflow` | generation | — | exists | — | — | Inspect a bundled, My Workflows, or explicit StorybookStudio workflow JSON. | Generation layer; expert profile only. |
 | 20 | `check_export_readiness` | health | L2 readiness; P6 health; V1 QA checks | exists | — | — | Check whether the current timeline is ready for a standard delivery export, especially MP4 H.264 HD. | Blockers and warnings for a target; studio_check_readiness adds package, policy and target-duration checks. |
 | 21 | `inspect_clip` | inspect | P4 inspect visual | exists | — | — | Inspect one timeline clip with its track, source asset, timing, transform, label, and a representative still image when available. | One clip, its asset and a still. |
 | 22 | `inspect_timeline_frame` | inspect | P4 inspect visual; V2 critic analysers | exists | — | — | Capture the composed timeline preview frame at the playhead, a time in seconds, or a frame number. | Composed frame; a vision input for the visual analyser. |
@@ -84,7 +84,7 @@ After an upstream merge adds or removes a tool, `--check` fails (and so does `te
 | 47 | `get_caption_status` | captions | E6 captions | exists | — | — | Return the state of the active or most recent MCP caption job (transcribe_captions / generate_captions) plus the current editable caption… | Caption job state and cue draft. |
 | 48 | `update_caption_cues` | captions | E6 captions; V3 repair | adapter | yes | yes | Edit caption cues: fix text, retime, remove cues, or replace the whole list. | Plan-writable since FILM-2013, which re-times cues after a ripple cut; takes per-cue globalOverrides and a clip preset, so the styled, safe-area cues from captions/style.js (FILM-2016) land in one call; the move_caption repair. |
 | 49 | `generate_captions` | captions | E6 captions | adapter | yes, default | — | Generate captions from the cue draft. | Not plan-writable; BrandSchema.captionStyle maps onto its preset and placement arguments (FILM-2016). |
-| 50 | `get_music_video_session` | music-video | — | exists | — | — | Read the complete agent-guided Music Video session from the Director workspace: song, lyrics/SRT, creative direction, cast, workflows, ou… | Velorn Director; expert profile only. |
+| 50 | `get_music_video_session` | music-video | — | exists | — | — | Read the complete agent-guided Music Video session from the Director workspace: song, lyrics/SRT, creative direction, cast, workflows, ou… | the upstream editor Director; expert profile only. |
 | 51 | `configure_music_video` | music-video | — | exists | yes, default | yes | Preview or update Music Video setup using existing project assets. | Expert profile only. |
 | 52 | `update_music_video_session` | music-video | — | exists | yes, default | yes | Preview or persist the conversational Music Video checkpoint so an agent can resume a multi-turn creation session without hiding state fr… | Expert profile only. |
 | 53 | `manage_music_video_cast` | music-video | — | exists | yes, default | yes | Preview or manage the Music Video cast roster in the Director workspace. | Expert profile only. |
@@ -99,7 +99,7 @@ After an upstream merge adds or removes a tool, `--check` fails (and so does `te
 | 62 | `transcribe_music_video_audio` | music-video | — | exists | yes, default | yes | Preview or run the Music Video Qwen ASR transcription/alignment workflow for the selected song. | Expert profile only. |
 | 63 | `assemble_music_video_timeline` | music-video | — | exists | yes, default | yes | Preview or assemble ready Music Video clips and song audio into a generated edit timeline with coverage tracks and vocal-performance sync… | Expert profile only. |
 | 64 | `replace_music_video_timeline_shot` | music-video | — | exists | yes, default | yes | Preview or replace an already assembled Music Video timeline shot with its latest or a specified generated video, preserving timing, tran… | Expert profile only. |
-| 65 | `save_project` | checkpoints | E9 checkpoints | exists | yes, default | yes | Preview or explicitly save the current StorybookStudio project, including Director state, assets, and the active timeline. | Writes project.comfystudio; a version snapshot is separate (FILM-2012). |
+| 65 | `save_project` | checkpoints | E9 checkpoints | exists | yes, default | yes | Preview or explicitly save the current StorybookStudio project, including Director state, assets, and the active timeline. | Writes project.storybookstudio; a version snapshot is separate (FILM-2012). |
 | 66 | `get_music_video_status` | music-video | — | exists | — | — | Summarize StorybookStudio music-video workflow assets, assembled clips, and sync-locked clips in the current project. | Expert profile only. |
 | 67 | `inspect_music_video_keyframe` | music-video | — | exists | — | — | Inspect one Music Video Step 4 shot through the open Generate workspace. | Expert profile only. |
 | 68 | `regenerate_music_video_keyframe` | music-video | — | exists | yes, default | yes | Preview or queue regeneration of one Music Video Step 4 shot using the exact active keyframe settings and native StorybookStudio routing. | Expert profile only. |
@@ -165,11 +165,11 @@ After an upstream merge adds or removes a tool, `--check` fails (and so does `te
 | 128 | `add_dip_to_black` | transitions | E4 transitions | exists | yes, default | yes | Preview or apply dip-to-black opacity fades between adjacent visual clips. | brand transitionStyle dip. |
 | 129 | `export_timeline` | export | E8 export; L7 render | exists | yes | yes | Start a StorybookStudio timeline export using the existing hidden export worker. | The 720p review render as is; keyframe, scene and audio-only tiers are FILM-2014. |
 | 130 | `export_fcpxml` | export | E8 export | exists | yes, default | yes | Preview or export the active StorybookStudio timeline as modern FCPXML for Resolve/Final Cut or legacy XMEML v5 for Adobe Premiere Pro. | Interchange; not part of delivery. |
-| 131 | `export_delivery_batch` | export | E8 export; L8 deliver | exists | yes, default | yes | Preview or run several delivery exports in sequence, such as 16:9, 1:1 square, and 9:16 vertical versions of the same range. | Velorn targets and the six StoryBook presets (FILM-2017: frame, fps, bitrate, LUFS, caption policy, language; renders/<version>/<preset>-<lang>.mp4). studio_deliver renders through its own delivery tier, not this tool. |
+| 131 | `export_delivery_batch` | export | E8 export; L8 deliver | exists | yes, default | yes | Preview or run several delivery exports in sequence, such as 16:9, 1:1 square, and 9:16 vertical versions of the same range. | the upstream editor targets and the six StoryBook presets (FILM-2017: frame, fps, bitrate, LUFS, caption policy, language; renders/<version>/<preset>-<lang>.mp4). studio_deliver renders through its own delivery tier, not this tool. |
 | 132 | `set_auto_reframe` | effects | E7 effects and graphics | exists | yes, default | — | Preview or apply a subject-tracking reframe on picture clips of the active timeline: finds faces (else the primary subject) on each clip'… | FILM-2017: local face/subject detection on keyframes, smoothed crop path written through set_clip_keyframes; no-subject clips centred and flagged. |
 | 133 | `set_focal_point` | effects | E7 effects and graphics | exists | yes, default | — | Preview or set a fixed focal point on a video or image clip: the clip fills the active timeline's frame with the window centred on (x, y)… | FILM-2017: a fixed fill crop on (x, y) through set_clip_keyframes. |
 
-### Missing: what the contract needs that no Velorn tool provides (`build`)
+### Missing: what the contract needs that no upstream tool provides (`build`)
 
 | Item | Contract verbs | Built by | Notes |
 | --- | --- | --- | --- |
@@ -177,7 +177,7 @@ After an upstream merge adds or removes a tool, `--check` fails (and so does `te
 | `studio_search_assets` | P3 search | FILM-2013 | Built: ranks by name, transcript, then semantic fields. |
 | `studio_get_job_status` | P8 job status | FILM-2013 | Built over FILM-2011's job registry (studioMain.cloud.getJobStatus); jobs run in main. |
 | `studio_review` | P7 review (critic); V2 critic analysers | FILM-2014 | electron/studio/reviewTools.js review: renders the scope's keyframes, a 720p preview and the bus mix with stems, runs QA then the critic; returns {pass, issues, qa, critic, skipped}. |
-| `electron/studio/qa.js checks` | V1 QA checks | FILM-2014 | ebur128 loudness and true peak, astats clipping, blackdetect, freezedetect, silencedetect, caption safe areas, script coverage. No Velorn tool does these at QA grade. |
+| `electron/studio/qa.js checks` | V1 QA checks | FILM-2014 | ebur128 loudness and true peak, astats clipping, blackdetect, freezedetect, silencedetect, caption safe areas, script coverage. No upstream tool does these at QA grade. |
 | `src/studio/critic/{pacing,audio,visual}.js` | V2 critic analysers | FILM-2014 | Analysers return issues in the QA shape. |
 | `studio_repair` | V3 repair | FILM-2014 | src/studio/intents/repair.js, the repair intent: each issue's repairIntent to steps of one plan (set_audio_buses, set_master_audio, set_clip_audio, update_caption_cues, replace_clip_with_asset, extract_range), the rest as cards. |
 | `studio_render_preview` | L7 render | FILM-2014 | electron/studio/previewRender.js tiers (keyframes, 720p scene, bus-mix WAV) and QA on the result; never enters the media-preparation queue, whose delivery kind takes the final encodes. |
@@ -187,7 +187,7 @@ After an upstream merge adds or removes a tool, `--check` fails (and so does `te
 | `studio_edit` | L4 plan and preview; L5 apply | FILM-2013 | Built: eleven intent compilers (src/studio/intents/), per-step previews, plan cards, apply into a version with a reason per op-log line. |
 | `src/studio/oplog.js` | L5 apply | FILM-2012 | One line per applied step with its reason; not a tool. |
 | `studio_create_version / studio_restore_version` | L6 version; E9 checkpoints | FILM-2013 | Built over src/studio/versions.js (FILM-2012). |
-| `studio_edit_audio and bus parameters` | E5 audio | FILM-2016 | Buses, sidechain ducking, stems. Velorn's UI ducking (src/utils/audioDucking.mjs) has no MCP tool. |
+| `studio_edit_audio and bus parameters` | E5 audio | FILM-2016 | Buses, sidechain ducking, stems. The upstream editor's UI ducking (src/utils/audioDucking.mjs) has no MCP tool. |
 | `studio_add_captions` | E6 captions | FILM-2016 | Brand style and per-aspect safe areas. |
 | `studio_add_graphic and the composition clip type` | E7 effects and graphics | FILM-2018 | VALIDATION_FAILED 'not available yet' until then. |
 | `studio_create_variant` | E1 timeline items; L8 deliver | FILM-2017 | short and hook; language is FILM-2019. |
@@ -200,7 +200,7 @@ After an upstream merge adds or removes a tool, `--check` fails (and so does `te
 | --- | --- |
 | exists | 121 (of which 52 serve no contract verb and stay in the expert profile) |
 | adapter | 12 |
-| build | 20 (items above; none is a Velorn tool) |
+| build | 20 (items above; none is a upstream tool) |
 
 | Verb | `exists` tools | `adapter` tools | `build` items |
 | --- | --- | --- | --- |
