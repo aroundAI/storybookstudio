@@ -222,8 +222,23 @@
         "certificateProfileName": "velorn-public"
       }
     },
+    "protocols": [
+      {
+        "name": "StorybookStudio",
+        "schemes": [
+          "velorn"
+        ]
+      }
+    ],
     "mac": {
-      "target": "dmg",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        }
+      ],
       "icon": "build/icon.icns",
       "category": "public.app-category.video",
       "artifactName": "${productName}-${version}-mac-${arch}.${ext}",
