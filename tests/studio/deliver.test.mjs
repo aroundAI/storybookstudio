@@ -222,3 +222,40 @@ test('Export to file: the same presets and a QA report in a folder, with no sign
   assert.equal(report.qa.pass, true)
   assert.equal(storybook.calls.length, 0, 'nothing went to StoryBook')
 })
+
+// The Deliver screen and MCP compute the summary, then deliver after the
+// user confirms; the editor saves the project before each summary, and a save
+// stamps timeline.modified (and the playhead/zoom ride along). The hash must
+// survive that and change only with what the render shows.
+test('the summary hash ignores save-time stamps and changes with a real edit', async (t) => {
+  const { dir } = makePulledProject(t)
+  const file = path.join(dir, 'project.comfystudio')
+  let saves = 0
+  const performAction = async ({ action }) => {
+    if (action !== 'save_project') return {}
+    saves += 1
+    const doc = JSON.parse(fs.readFileSync(file, 'utf8'))
+    for (const timeline of doc.timelines) Object.assign(timeline, { modified: new Date(Date.parse('2026-10-05T00:00:00Z') + saves * 1000).toISOString(), playheadPosition: saves * 1.5, zoom: 40 + saves })
+    doc.modified = new Date().toISOString()
+    fs.writeFileSync(file, JSON.stringify(doc))
+    return { success: true }
+  }
+  const deliver = createStudioDeliver({ jobs: createJobRegistry(), getMcpServer: () => ({ performAction, lastSnapshot: { project: { path: dir } } }), render: fakeRender(), qa: passingQa })
+  const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'studio-export-'))
+  t.after(() => fs.rmSync(folder, { recursive: true, force: true }))
+  const args = { presets: ['youtube_16x9'], destination: 'folder', folder }
+  const first = await deliver.studioDeliver(args)
+  const second = await deliver.studioDeliver(args)
+  assert.equal(saves, 2, 'each summary saved first')
+  assert.equal(second.summaryHash, first.summaryHash)
+  // The confirmed summary's token is accepted after yet another save.
+  const { token } = deliver.issueConfirmationToken(first.summaryHash)
+  const started = await deliver.studioDeliver({ ...args, confirm: true, confirmationToken: token })
+  assert.equal(started.started, true)
+  // A real edit (a clip one second shorter) changes the hash.
+  const doc = JSON.parse(fs.readFileSync(file, 'utf8'))
+  doc.timelines[0].clips.find((clip) => clip.type === 'video').duration -= 1
+  fs.writeFileSync(file, JSON.stringify(doc))
+  const edited = await deliver.studioDeliver(args)
+  assert.notEqual(edited.summaryHash, first.summaryHash)
+})

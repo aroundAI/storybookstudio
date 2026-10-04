@@ -94,6 +94,20 @@ const FOCAL_POINT_INPUT_SCHEMA = {
   required: ['clipId', 'x', 'y'],
 }
 
+// What a render of a timeline depends on, for the summary hash. A save
+// stamps `modified` (and the playhead, zoom and other view state ride along)
+// on every call, so the whole timeline object would never hash the same
+// twice; this keeps the frame, the tracks, clips, transitions and the
+// studio metadata, and the source file of every asset a clip uses.
+const TIMELINE_RENDER_KEYS = ['id', 'width', 'height', 'fps', 'tracks', 'clips', 'transitions', 'studio']
+const ASSET_RENDER_KEYS = ['id', 'path', 'type', 'width', 'height', 'duration', 'proxyPath']
+const pick = (value, keys) => Object.fromEntries(keys.filter((key) => value?.[key] !== undefined).map((key) => [key, value[key]]))
+function renderContentHash(timeline, assets = []) {
+  const used = new Set((timeline.clips || []).map((clip) => clip.assetId).filter(Boolean))
+  const sources = (assets || []).filter((asset) => used.has(asset.id)).map((asset) => pick(asset, ASSET_RENDER_KEYS)).sort((a, b) => String(a.id).localeCompare(String(b.id)))
+  return sha256(JSON.stringify({ timeline: pick(timeline, TIMELINE_RENDER_KEYS), sources }))
+}
+
 async function readJson(file) {
   try {
     return JSON.parse(await fsp.readFile(file, 'utf8'))
@@ -257,7 +271,7 @@ function createStudioDeliver({
           estimatedBytes: presetsModule.estimateBytes(name, duration),
           lastQa: await lastPreviewQa(projectDir),
           file: presetsModule.deliveryFileName(name, language),
-          contentHash: sha256(JSON.stringify(timeline)),
+          contentHash: renderContentHash(timeline, document.assets),
         })
       }
     }
@@ -657,6 +671,7 @@ function createStudioDeliver({
 
 module.exports = {
   createStudioDeliver,
+  renderContentHash,
   putFile,
   DELIVER_INPUT_SCHEMA,
   CREATE_VARIANT_INPUT_SCHEMA,
