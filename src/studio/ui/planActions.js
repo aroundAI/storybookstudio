@@ -97,10 +97,17 @@ export function parseCapabilityResult(result) {
   return { success: body?.success !== false, ...body, versionId: body?.version?.id ?? body?.versionId ?? null, error: body?.success === false ? `The plan stopped at step ${body?.failedStep?.step ?? '?'}.` : undefined, partial: body?.applied === 'partial' }
 }
 
-async function applyThroughCapability({ api, plan, scenes }) {
+// FILM-2013 creates the version and runs the steps in main; the journal
+// around the call is what lets a crash in between offer the version before.
+async function applyThroughCapability({ api, plan, scenes, runner }) {
   const { tool, intent, scope, params } = plan.capability
   const args = { ...(tool === 'studio_edit' ? { intent, scope, params } : {}), previewOnly: false, planId: plan.planId, ...(scenes ? { scenes } : {}) }
-  return parseCapabilityResult(await api.studio.callCapability(tool, args))
+  const journal = planJournalEntry({ planId: plan.planId, instruction: plan.instruction, parentVersionId: runner?.currentVersionId?.() ?? null })
+  await runner?.writeJournal?.(journal)
+  const answer = parseCapabilityResult(await api.studio.callCapability(tool, args))
+  if (answer.success) await runner?.writeJournal?.({ ...journal, versionId: answer.versionId, status: 'done' })
+  else if (!answer.partial) await runner?.writeJournal?.({ ...journal, status: 'refused' })
+  return answer
 }
 
 export async function approvePlan({ store, api = globalThis.window?.electronAPI, runner, planId, scenes = null }) {
@@ -111,7 +118,7 @@ export async function approvePlan({ store, api = globalThis.window?.electronAPI,
   let answer
   try {
     if (plan.capability && typeof api?.studio?.callCapability === 'function') {
-      answer = await applyThroughCapability({ api, plan, scenes })
+      answer = await applyThroughCapability({ api, plan, scenes, runner })
     } else if (typeof api?.studio?.applyPlan === 'function') {
       answer = await api.studio.applyPlan({ planId, ...(scenes ? { scenes } : {}) })
     } else {

@@ -245,6 +245,19 @@ test('Approve all on a FILM-2013 plan calls studio_edit with the previewed inten
   assert.equal(store.getState().plans[0].versionId, 'v4')
 })
 
+test('a FILM-2013 apply is journalled too, so a crash in the middle offers the version before it', async () => {
+  let journalDuringApply = null
+  const { runner, journal } = fakeRunner()
+  const { api, emit } = fakeApi({ callCapability: async () => { journalDuringApply = journal.at(-1); return mcpResult({ success: true, version: { id: 'v4' } }) } })
+  const store = createStudioUiStore()
+  startStudioUiBridge({ api, store })
+  emit('studio:plan-proposed', capabilityPlan())
+  await approvePlan({ store, api, runner, planId: 'cap-1' })
+  assert.equal(journalDuringApply.status, 'applying')
+  assert.equal(journalDuringApply.planId, 'cap-1')
+  assert.deepEqual(journal.at(-1), { ...journalDuringApply, versionId: 'v4', status: 'done' })
+})
+
 test('a refused capability apply (TARGET_CHANGED) keeps the cards and says to ask again', async () => {
   const { api, emit } = fakeApi({ callCapability: async () => mcpResult({ error: { code: 'TARGET_CHANGED', message: 'The timeline changed since the preview.' } }, true) })
   const store = createStudioUiStore()
