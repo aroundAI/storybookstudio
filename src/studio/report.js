@@ -78,6 +78,42 @@ const audioChange = ({ kind, label, before, after, reason, by, opId, clipId = nu
   return { target: label, change: words, reason, kind, before, after, by, opId, clipId, trackId }
 }
 
+const sourceRange = (clip) => {
+  const start = Number(clip.trimStart) || 0
+  return [start, start + (Number(clip.duration) || 0) * (Number(clip.speed) > 0 ? Number(clip.speed) : 1)]
+}
+
+// A ripple cut splits a clip: Velorn keeps the id on the left piece and gives
+// the right piece a new one (a head trim removes the left piece). A new clip
+// on the same track, from the same asset, playing part of a clip that was
+// there before, is that clip's remainder: it is folded into the original, so
+// the report says "Trimmed 6.0 s -> 3.6 s" rather than "Removed" and "Added".
+function foldSplitPieces(before, after) {
+  const folded = new Map(after)
+  const pieces = new Map()
+  for (const [id, clip] of after) {
+    if (before.has(id) || !clip.assetId) continue
+    const [from, to] = sourceRange(clip)
+    const original = [...before.values()].find((candidate) => candidate.trackId === clip.trackId && candidate.assetId === clip.assetId
+      && sourceRange(candidate)[0] <= from + 1e-3 && sourceRange(candidate)[1] >= to - 1e-3)
+    if (!original) continue
+    if (!pieces.has(original.id)) pieces.set(original.id, [])
+    pieces.get(original.id).push(clip)
+  }
+  for (const [originalId, list] of pieces) {
+    const kept = after.get(originalId)
+    const all = [...(kept ? [kept] : []), ...list].sort((a, b) => a.startTime - b.startTime)
+    for (const piece of list) folded.delete(piece.id)
+    folded.set(originalId, {
+      ...(kept || before.get(originalId)),
+      id: originalId,
+      startTime: all[0].startTime,
+      duration: round(all.reduce((sum, piece) => sum + (Number(piece.duration) || 0), 0)),
+    })
+  }
+  return folded
+}
+
 export function buildExplainWhyReport({ log, versions, versionId, before, after, qa = null, target = null }) {
   const index = versions.findIndex((version) => version.id === versionId)
   if (index < 0) throw new Error(`Unknown version ${versionId}`)
@@ -86,6 +122,7 @@ export function buildExplainWhyReport({ log, versions, versionId, before, after,
   const [from, to] = record.opRange
   const withinEnd = (entry) => to == null || entry.op <= to
   const rangeOps = log.filter((entry) => entry.op >= from && withinEnd(entry))
+  const clipsBeforeById = new Map((timelineOf(before, after?.currentTimelineId ?? before?.currentTimelineId ?? null).clips || []).map((clip) => [clip.id, clip]))
   const counted = log.filter((entry) => withinEnd(entry) && entry.tool !== CREATE_VERSION_TOOL)
   const touchedByOp = new Map(rangeOps.map((entry) => [entry.op, touchedClipIds(entry.inverse?.args?.patch)]))
 
@@ -94,7 +131,16 @@ export function buildExplainWhyReport({ log, versions, versionId, before, after,
   const attribute = (id) => {
     const touching = rangeOps.filter((entry) => touchedByOp.get(entry.op).has(id) || JSON.stringify(entry.args ?? {}).includes(`"${id}"`))
     const naming = touching.filter((entry) => JSON.stringify(entry.args ?? {}).includes(`"${id}"`))
-    const chosen = (naming.length > 0 ? naming : touching).at(-1)
+    // A ripple cut touches every later clip; the one whose range overlaps the
+    // clip is the one that cut it (FILM-2013 plans run cuts latest first, so
+    // each range is in the clip's own coordinates).
+    const was = clipsBeforeById.get(id)
+    const cutting = was ? touching.filter((entry) => {
+      const from = Number(entry.args?.startSeconds)
+      const to = Number(entry.args?.endSeconds)
+      return Number.isFinite(from) && Number.isFinite(to) && from < endOf(was) - EPSILON && to > (Number(was.startTime) || 0) + EPSILON
+    }) : []
+    const chosen = (naming.length > 0 ? naming : cutting.length > 0 ? cutting : touching).at(-1)
     // A change no logged op explains was made by hand outside the logged
     // mutators (FILM-2012: AI changes always go through the log).
     const by = chosen?.by ?? 'user'
@@ -107,7 +153,9 @@ export function buildExplainWhyReport({ log, versions, versionId, before, after,
   const tracks = new Map([...(timelineBefore.tracks || []), ...(timelineAfter.tracks || [])].map((track) => [track.id, track]))
   const isAudio = (clip) => tracks.get(clip?.trackId)?.type === 'audio'
   const clipsBefore = new Map((timelineBefore.clips || []).map((clip) => [clip.id, clip]))
-  const clipsAfter = new Map((timelineAfter.clips || []).map((clip) => [clip.id, clip]))
+  const clipsAfter = foldSplitPieces(clipsBefore, new Map((timelineAfter.clips || []).map((clip) => [clip.id, clip])))
+  const linkedPicture = new Set([...clipsBefore.values(), ...clipsAfter.values()]
+    .filter((clip) => clip.linkGroupId && !isAudio(clip)).map((clip) => clip.linkGroupId))
   const commonIds = new Set([...clipsBefore.keys()].filter((id) => clipsAfter.has(id)))
   const orderBefore = relativeOrder(clipsBefore.values(), commonIds)
   const orderAfter = relativeOrder(clipsAfter.values(), commonIds)
@@ -136,6 +184,8 @@ export function buildExplainWhyReport({ log, versions, versionId, before, after,
       audio.push(audioChange({ kind: 'gain', clipId: id, label, before: was.gainDb ?? 0, after: now.gainDb ?? 0, ...attribution }))
     }
     const scene = sceneOf(was) ?? sceneOf(now)
+    // A shot's own linked sound changes with its picture; the picture line says it.
+    if (isAudio(clip) && clip.linkGroupId && linkedPicture.has(clip.linkGroupId)) continue
     for (const kind of kinds) {
       if (isAudio(clip) && scene === null) {
         audio.push(audioChange({ kind, clipId: id, label, before: durationOf(was), after: durationOf(now), ...attribution }))
