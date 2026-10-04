@@ -15,7 +15,8 @@ export { loudnessTargetFor }
 // export's loudnorm pass lands within ±1 LU, FILM-2016).
 export const LOUDNESS_TOLERANCE_LU = 1
 // Platforms re-encode; a true peak above this clips after their AAC pass
-// (the export's loudnorm ceiling, audioBusMix.mjs LOUDNORM_TRUE_PEAK_DB).
+// (the export mix stops lower, audioBusMix.mjs LOUDNORM_TRUE_PEAK_DB -2 dBTP,
+// so the AAC encode's overshoot stays under this ceiling).
 export const TRUE_PEAK_MAX_DBTP = -1
 export const DURATION_TOLERANCE = 0.05
 
