@@ -5,7 +5,6 @@
   "main": "electron/main.js",
   "scripts": {
     "test": "node ./scripts/run-all-tests.mjs",
-    "test:studio": "node --test \"tests/studio/**/*.test.mjs\"",
     "test:media-preparation": "node --test ./tests/mediaPreparation.test.cjs ./tests/mediaPreparationBridge.test.cjs ./tests/mediaPreparationServices.test.mjs ./src/utils/mediaPreparationStatus.test.mjs ./src/utils/mediaPreparationTarget.test.mjs",
     "check:media-preparation": "node ./scripts/check-media-preparation.cjs",
     "test:studio": "node ./scripts/run-studio-tests.mjs",
