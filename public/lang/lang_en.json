@@ -1437,6 +1437,8 @@
       "planLabel": "Plan: {{instruction}}",
       "total": "Episode {{change}}",
       "touchesTitle": "Touches your edits",
+      "needsOkTotal": "With these: {{seconds}} s",
+      "needsOkAsk": "Plan with these lines dropped",
       "cardTouchesEdits": "This scene includes clips you edited by hand.",
       "approveScene": "Approve scene {{scene}}",
       "sceneApplied": "Applied",

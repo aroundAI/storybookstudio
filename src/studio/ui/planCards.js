@@ -113,6 +113,27 @@ const normalizeTouch = (entry) => {
   return { clipId: entry.clipId, scene: Number.isInteger(entry.scene) ? entry.scene : null, text: String(entry.text || `A clip you edited by hand (${entry.clipId}) is in this plan.`) }
 }
 
+// FILM-2013 hit_duration's second tier: lines it would drop to reach the
+// target, proposed apart from the plan ("Needs your OK"); approving asks the
+// compiler again with the drops included, as a new plan.
+const normalizeProposal = (entry) => {
+  if (!entry || typeof entry !== 'object' || !Array.isArray(entry.lines) || !entry.approveWith?.tool) return null
+  return {
+    kind: String(entry.kind || 'proposal'),
+    title: String(entry.title || 'Needs your OK'),
+    why: typeof entry.why === 'string' ? entry.why : null,
+    durationAfter: finite(entry.durationAfter),
+    lines: entry.lines.map((line) => ({
+      key: String(line.lineId ?? line.sequenceNumber),
+      label: `Scene ${line.scene} · line ${line.sequenceNumber} · ${line.character}`,
+      text: String(line.text || ''),
+      reason: String(line.reason || ''),
+      seconds: finite(line.seconds),
+    })),
+    approveWith: entry.approveWith,
+  }
+}
+
 export function normalizePlan(payload, { sceneHeadings = new Map(), receivedAt = null } = {}) {
   if (!payload || typeof payload !== 'object' || typeof payload.planId !== 'string' || !payload.planId) return null
   const intent = typeof payload.intent === 'string' && payload.intent ? payload.intent : null
@@ -168,6 +189,7 @@ export function normalizePlan(payload, { sceneHeadings = new Map(), receivedAt =
     totalLabel: expected ? formatDurationChange(expected.durationBefore, expected.durationAfter) : null,
     cards,
     touchesUserEdits,
+    proposals: (Array.isArray(payload.proposals) ? payload.proposals : []).map(normalizeProposal).filter(Boolean),
     steps,
     unresolved: (Array.isArray(payload.unresolved) ? payload.unresolved : []).map((entry) => String(entry?.reason || entry)),
     report: payload.report ?? null,
