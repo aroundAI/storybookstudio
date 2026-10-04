@@ -355,6 +355,7 @@ function createCapabilityTools({
   // FILM-2017: studioMain.deliver (electron/studio/deliver.js).
   getDeliver = () => null,
   getSnapshot = () => null,
+  analyzeAudio = null,
   review = null,
   repair = null,
   reviewTools = null,
@@ -366,7 +367,7 @@ function createCapabilityTools({
   const reviewRound = review || (reviewTools ? (args) => reviewTools.review(args) : null)
   // The autoRepair loop's repair: the one passed in, else FILM-2014's compiler in the renderer.
   const repairPlan = repair || (async ({ issues }) => {
-    const compiled = await renderer('studio_compile', { intent: 'repair', scope: {}, params: { issues }, writable: writable() })
+    const compiled = await compileWithReads({ intent: 'repair', scope: {}, params: { issues }, writable: writable() })
     return compiled?.studioError ? null : compiled
   })
 
@@ -390,6 +391,25 @@ function createCapabilityTools({
   }
 
   const writable = () => (writableTools ? [...writableTools] : undefined)
+
+  // Compile-time audio reads run here (ffmpeg, electron/studio/audioReads.js)
+  // when the server has an analyser, never as Web Audio in the renderer.
+  async function compileWithReads(payload) {
+    if (typeof analyzeAudio !== 'function') return renderer('studio_compile', payload)
+    const planned = await renderer('studio_compile_reads', payload)
+    if (planned?.studioError) return planned
+    const items = planned?.items || []
+    const results = {}
+    const failures = []
+    for (const item of items) {
+      try {
+        results[item.clipId] = await analyzeAudio(item)
+      } catch (error) {
+        failures.push({ clipId: item.clipId, warning: error?.message || String(error) })
+      }
+    }
+    return renderer('studio_compile', { ...payload, reads: { requested: items.length, results, failures } })
+  }
 
   // previewAfter[i] = j: step i targets what step j creates (a re-sync's
   // replace_clip_with_asset names the asset its import step adds), so its own
@@ -433,27 +453,27 @@ function createCapabilityTools({
   const PLAN_KINDS = {
     edit: {
       tool: 'studio_edit',
-      compile: (args) => renderer('studio_compile', { intent: args.intent, scope: args.scope || {}, params: args.params || {}, writable: writable() }),
+      compile: (args) => compileWithReads({ intent: args.intent, scope: args.scope || {}, params: args.params || {}, writable: writable() }),
       key: (args) => ({ intent: args.intent, scope: args.scope || {}, params: args.params || {} }),
       versionName: (compiled, args) => String(args.params?.versionName || `AI: ${compiled.prompt}`).slice(0, 120),
     },
     audio: {
       tool: 'studio_edit_audio',
-      compile: (args) => renderer('studio_compile', { intent: `audio:${args.intent}`, scope: args.scope || {}, params: args.params || {}, writable: writable() }),
+      compile: (args) => compileWithReads({ intent: `audio:${args.intent}`, scope: args.scope || {}, params: args.params || {}, writable: writable() }),
       key: (args) => ({ intent: `audio:${args.intent}`, scope: args.scope || {}, params: args.params || {} }),
       applyArgs: (args) => ({ intent: args.intent, scope: args.scope || {}, params: args.params || {} }),
       versionName: (compiled) => `AI: ${compiled.prompt}`.slice(0, 120),
     },
     captions: {
       tool: 'studio_add_captions',
-      compile: (args) => renderer('studio_compile', { intent: 'captions:add_captions', scope: {}, params: { language: args.language, ...(args.style ? { style: args.style } : {}) }, writable: writable() }),
+      compile: (args) => compileWithReads({ intent: 'captions:add_captions', scope: {}, params: { language: args.language, ...(args.style ? { style: args.style } : {}) }, writable: writable() }),
       key: (args) => ({ intent: 'captions:add_captions', scope: {}, params: { language: args.language, ...(args.style ? { style: args.style } : {}) } }),
       applyArgs: (args) => ({ language: args.language, ...(args.style ? { style: args.style } : {}) }),
       versionName: (compiled, args) => `AI: captions (${args.language})`,
     },
     repair: {
       tool: 'studio_repair',
-      compile: (args) => renderer('studio_compile', { intent: 'repair', scope: {}, params: { issues: args.issues || [] }, writable: writable() }),
+      compile: (args) => compileWithReads({ intent: 'repair', scope: {}, params: { issues: args.issues || [] }, writable: writable() }),
       key: (args) => ({ intent: 'repair', scope: {}, params: { issues: args.issues || [] } }),
       applyArgs: (args) => ({ issues: args.issues || [] }),
       versionName: () => 'AI: repair',

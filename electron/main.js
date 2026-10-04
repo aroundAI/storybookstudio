@@ -7831,6 +7831,8 @@ app.whenReady().then(async () => {
     // FILM-2013: the agent profile's cloud tools and the plan-card event.
     getStudioCloud: () => studioMain.cloud,
     getStudioDeliver: () => studioMain.deliver,
+    // FILM-2013: compile-time audio reads with ffmpeg, never Web Audio in the window.
+    analyzeAudio: (item) => studioMain.audioReads.analyzeClip(item),
     emitPlanProposed: (proposal) => studioMain.emitPlanProposed(proposal),
     // FILM-2014: preview tiers, QA and the critic run here; the document and
     // the op log come from the renderer.

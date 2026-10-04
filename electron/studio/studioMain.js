@@ -8,6 +8,7 @@ const secrets = require('./secrets')
 const { createStudioCloud } = require('./cloud')
 const { createStudioDeliver } = require('./deliver')
 const { createDeliveryPath } = require('./deliveryPath')
+const { createAudioReads } = require('./audioReads')
 
 // Velorn's own temp working directories; Electron has no "cache" path name.
 const CACHE_DIR_NAMES = ['comfystudio-shot-audio', 'comfystudio-caption-audio']
@@ -107,7 +108,11 @@ function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, get
     return server.callCapabilityTool(String(name || ''), args, { source: 'in-app' })
   })
 
+  // FILM-2013: the intent compilers' audio reads, with ffmpeg in this process.
+  const audioReads = createAudioReads({ getFfmpegPath })
+
   return {
+    audioReads,
     // Plan cards to the AI panel (FILM-2015), from any client.
     emitPlanProposed(proposal) {
       const mainWindow = getMainWindow()
