@@ -103,8 +103,10 @@ const studioMain = createStudioMain({
   app,
   ipcMain,
   safeStorage,
+  shell,
   getMainWindow: () => mainWindow,
   getMcpServer: () => mcpServer,
+  getFfprobePath: () => ffprobePath,
 })
 let downloadSaveDialogHandlerInstalled = false
 let downloadCounter = 0

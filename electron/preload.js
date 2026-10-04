@@ -98,6 +98,37 @@ contextBridge.exposeInMainWorld('electronAPI', {
     sync: (projectDir, relPath) => ipcRenderer.invoke('studioEdits:sync', projectDir, relPath),
   },
 
+  // StoryBook cloud client (FILM-2011): main process only; no token or
+  // signed URL crosses this bridge.
+  studio: (() => {
+    const subscribe = (channel) => (callback) => {
+      const handler = (_event, payload) => callback(payload)
+      ipcRenderer.on(channel, handler)
+      return () => ipcRenderer.removeListener(channel, handler)
+    }
+    return {
+      authStatus: (args) => ipcRenderer.invoke('studio:authStatus', args),
+      signIn: (args) => ipcRenderer.invoke('studio:signIn', args),
+      signOut: (args) => ipcRenderer.invoke('studio:signOut', args),
+      listProjects: (args) => ipcRenderer.invoke('studio:listProjects', args),
+      listEpisodes: (args) => ipcRenderer.invoke('studio:listEpisodes', args),
+      pull: (args) => ipcRenderer.invoke('studio:pull', args),
+      jobStatus: (args) => ipcRenderer.invoke('studio:jobStatus', args),
+      checkUpdates: () => ipcRenderer.invoke('studio:checkUpdates'),
+      pullBuilt: (args) => ipcRenderer.invoke('studio:pullBuilt', args),
+      projectOpened: (args) => ipcRenderer.invoke('studio:projectOpened', args),
+      projectClosed: () => ipcRenderer.invoke('studio:projectClosed'),
+      recordEvent: (args) => ipcRenderer.invoke('studio:recordEvent', args),
+      networkOnline: () => ipcRenderer.invoke('studio:networkOnline'),
+      rendererReady: () => ipcRenderer.invoke('studio:rendererReady'),
+      onAuthChanged: subscribe('studio:auth-changed'),
+      onJobProgress: subscribe('studio:job-progress'),
+      onPullReady: subscribe('studio:pull-ready'),
+      onOpenRequest: subscribe('studio:open-request'),
+      onPlanProposed: subscribe('studio:plan-proposed'),
+    }
+  })(),
+
   // ============================================
   // Export Operations
   // ============================================
