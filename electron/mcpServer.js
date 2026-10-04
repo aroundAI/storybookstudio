@@ -3,6 +3,7 @@ const fs = fsSync.promises
 const http = require('http')
 const path = require('path')
 const { spawnSync } = require('child_process')
+const { authorizeMcpRequest, isLoopbackOrigin } = require('./studio/mcpAuth')
 
 const DEFAULT_MCP_PORT = 19790
 const MCP_PROTOCOL_VERSION = '2024-11-05'
@@ -10531,8 +10532,10 @@ class ComfyStudioMcpServer {
     validateComfyUINodes = null,
     listComfyStudioWorkflows = null,
     inspectComfyStudioWorkflow = null,
+    authSecret = null,
   } = {}) {
     this.port = port
+    this.authSecret = typeof authSecret === 'string' && authSecret ? authSecret : null
     this.version = version
     this.performAction = typeof performAction === 'function' ? performAction : null
     this.diagnoseComfyUIConnection = typeof diagnoseComfyUIConnection === 'function' ? diagnoseComfyUIConnection : null
@@ -10610,6 +10613,15 @@ class ComfyStudioMcpServer {
 
   async handleRequest(req, res) {
     this.writeCorsHeaders(res)
+
+    // FILM-2010: loopback Host/Origin (403), then the bearer from userData/mcp-secret (401).
+    // A CORS preflight carries no Authorization header, so it is checked for Host/Origin only.
+    const auth = authorizeMcpRequest(req.headers, this.authSecret, { requireBearer: req.method !== 'OPTIONS' })
+    if (!auth.ok) {
+      if (auth.status === 401) res.setHeader('WWW-Authenticate', 'Bearer realm="storybookstudio-mcp"')
+      this.writeJson(res, auth.status, { error: auth.reason })
+      return
+    }
 
     if (req.method === 'OPTIONS') {
       res.writeHead(204)
@@ -14767,9 +14779,11 @@ class ComfyStudioMcpServer {
   }
 
   writeCorsHeaders(res) {
-    res.setHeader('Access-Control-Allow-Origin', 'http://127.0.0.1')
+    const origin = res.req?.headers?.origin
+    res.setHeader('Access-Control-Allow-Origin', isLoopbackOrigin(origin) ? origin : 'http://127.0.0.1')
+    res.setHeader('Vary', 'Origin')
     res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, MCP-Protocol-Version')
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept, MCP-Protocol-Version, Authorization')
   }
 
   writeJson(res, statusCode, payload) {

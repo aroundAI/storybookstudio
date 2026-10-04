@@ -15,6 +15,7 @@ import FeedbackSection from './FeedbackSection'
 import ComfyLauncherSettingsSection from './ComfyLauncherSettingsSection'
 import ComfyLauncherLogViewer from './ComfyLauncherLogViewer'
 import ApiKeyDialog from './ApiKeyDialog'
+import McpConnectCommands from '../studio/McpConnectCommands'
 import {
   COMFY_PARTNER_KEY_CHANGED_EVENT,
   COMFY_PARTNER_WORKFLOWS,
@@ -1162,8 +1163,6 @@ function GeneralTab({ initialSection = null }) {
       break
     case 'agents': {
       const mcpUrl = mcpStatus?.url || 'http://127.0.0.1:19790/mcp'
-      const codexCommand = `codex mcp add velorn --url ${mcpUrl}`
-      const claudeCommand = `claude mcp add --transport http velorn ${mcpUrl}`
       activeSectionContent = (
         <div className="space-y-4">
           <div className="rounded-lg border border-sf-dark-700 bg-sf-dark-900/60 px-3 py-3">
@@ -1209,37 +1208,7 @@ function GeneralTab({ initialSection = null }) {
             </p>
           </div>
 
-          <div className="space-y-3">
-            <div className="rounded-lg border border-sf-dark-700 bg-sf-dark-900/60 px-3 py-3">
-              <div className="mb-2 text-xs font-semibold text-sf-text-primary">Codex</div>
-              <div className="flex items-center gap-2">
-                <code className="min-w-0 flex-1 truncate rounded bg-black/30 px-2 py-1.5 text-[11px] text-sf-text-secondary">{codexCommand}</code>
-                <button
-                  type="button"
-                  onClick={() => { void handleCopyMcpText('codex', codexCommand) }}
-                  className="inline-flex flex-shrink-0 items-center gap-1 rounded bg-sf-dark-700 px-2 py-1.5 text-[11px] text-sf-text-secondary hover:bg-sf-dark-600"
-                >
-                  <Copy className="h-3 w-3" />
-                  {mcpCopied === 'codex' ? 'Copied' : 'Copy'}
-                </button>
-              </div>
-            </div>
-
-            <div className="rounded-lg border border-sf-dark-700 bg-sf-dark-900/60 px-3 py-3">
-              <div className="mb-2 text-xs font-semibold text-sf-text-primary">Claude Code</div>
-              <div className="flex items-center gap-2">
-                <code className="min-w-0 flex-1 truncate rounded bg-black/30 px-2 py-1.5 text-[11px] text-sf-text-secondary">{claudeCommand}</code>
-                <button
-                  type="button"
-                  onClick={() => { void handleCopyMcpText('claude', claudeCommand) }}
-                  className="inline-flex flex-shrink-0 items-center gap-1 rounded bg-sf-dark-700 px-2 py-1.5 text-[11px] text-sf-text-secondary hover:bg-sf-dark-600"
-                >
-                  <Copy className="h-3 w-3" />
-                  {mcpCopied === 'claude' ? 'Copied' : 'Copy'}
-                </button>
-              </div>
-            </div>
-          </div>
+          <McpConnectCommands copiedId={mcpCopied} onCopy={handleCopyMcpText} />
 
           <div className="rounded-lg border border-sf-dark-700 bg-sf-dark-900/60 px-3 py-3">
             <div className="text-xs font-semibold text-sf-text-primary">Available tools</div>

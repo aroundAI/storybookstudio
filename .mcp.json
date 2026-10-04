@@ -1,8 +1,11 @@
 {
   "mcpServers": {
-    "velorn": {
+    "storybookstudio": {
       "type": "http",
-      "url": "http://127.0.0.1:19790/mcp"
+      "url": "http://127.0.0.1:19790/mcp",
+      "headers": {
+        "Authorization": "Bearer ${STORYBOOKSTUDIO_MCP_TOKEN}"
+      }
     }
   }
 }
