@@ -14,6 +14,11 @@ import InspectorPanel from './components/InspectorPanel'
 import ResizeHandle from './components/ResizeHandle'
 import SettingsModal from './components/SettingsModal'
 import GettingStartedModal from './components/GettingStartedModal'
+import Welcome from './components/studio/Welcome'
+import AIPanel from './components/studio/AIPanel'
+import SceneStrip from './components/studio/SceneStrip'
+import { StudioOverlays, useStudioApp } from './components/studio/StudioRoot'
+import StudioBoundary from './components/studio/StudioBoundary'
 import WelcomeScreen from './components/WelcomeScreen'
 import BottomBar from './components/BottomBar'
 import useProjectStore from './stores/projectStore'
@@ -480,6 +485,9 @@ function App() {
   useEffect(() => {
     initialize()
   }, [initialize])
+
+  // FILM-2015: StoryBook sign-in, picker, AI panel, Review and Deliver.
+  useStudioApp()
   
   // Auto-save functionality. Saves only when something actually changed —
   // the save path serializes the whole project and captures a playhead
@@ -621,7 +629,12 @@ function App() {
 
   // Show welcome screen if no project is open
   if (!currentProject) {
-    return <WelcomeScreen />
+    return (
+      <>
+        <StudioBoundary name="welcome" fallback={<WelcomeScreen />}><Welcome /></StudioBoundary>
+        <StudioBoundary name="overlays"><StudioOverlays /></StudioBoundary>
+      </>
+    )
   }
 
   return (
@@ -1033,6 +1046,7 @@ function App() {
                   )}
                 </div>
                 )}
+                <StudioBoundary name="scene-strip"><SceneStrip /></StudioBoundary>
                 {/* Bottom editor view switcher */}
                 <div className="flex-shrink-0 h-7 px-2 bg-sf-dark-900 border-y border-sf-dark-700 flex items-center justify-between">
                   <div className="flex items-center gap-1">
@@ -1134,10 +1148,14 @@ function App() {
               </>
             )}
           </>
+          {/* FILM-2015: the AI panel, right of the inspector */}
+          <StudioBoundary name="ai-panel"><AIPanel /></StudioBoundary>
         </div>
         )}
       </div>
       
+      <StudioBoundary name="overlays"><StudioOverlays /></StudioBoundary>
+
       {/* Bottom bar: settings menu + undo/redo */}
       <BottomBar
         projectName={currentProject?.name}

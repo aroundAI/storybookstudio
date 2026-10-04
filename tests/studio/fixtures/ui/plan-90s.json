@@ -1,0 +1,35 @@
+{
+  "source": "agent",
+  "planId": "plan-fixture-90s",
+  "instruction": "make it 90 seconds",
+  "scope": { "scenes": [] },
+  "baseVersionId": "v1",
+  "expected": { "durationBefore": 99, "durationAfter": 90 },
+  "cards": [
+    {
+      "scene": 1,
+      "heading": "INT. RESEARCH LAB - NIGHT (1)",
+      "durationBefore": 19,
+      "durationAfter": 15,
+      "changes": [
+        { "text": "Remove S1.4 ARJUN reacts to the alarm (4.0 s)", "reason": "Second reaction to the same alarm; the scene already lands on Maya's look.", "clipIds": ["clip-4", "clip-64"] }
+      ]
+    },
+    {
+      "scene": 2,
+      "heading": "INT. RESEARCH LAB - NIGHT (2)",
+      "durationBefore": 20,
+      "durationAfter": 15,
+      "changes": [
+        { "text": "Remove S2.4 ARJUN reacts to the alarm (5.0 s)", "reason": "Repeats the beat of S2.2; cutting it brings the episode to the 90 s target.", "clipIds": ["clip-8", "clip-68"] }
+      ]
+    }
+  ],
+  "touchesUserEdits": [
+    { "clipId": "clip-8", "scene": 2, "text": "You trimmed S2.4 by hand; this plan removes it." }
+  ],
+  "steps": [
+    { "tool": "delete_clips", "arguments": { "clipIds": ["clip-4", "clip-64"], "ripple": true, "previewOnly": true, "studioMeta": { "reason": "Second reaction to the same alarm; the scene already lands on Maya's look.", "scene": 1 } }, "reason": "Second reaction to the same alarm; the scene already lands on Maya's look.", "scene": 1 },
+    { "tool": "delete_clips", "arguments": { "clipIds": ["clip-8", "clip-68"], "ripple": true, "previewOnly": true, "studioMeta": { "reason": "Repeats the beat of S2.2; cutting it brings the episode to the 90 s target.", "scene": 2 } }, "reason": "Repeats the beat of S2.2; cutting it brings the episode to the 90 s target.", "scene": 2 }
+  ]
+}

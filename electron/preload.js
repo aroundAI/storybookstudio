@@ -135,6 +135,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
       onPlanProposed: subscribe('studio:plan-proposed'),
       // FILM-2013: the in-app agent calls the agent profile's capability tools.
       callCapability: (name, args) => ipcRenderer.invoke('studio:callCapability', name, args),
+      // FILM-2015: the quit prompt (electron/studio/studioUi.js).
+      setPendingWork: (args) => ipcRenderer.invoke('studio:setPendingWork', args),
+      confirmQuit: () => ipcRenderer.invoke('studio:confirmQuit'),
+      onCloseRequested: subscribe('studio:close-requested'),
     }
   })(),
 
