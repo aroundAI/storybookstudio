@@ -90,6 +90,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
    */
   writeFileFromArrayBuffer: (filePath, arrayBuffer) => ipcRenderer.invoke('fs:writeFileFromArrayBuffer', filePath, arrayBuffer),
 
+  // Studio op log, versions and snapshots: <projectDir>/edits/** only (FILM-2012).
+  studioEdits: {
+    append: (projectDir, relPath, text) => ipcRenderer.invoke('studioEdits:append', projectDir, relPath, text),
+    read: (projectDir, relPath) => ipcRenderer.invoke('studioEdits:read', projectDir, relPath),
+    write: (projectDir, relPath, text) => ipcRenderer.invoke('studioEdits:write', projectDir, relPath, text),
+    sync: (projectDir, relPath) => ipcRenderer.invoke('studioEdits:sync', projectDir, relPath),
+  },
+
   // ============================================
   // Export Operations
   // ============================================
