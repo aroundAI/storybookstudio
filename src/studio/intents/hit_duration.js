@@ -10,6 +10,7 @@ import {
 } from './shared.js'
 import { dialogueAnalysisReads, scopeScenes, targetBudget, targetNotes, unavailable } from './common.js'
 import { resolveScope } from '../context.js'
+import { dialogueCutMode, planDialogueDrops } from './dialogueDrops.js'
 
 export const INTENT = 'hit_duration'
 export const reads = (context, scope) => dialogueAnalysisReads(context, scopeScenes(context, scope))
@@ -68,6 +69,35 @@ export function compile(context, scope, params = {}) {
     }
   }
 
+  // Tier 2: whole dialogue lines, least important first, as the policy allows.
+  const mode = dialogueCutMode(context)
+  let proposal = null
+  if (left > EPS && mode === 'never') {
+    notes.push(sceneNote(null, `The edit policy does not allow cutting dialogue (allowDialogueCuts: never), so the ${seconds(target)} target is not reached`))
+  } else if (left > EPS) {
+    const drops = planDialogueDrops(context, { scenes, budget: left, existingCuts: cuts, trackIds, target, includeUserEdits: params.includeUserEdits === true })
+    for (const skip of drops.skipped) notes.push(sceneNote(null, `Kept line ${skip.sequenceNumber}: ${skip.why}`))
+    if (drops.lines.length && (mode === 'allow' || params.approveDialogueDrops === true)) {
+      cuts.push(...drops.cuts)
+      left -= drops.removed
+    } else if (drops.lines.length) {
+      const withDrops = finishPlan(context, { intent: INTENT, entries: cutSteps(context, [...cuts, ...drops.cuts], { trackIds }) })
+      proposal = {
+        kind: 'dialogue_drops',
+        title: `Needs your OK: drops ${drops.lines.length} line${drops.lines.length === 1 ? '' : 's'}`,
+        why: `Cutting silence reaches ${seconds(current - (budget - left))}; the ${seconds(target)} target needs ${seconds(left)} more, which only dialogue can give. The edit policy asks before dialogue is cut (allowDialogueCuts: ask).`,
+        lines: drops.lines,
+        removedSeconds: drops.removed,
+        durationAfter: withDrops.expected.durationAfter,
+        approveWith: { params: { ...params, approveDialogueDrops: true } },
+      }
+    }
+  }
+
   notes.push(...targetNotes(context, scenes, { target, current, removed: round3(budget - Math.max(0, left)), params, wholeTimeline }))
-  return finishPlan(context, { intent: INTENT, entries: cutSteps(context, cuts, { trackIds }), notes: notes.length ? notes : [sceneNote(null, 'Nothing to cut')] })
+  const plan = finishPlan(context, { intent: INTENT, entries: cutSteps(context, cuts, { trackIds }), notes: notes.length ? notes : [sceneNote(null, 'Nothing to cut')] })
+  plan.dialogueCuts = mode
+  plan.droppedLines = cuts.filter((cut) => cut.tier === 'dialogue_drop').map((cut) => cut.lineId).filter((id, index, all) => all.indexOf(id) === index)
+  plan.proposals = proposal ? [proposal] : []
+  return plan
 }

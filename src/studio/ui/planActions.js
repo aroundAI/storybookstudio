@@ -65,6 +65,25 @@ async function previewThroughCapability({ store, api, text, scope }) {
   return { ok: true, planId: answer.planId ?? null }
 }
 
+// "Plan with these lines dropped": the compiler's approveWith call (a new
+// preview with the second tier included); its cards arrive as a new plan.
+export async function askWithProposal({ store, api = globalThis.window?.electronAPI, plan, proposal }) {
+  const { patch } = store.getState()
+  const call = proposal?.approveWith
+  if (!call?.tool || typeof api?.studio?.callCapability !== 'function') {
+    patch({ panelError: NOT_AVAILABLE })
+    return { ok: false, code: 'VALIDATION_FAILED' }
+  }
+  patch({ panelError: null, pending: { instruction: `${plan.instruction} (${proposal.title.replace(/^Needs your OK: /, '')})`, planId: null, startedAt: new Date().toISOString() } })
+  const answer = parseCapabilityResult(await api.studio.callCapability(call.tool, call.arguments))
+  if (!answer.success) {
+    patch({ pending: null, panelError: messageOf(answer, 'The plan could not be prepared.') })
+    return { ok: false, code: answer.code }
+  }
+  patch((state) => (state.pending ? { pending: { ...state.pending, planId: answer.planId ?? null } } : {}))
+  return { ok: true, planId: answer.planId ?? null }
+}
+
 async function applyLocally({ plan, scenes, runner }) {
   const steps = stepsForScenes(plan, scenes)
   if (steps.length === 0) return { success: false, error: 'This plan has nothing to apply here.' }

@@ -500,7 +500,13 @@ function createCapabilityTools({
     const key = flow.key(args)
     rememberPlan({ planId, kind, ...key, fingerprint: compiled.fingerprint, planKey: compiled.planKey ?? null, createdAt: clock(), source })
     // touchesUserEdits: clip ids (the cards carry {clipId, label} per scene).
-    const proposal = { phase: 'proposed', planId, source, tool: flow.tool, intent: key.intent, scope: key.scope, params: key.params, instruction: compiled.prompt, expected: compiled.plan.expected, cards: compiled.cards, touchesUserEdits: compiled.plan.touchesUserEdits, reportText: compiled.reportText }
+    // A second tier a compiler only proposes (hit_duration's dialogue drops):
+    // shown apart, never applied with this plan; approving it is a new preview.
+    const proposals = (compiled.plan.proposals || []).map((entry) => ({
+      ...entry,
+      approveWith: { tool: flow.tool, arguments: { ...(flow.applyArgs ? flow.applyArgs(args) : key), ...(entry.approveWith?.params ? { params: entry.approveWith.params } : {}), previewOnly: true } },
+    }))
+    const proposal = { phase: 'proposed', planId, source, tool: flow.tool, proposals, intent: key.intent, scope: key.scope, params: key.params, instruction: compiled.prompt, expected: compiled.plan.expected, cards: compiled.cards, touchesUserEdits: compiled.plan.touchesUserEdits, reportText: compiled.reportText }
     try { emitPlanProposed(proposal) } catch { /* the panel is optional */ }
     return ok({
       previewOnly: true,
@@ -512,6 +518,8 @@ function createCapabilityTools({
       expected: compiled.plan.expected,
       touchesUserEdits: compiled.plan.touchesUserEdits,
       notes: compiled.plan.notes,
+      proposals,
+      dialogueCuts: compiled.plan.dialogueCuts ?? null,
       plan: { steps: compiled.plan.steps, reasons: compiled.plan.reasons, scenes: compiled.plan.scenes },
       stepPreviews,
       report: compiled.report,
