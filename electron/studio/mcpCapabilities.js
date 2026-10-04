@@ -1,5 +1,5 @@
 // The agent profile (FILM-2013): the capability tools the model sees instead
-// of Velorn's primitives (131). The server in electron/mcpServer.js serves them
+// of Velorn's primitives (133 at 438fdb9; scripts/capability-matrix.mjs counts them). The server in electron/mcpServer.js serves them
 // at /mcp?profile=agent (the default); ?profile=expert serves Velorn's tools
 // plus the lifecycle tools marked `expert` below. Both need the FILM-2010
 // bearer.
@@ -173,10 +173,10 @@ const CAPABILITY_TOOLS = Object.freeze([
     name: 'studio_repair',
     profiles: ['agent'],
     owner: 'FILM-2014',
-    available: false,
+    available: true,
     annotations: write,
-    description: 'One plan that fixes the given QA issues by their repairIntent. Not available until FILM-2014.',
-    inputSchema: { type: 'object', required: ['issues'], properties: { issues: { type: 'array', items: { type: 'object' } }, previewOnly: previewOnlySchema }, additionalProperties: false },
+    description: 'One plan that fixes the given QA issues by their repairIntent, previewed and applied like studio_edit (planId). Compiled by FILM-2014\'s repair compiler; a build without it answers not available yet.',
+    inputSchema: { type: 'object', required: ['issues'], properties: { issues: { type: 'array', items: { type: 'object' } }, previewOnly: previewOnlySchema, planId: { type: 'string' } }, additionalProperties: false },
   },
   {
     name: 'studio_render_preview',
@@ -361,6 +361,11 @@ function createCapabilityTools({
   newId = () => crypto.randomUUID(),
 } = {}) {
   const plans = new Map()
+  // The autoRepair loop's repair: the one passed in, else FILM-2014's compiler in the renderer.
+  const repairPlan = repair || (async ({ issues }) => {
+    const compiled = await renderer('studio_compile', { intent: 'repair', scope: {}, params: { issues }, writable: writable() })
+    return compiled?.studioError ? null : compiled
+  })
 
   const renderer = async (action, payload = {}) => {
     if (typeof performAction !== 'function') {
@@ -443,6 +448,13 @@ function createCapabilityTools({
       applyArgs: (args) => ({ language: args.language, ...(args.style ? { style: args.style } : {}) }),
       versionName: (compiled, args) => `AI: captions (${args.language})`,
     },
+    repair: {
+      tool: 'studio_repair',
+      compile: (args) => renderer('studio_compile', { intent: 'repair', scope: {}, params: { issues: args.issues || [] }, writable: writable() }),
+      key: (args) => ({ intent: 'repair', scope: {}, params: { issues: args.issues || [] } }),
+      applyArgs: (args) => ({ issues: args.issues || [] }),
+      versionName: () => 'AI: repair',
+    },
     resync: {
       tool: 'studio_apply_updates',
       compile: () => renderer('studio_resync_plan', { writable: writable() }),
@@ -464,7 +476,8 @@ function createCapabilityTools({
     const planId = newId()
     const key = flow.key(args)
     rememberPlan({ planId, kind, ...key, fingerprint: compiled.fingerprint, planKey: compiled.planKey ?? null, createdAt: clock(), source })
-    const proposal = { phase: 'proposed', planId, source, intent: key.intent, scope: key.scope, cards: compiled.cards, touchesUserEdits: compiled.plan.touchesUserEdits, reportText: compiled.reportText }
+    // touchesUserEdits: clip ids (the cards carry {clipId, label} per scene).
+    const proposal = { phase: 'proposed', planId, source, tool: flow.tool, intent: key.intent, scope: key.scope, params: key.params, instruction: compiled.prompt, expected: compiled.plan.expected, cards: compiled.cards, touchesUserEdits: compiled.plan.touchesUserEdits, reportText: compiled.reportText }
     try { emitPlanProposed(proposal) } catch { /* the panel is optional */ }
     return ok({
       previewOnly: true,
@@ -515,7 +528,7 @@ function createCapabilityTools({
     let stoppedBecause = null
     if (args.autoRepair === true && !run.failed) {
       for (let round = 1; round <= MAX_REPAIR_ROUNDS; round += 1) {
-        if (typeof review !== 'function' || typeof repair !== 'function') {
+        if (typeof review !== 'function' || typeof repairPlan !== 'function') {
           stoppedBecause = 'QA and repair are not available yet (FILM-2014: studio_render_preview, studio_review, studio_repair); one round ran'
           break
         }
@@ -528,7 +541,7 @@ function createCapabilityTools({
           stoppedBecause = `QA still has ${qa.issues.length} issue${qa.issues.length === 1 ? '' : 's'} after ${MAX_REPAIR_ROUNDS} rounds; they are left as cards`
           break
         }
-        const fix = await repair({ issues: qa.issues, versionId: version.id })
+        const fix = await repairPlan({ issues: qa.issues, versionId: version.id })
         if (!fix?.plan?.steps?.length) {
           stoppedBecause = 'No repair plan for the remaining issues; they are left as cards'
           break
@@ -651,6 +664,8 @@ function createCapabilityTools({
           return failure(error?.code || 'VALIDATION_FAILED', error?.message || String(error), error?.details)
         }
       }
+      case 'studio_repair':
+        return planTool('repair')(args, { source })
       case 'studio_open_episode':
         return cloudCall(tool, 'openEpisode', { episodeId: args.episodeId })
       case 'studio_get_job_status':
