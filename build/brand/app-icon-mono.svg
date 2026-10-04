@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="StorybookStudio">
+<title>StorybookStudio</title>
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#262626"/><stop offset="1" stop-color="#0A0A0A"/></linearGradient><mask id="sb-app-perf" maskUnits="userSpaceOnUse" x="0" y="0" width="256" height="256"><rect width="256" height="256" fill="#fff"/><g fill="#000"><rect x="172.5" y="139" width="13" height="14" rx="3.5"/><rect x="172.5" y="161" width="13" height="14" rx="3.5"/><rect x="172.5" y="183" width="13" height="14" rx="3.5"/></g></mask></defs>
+<rect width="1024" height="1024" fill="url(#bg)"/><g transform="translate(512 512) scale(3.05) translate(-128 -128)"><g transform="translate(128 128) skewX(-12) translate(-128 -128)"><path d="M162 26H118A62 62 0 0 0 118 150H138A18 18 0 0 1 138 186H70V230H138A62 62 0 0 0 138 106H118A18 18 0 0 1 118 70H186V50Z" fill="#E5E7EB" mask="url(#sb-app-perf)"/><path d="M162 26L186 50H162Z" fill="#E5E7EB" fill-opacity="0.55"/></g></g>
+</svg>

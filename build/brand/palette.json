@@ -1,0 +1,49 @@
+{
+  "$comment": "StoryBook brand palette (brand board 2). The marks use the blue → violet gradient; the rest are UI and accent colours.",
+  "colors": {
+    "midnight": {
+      "hex": "#0B0F1A",
+      "role": "Primary dark ground: app icon, splash, social"
+    },
+    "slate": { "hex": "#111827", "role": "Raised dark surface" },
+    "navy": {
+      "hex": "#1F2A44",
+      "role": "Top of the app-icon ground, dark cards"
+    },
+    "blue": { "hex": "#3B82F6", "role": "Gradient start, primary action" },
+    "violet": { "hex": "#8B5CF6", "role": "Gradient end" },
+    "magenta": { "hex": "#EC4899", "role": "Accent (Screenplay Editor)" },
+    "cyan": { "hex": "#22D3EE", "role": "Accent, glows (Audio Studio)" },
+    "purple": {
+      "hex": "#A855F7",
+      "role": "Gradient highlight at the monogram's tip"
+    },
+    "teal": { "hex": "#10B981", "role": "Success, Audio Studio" },
+    "white": { "hex": "#FFFFFF", "role": "Wordmark on dark" }
+  },
+  "gradients": {
+    "brand": {
+      "stops": [
+        { "offset": 0, "color": "#3B82F6" },
+        { "offset": 0.62, "color": "#8B5CF6" },
+        { "offset": 1, "color": "#A855F7" }
+      ],
+      "direction": "bottom-left to top-right"
+    }
+  },
+  "type": {
+    "wordmark": {
+      "family": "Outfit",
+      "weight": 600,
+      "tracking": "-0.012em",
+      "license": "OFL-1.1",
+      "outlined": true
+    },
+    "tagline": {
+      "family": "Outfit",
+      "weight": 400,
+      "tracking": "0.32em (caps) / 0.04em (sentence)",
+      "outlined": true
+    }
+  }
+}
