@@ -1,3 +1,5 @@
+import { stampProjectVersionForSave } from '../studio/projectVersion.js'
+
 /**
  * File System Service
  * Handles all file system operations for project management
@@ -241,8 +243,7 @@ const writeProjectSnapshot = async (projectDir, projectJson, timestamp) => {
 export const saveProject = async (projectDir, projectData) => {
   const saveTimestamp = new Date()
   const dataWithMeta = {
-    ...projectData,
-    version: '1.0',
+    ...stampProjectVersionForSave(projectData),
     modified: saveTimestamp.toISOString(),
   }
   const serializedProject = JSON.stringify(dataWithMeta, null, 2)

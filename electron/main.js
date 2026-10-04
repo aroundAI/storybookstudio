@@ -28,6 +28,7 @@ const {
   probeStreamHasAlpha,
 } = require('./mediaAlpha')
 const { registerCaptionWhisperHandlers } = require('./captionWhisper')
+const { registerStudioEditsHandlers } = require('./studio/editsFiles')
 const {
   cancelRtxVideoUpscale,
   checkRtxRuntime,
@@ -4661,6 +4662,8 @@ registerCaptionWhisperHandlers({
   ffmpegPath,
   getMainWindow: () => mainWindow,
 })
+// Studio op log, versions and snapshots under <project>/edits/ (FILM-2012).
+registerStudioEditsHandlers({ ipcMain })
 
 ipcMain.handle('captions:mixTimelineAudio', async (event, options = {}) => {
   const { buildAudioVolumeEnvelopeFilter } = await import('./audioVolumeEnvelope.mjs')

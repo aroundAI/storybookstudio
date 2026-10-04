@@ -1,0 +1,15 @@
+{
+  "name": "Legacy Single Timeline",
+  "version": "1.0",
+  "created": "2025-01-01T10:00:00.000Z",
+  "modified": "2025-01-02T10:00:00.000Z",
+  "settings": { "width": 1280, "height": 720, "fps": 30 },
+  "timeline": {
+    "duration": 60,
+    "zoom": 100,
+    "tracks": [{ "id": "video-1", "name": "Video 1", "type": "video", "muted": false, "locked": false, "visible": true }],
+    "clips": [],
+    "transitions": []
+  },
+  "assets": []
+}
