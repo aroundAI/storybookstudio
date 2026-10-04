@@ -83,7 +83,10 @@ export async function loadRendererModules() {
   }
 }
 
-export async function startStudioHarness(m, { shots = 20, runRead = silentLinesAnalysis(), packageTransform = null } = {}) {
+// FILM-2014: `media: true` writes FFmpeg-made media for every asset (the
+// preview tiers read real files), and `review` passes main.js's reviewTools
+// to the server, reading the document over the same bridge.
+export async function startStudioHarness(m, { shots = 20, runRead = silentLinesAnalysis(), packageTransform = null, media = false, review = null } = {}) {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'studio-capabilities-'))
   const pkg = packageTransform ? packageTransform(loadFixture(shots)) : loadFixture(shots)
   const { project, files } = buildProject({ package: pkg, probedAssets: probesFor(pkg) })
@@ -92,6 +95,7 @@ export async function startStudioHarness(m, { shots = 20, runRead = silentLinesA
     await writeFile(path.join(dir, relative), text)
   }
   await writeFile(path.join(dir, 'project.comfystudio'), `${JSON.stringify(project, null, 2)}\n`)
+  if (media) await (await import('./review-media.mjs')).writeMediaFor(project, dir)
 
   const proposals = []
   const secret = 'harness-bearer-secret'
@@ -134,6 +138,14 @@ export async function startStudioHarness(m, { shots = 20, runRead = silentLinesA
       return result
     },
     emitPlanProposed: (proposal) => proposals.push(proposal),
+    reviewTools: review ? review({
+      getReviewContext: async (payload) => {
+        const result = await m.mcp.runMcpAction('studio_review_context', payload || {})
+        if (result?.studioError) throw Object.assign(new Error(result.studioError.message), { code: result.studioError.code })
+        return result
+      },
+      appendOpLog: (entry) => m.mcp.runMcpAction('studio_append_oplog', entry),
+    }) : null,
   })
   publishSnapshot()
   await server.start()

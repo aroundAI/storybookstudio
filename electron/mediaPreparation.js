@@ -14,15 +14,39 @@ function proxyHeight(value) {
   return Math.round(Math.max(180, Math.min(1080, Number.isFinite(number) && number > 0 ? number : 540)) / 2) * 2
 }
 
-function buildMediaPreparationArgs({ kind, inputPath, tempOutputPath, targetHeight, fps, encoder, threads = 2 }) {
+// FILM-2014: `delivery` encodes a finished render to a preset frame
+// (targetWidth x targetHeight, letterboxed) for upload. It goes through this
+// queue and its hardware-encoder fallback like the playback tiers.
+const evenSize = (value, fallback) => Math.max(2, Math.round((Number(value) > 0 ? Number(value) : fallback) / 2) * 2)
+
+function buildMediaPreparationArgs({ kind, inputPath, tempOutputPath, targetHeight, targetWidth, targetBitrateKbps, fps, encoder, threads = 2 }) {
   const proxy = kind === 'proxy'
+  const delivery = kind === 'delivery'
   const filters = []
   if (proxy) filters.push(`scale=-2:${proxyHeight(targetHeight)}`)
+  if (delivery) {
+    const width = evenSize(targetWidth, 1920)
+    const height = evenSize(targetHeight, 1080)
+    filters.push(`scale=${width}:${height}:force_original_aspect_ratio=decrease`, `pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2:color=black`, 'setsar=1')
+  }
   if (fps) filters.push(`fps=${fps}`)
   const args = ['-hide_banner', '-nostdin', '-y', '-threads', String(threads), '-i', inputPath,
     '-map', '0:v:0', '-map', '0:a:0?', '-filter_threads', '1']
   if (filters.length) args.push('-vf', filters.join(','))
   args.push('-c:v', encoder)
+  if (delivery) {
+    // Platform uploads: quality over seek speed, a 2 s GOP, B-frames allowed.
+    // A preset's bitrate when it names one (FILM-2017's DELIVERY_PRESETS), else quality-based.
+    const kbps = Number(targetBitrateKbps) > 0 ? Math.round(Number(targetBitrateKbps)) : null
+    const capped = kbps ? ['-b:v', `${kbps}k`, '-maxrate', `${Math.round(kbps * 1.5)}k`, '-bufsize', `${kbps * 2}k`] : null
+    if (encoder === 'h264_nvenc') args.push('-preset', 'p4', '-rc', 'vbr', ...(capped || ['-cq', '19', '-b:v', '0']))
+    else if (encoder === 'h264_videotoolbox') args.push(...(capped ? capped.slice(0, 2) : ['-b:v', `${Math.max(6, Math.round((evenSize(targetWidth, 1920) * evenSize(targetHeight, 1080)) / 160000))}M`]), '-allow_sw', '0')
+    else args.push('-preset', 'fast', ...(capped || ['-crf', '20']))
+    args.push('-threads', String(threads), '-g', String(Math.round((Number(fps) || 24) * 2)), '-pix_fmt', 'yuv420p',
+      '-movflags', '+faststart', '-c:a', 'aac', '-b:a', '192k',
+      '-ar', '48000', '-ac', '2', '-progress', 'pipe:1', '-nostats', tempOutputPath)
+    return args
+  }
   if (encoder === 'h264_nvenc') {
     args.push('-preset', 'p2', '-rc', 'vbr', '-cq', proxy ? '28' : '23', '-b:v', '0')
   } else if (encoder === 'h264_videotoolbox') {
@@ -38,7 +62,7 @@ function buildMediaPreparationArgs({ kind, inputPath, tempOutputPath, targetHeig
   return args
 }
 
-function validatePreparedMedia(input, output, { kind, targetHeight, fps }) {
+function validatePreparedMedia(input, output, { kind, targetHeight, targetWidth, fps }) {
   if (!output?.success || !output.hasVideo) return output?.error || 'Prepared media validation failed: no video stream.'
   if (output.videoCodec && output.videoCodec !== 'h264') return 'Prepared media validation failed: expected H.264 video.'
   if (output.pixelFormat && output.pixelFormat !== 'yuv420p') return 'Prepared media validation failed: expected 8-bit YUV420 video.'
@@ -50,6 +74,10 @@ function validatePreparedMedia(input, output, { kind, targetHeight, fps }) {
   const actualDuration = Number(output.duration)
   if (expectedDuration > 0 && actualDuration > 0 && actualDuration + Math.max(0.5, 2 / (fps || 24)) < expectedDuration) {
     return 'Prepared media validation failed: output ended early.'
+  }
+  if (kind === 'delivery' && output.width > 0 && output.height > 0
+    && (output.width !== evenSize(targetWidth, 1920) || output.height !== evenSize(targetHeight, 1080))) {
+    return 'Prepared media validation failed: delivery frame size is wrong.'
   }
   if (kind === 'proxy' && output.height > 0 && output.height !== proxyHeight(targetHeight)) {
     return 'Prepared media validation failed: incorrect proxy height.'
@@ -83,6 +111,7 @@ function createMediaPreparationService({
   const records = []
   const counters = new Map()
   let active = null
+  const bypassing = new Set()
   let drainScheduled = false
   const historyLimit = Math.max(1, Math.min(500, Number(maxHistory) || 100))
   const threadLimit = Math.max(1, Math.min(4, Math.floor(Number(threads) || 2)))
@@ -274,6 +303,14 @@ function createMediaPreparationService({
     }
   }
 
+  async function execute(job) {
+    update(job, { status: 'encoding' })
+    const result = await run(job)
+    for (const record of job.subscribers.values()) finishRecord(record, job.cancelled ? cancelledResult() : result)
+    jobs.delete(job.id)
+    if (byOutput.get(job.key) === job) byOutput.delete(job.key)
+  }
+
   function scheduleDrain() {
     if (drainScheduled) return
     drainScheduled = true
@@ -283,11 +320,7 @@ function createMediaPreparationService({
       const job = queue.shift()
       if (!job) return
       active = job
-      update(job, { status: 'encoding' })
-      const result = await run(job)
-      for (const record of job.subscribers.values()) finishRecord(record, job.cancelled ? cancelledResult() : result)
-      jobs.delete(job.id)
-      if (byOutput.get(job.key) === job) byOutput.delete(job.key)
+      await execute(job)
       active = null
       trimHistory()
       emit()
@@ -295,9 +328,25 @@ function createMediaPreparationService({
     })
   }
 
+  // FILM-2014: a preview proxy the AI is waiting on starts now, beside
+  // whatever the queue is encoding (a delivery can take minutes), instead of
+  // behind it. Bypassing jobs never occupy the queue's single slot.
+  function startBypassing(job) {
+    bypassing.add(job)
+    queueMicrotask(async () => {
+      try { await execute(job) } finally {
+        bypassing.delete(job)
+        trimHistory()
+        emit()
+      }
+    })
+  }
+
   function enqueue(options = {}) {
     const { inputPath, outputPath, kind, ownerId = 'default', assetId = null, label } = options
-    if (!['playback', 'proxy'].includes(kind)) return Promise.resolve({ success: false, error: 'Invalid media preparation kind.' })
+    if (!['playback', 'proxy', 'delivery'].includes(kind)) return Promise.resolve({ success: false, error: 'Invalid media preparation kind.' })
+    const bypassQueue = options.bypassQueue === true
+    if (bypassQueue && kind === 'delivery') return Promise.resolve({ success: false, error: 'Delivery renders wait their turn in the queue; only previews bypass it.' })
     if (typeof inputPath !== 'string' || !inputPath || typeof outputPath !== 'string' || !outputPath) {
       return Promise.resolve({ success: false, error: 'Missing inputPath or outputPath.' })
     }
@@ -320,11 +369,12 @@ function createMediaPreparationService({
     }
     if (!job) {
       job = { id: randomUUID(), key, kind, inputPath, outputPath, targetHeight: options.targetHeight,
+        targetWidth: options.targetWidth, targetBitrateKbps: options.targetBitrateKbps, bypassQueue,
         status: 'queued', progress: null, encoder: null, hardware: false, fallbackReason: null,
         subscribers: new Map(), process: null, cancelled: false }
       jobs.set(job.id, job)
       byOutput.set(key, job)
-      queue.push(job)
+      if (!bypassQueue) queue.push(job)
     }
     let resolve
     const promise = new Promise((done) => { resolve = done })
@@ -335,7 +385,8 @@ function createMediaPreparationService({
     job.subscribers.set(ownerId, record)
     counters.get(ownerId).total += 1
     emit()
-    scheduleDrain()
+    if (job.bypassQueue && job.status === 'queued' && !bypassing.has(job)) startBypassing(job)
+    else scheduleDrain()
     return promise
   }
 
@@ -348,10 +399,10 @@ function createMediaPreparationService({
       const otherSubscriber = [...job.subscribers.values()].some((entry) => entry !== record && !TERMINAL.has(entry.status))
       // A sole active request settles only after its process and temporary
       // output are gone. Shared subscribers may detach immediately.
-      if (otherSubscriber || job !== active) finishRecord(record, cancelledResult())
+      if (otherSubscriber || (job !== active && !bypassing.has(job))) finishRecord(record, cancelledResult())
       if (otherSubscriber) continue
       job.cancelled = true
-      if (job === active) {
+      if (job === active || bypassing.has(job)) {
         try { job.process?.kill('SIGKILL') } catch { /* Process is already gone. */ }
       } else {
         const index = queue.indexOf(job)

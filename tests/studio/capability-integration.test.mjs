@@ -257,10 +257,12 @@ test('studio_apply_updates refuses a stale proposal and removes a regenerated sh
   assert.ok(!harness.timeline().clips.some((clip) => clip.id === sound.id))
 })
 
-test('FILM-2014\'s seams: repair without its compiler says whose it is; review context and the vision-cost op-log line', async () => {
-  const { result, body } = await call('studio_repair', { issues: [{ type: 'loudness' }] })
-  assert.equal(result.isError, true)
-  assert.match(body.error.message, /not available yet: FILM-2014/)
+test('FILM-2014\'s seams: repair compiles in the window; review context and the vision-cost op-log line', async () => {
+  // FILM-2014's compiler is in the build: an issue with no repairIntent is a card, not a step.
+  const { result, body } = await call('studio_repair', { issues: [{ type: 'loudness', severity: 0.6, timeRange: null, scene: null, detail: 'Too quiet' }] })
+  assert.equal(result.isError, undefined, JSON.stringify(body))
+  assert.equal(body.plan.steps.length, 0)
+  assert.ok(body.notes.some((note) => /Not repaired \(loudness\)/.test(note.text)), JSON.stringify(body.notes))
   const review = await m.mcp.runMcpAction('studio_review_context', {})
   assert.equal(review.projectPath, harness.dir)
   assert.equal(review.pkg.etag, harness.pkg.etag)

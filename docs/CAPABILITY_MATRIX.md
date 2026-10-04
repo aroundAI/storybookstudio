@@ -176,11 +176,11 @@ After an upstream merge adds or removes a tool, `--check` fails (and so does `te
 | `studio_get_context` | P1 context; P2 scene map | FILM-2013 | Built: agent profile (electron/studio/mcpCapabilities.js, src/studio/context.js). Script, scene map, policy, brand, timeline summary, versions, user edits, last QA in one call. |
 | `studio_search_assets` | P3 search | FILM-2013 | Built: ranks by name, transcript, then semantic fields. |
 | `studio_get_job_status` | P8 job status | FILM-2013 | Built over FILM-2011's job registry (studioMain.cloud.getJobStatus); jobs run in main. |
-| `studio_review` | P7 review (critic); V2 critic analysers | FILM-2014 | QA then critic. |
+| `studio_review` | P7 review (critic); V2 critic analysers | FILM-2014 | electron/studio/reviewTools.js review: renders the scope's keyframes, a 720p preview and the bus mix with stems, runs QA then the critic; returns {pass, issues, qa, critic, skipped}. |
 | `electron/studio/qa.js checks` | V1 QA checks | FILM-2014 | ebur128 loudness and true peak, astats clipping, blackdetect, freezedetect, silencedetect, caption safe areas, script coverage. No Velorn tool does these at QA grade. |
 | `src/studio/critic/{pacing,audio,visual}.js` | V2 critic analysers | FILM-2014 | Analysers return issues in the QA shape. |
-| `studio_repair` | V3 repair | FILM-2014 | Compiles each issue's repairIntent to a plan. |
-| `studio_render_preview` | L7 render | FILM-2014 | Keyframe, scene and audio-only tiers; bypasses the media-preparation queue. |
+| `studio_repair` | V3 repair | FILM-2014 | src/studio/intents/repair.js, the repair intent: each issue's repairIntent to steps of one plan (set_audio_buses, set_master_audio, set_clip_audio, update_caption_cues, replace_clip_with_asset, extract_range), the rest as cards. |
+| `studio_render_preview` | L7 render | FILM-2014 | electron/studio/previewRender.js tiers (keyframes, 720p scene, bus-mix WAV) and QA on the result; never enters the media-preparation queue, whose delivery kind takes the final encodes. |
 | `studio_open_episode` | L1 open episode | FILM-2013 | Built: starts the FILM-2011 pull (studioMain.cloud.openEpisode) and returns a jobId. |
 | `src/studio/projectBuilder.js` | L3 rough cut; P2 scene map | FILM-2012 | Package to project JSON; not a tool. |
 | `studio_check_readiness` | L2 readiness | FILM-2013 | Built: package, policy, target, offline and unprobed media, codecs, captions, coverage, plus check_media_health and check_export_readiness. |

@@ -164,9 +164,9 @@ const CAPABILITY_TOOLS = Object.freeze([
     name: 'studio_review',
     profiles: ['agent'],
     owner: 'FILM-2014',
-    available: false,
+    available: true,
     annotations: read,
-    description: 'Deterministic QA, then the critic (pacing, audio, visual). Not available until FILM-2014.',
+    description: 'Renders the scope (keyframes, a 720p preview, the bus mix with stems), runs deterministic QA (loudness, true peak, clipping, black, frozen, silence, duration, captions in the safe area, missing media, script coverage), then the critic (pacing, audio, visual). Returns {pass, issues, qa, critic, skipped}; every fixable issue names its repairIntent for studio_repair. The visual critic is skipped, and says so, when no vision model is configured. Writes only preview files under cache/ and the last QA (edits/qa/latest.json).',
     inputSchema: { type: 'object', properties: { scope: scopeSchema, versionId: { type: 'string' } }, additionalProperties: false },
   },
   {
@@ -182,12 +182,12 @@ const CAPABILITY_TOOLS = Object.freeze([
     name: 'studio_render_preview',
     profiles: ['agent'],
     owner: 'FILM-2014',
-    available: false,
+    available: true,
     annotations: { ...read, readOnlyHint: false },
-    description: 'Render a preview (keyframes, a scene, audio only) and run QA on it. Not available until FILM-2014.',
+    description: 'Render a preview of the scope and run QA on it. quality keyframes (default; one 640 px JPEG per cut and per 2 s), scene (720p, the default with a scene scope), audio (the bus mix as WAV) or full (the whole timeline at 720p). Returns the file, the keyframe paths and the QA result. Previews never wait behind an export.',
     inputSchema: {
       type: 'object',
-      properties: { scope: scopeSchema, range: { type: 'array', items: { type: 'number' } }, timeline: { type: 'string' }, quality: { type: 'string' } },
+      properties: { scope: scopeSchema, range: { type: 'array', items: { type: 'number' } }, timeline: { type: 'string' }, quality: { type: 'string', enum: ['keyframes', 'scene', 'audio', 'full'] } },
       additionalProperties: false,
     },
   },
@@ -357,10 +357,13 @@ function createCapabilityTools({
   getSnapshot = () => null,
   review = null,
   repair = null,
+  reviewTools = null,
   clock = () => Date.now(),
   newId = () => crypto.randomUUID(),
 } = {}) {
   const plans = new Map()
+  // The autoRepair loop's review: the one passed in, else FILM-2014's studio_review handler.
+  const reviewRound = review || (reviewTools ? (args) => reviewTools.review(args) : null)
   // The autoRepair loop's repair: the one passed in, else FILM-2014's compiler in the renderer.
   const repairPlan = repair || (async ({ issues }) => {
     const compiled = await renderer('studio_compile', { intent: 'repair', scope: {}, params: { issues }, writable: writable() })
@@ -528,11 +531,11 @@ function createCapabilityTools({
     let stoppedBecause = null
     if (args.autoRepair === true && !run.failed) {
       for (let round = 1; round <= MAX_REPAIR_ROUNDS; round += 1) {
-        if (typeof review !== 'function' || typeof repairPlan !== 'function') {
+        if (typeof reviewRound !== 'function' || typeof repairPlan !== 'function') {
           stoppedBecause = 'QA and repair are not available yet (FILM-2014: studio_render_preview, studio_review, studio_repair); one round ran'
           break
         }
-        qa = await review({ versionId: version.id })
+        qa = await reviewRound({ versionId: version.id })
         if (qa?.pass || !qa?.issues?.length) {
           stoppedBecause = qa?.pass ? 'QA passed' : 'QA found nothing to repair'
           break
@@ -666,6 +669,15 @@ function createCapabilityTools({
       }
       case 'studio_repair':
         return planTool('repair')(args, { source })
+      case 'studio_review':
+      case 'studio_render_preview': {
+        if (!reviewTools) return failure('VALIDATION_FAILED', `${name} is not available yet: FILM-2014's preview renderer was not passed to this server (main.js passes reviewTools).`, { availableAfter: 'FILM-2014' })
+        try {
+          return ok(name === 'studio_review' ? await reviewTools.review(args) : await reviewTools.renderPreview(args))
+        } catch (error) {
+          return failure(error?.code && ERROR_CODES.includes(error.code) ? error.code : 'VALIDATION_FAILED', error?.message || String(error))
+        }
+      }
       case 'studio_open_episode':
         return cloudCall(tool, 'openEpisode', { episodeId: args.episodeId })
       case 'studio_get_job_status':

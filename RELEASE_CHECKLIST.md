@@ -154,6 +154,28 @@ npm run electron:build:linux
 - [ ] Record tested Node/npm versions for Windows and macOS in release notes.
 - [ ] Linux validation remains optional until explicitly in release scope.
 
+### Studio Render Timings (FILM-2014)
+
+Run `node scripts/studio-render-timings.mjs` on each reference machine and paste its table here. It builds the 20-shot, 99 s rough cut with 1080p FFmpeg test media and times each preview tier, a full 1080p render and the delivery encode through the media-preparation queue. Test media encodes faster than generated footage, so treat these as upper bounds on speed.
+
+- [ ] M1 Air (the spec's reference: keyframes under 5 s for a 90 s cut; 1080p 90 s at 1x real time or faster with VideoToolbox): not measured yet.
+- [ ] Windows with an NVIDIA GPU (NVENC): not measured yet.
+- [x] Apple M5 Pro, 15 cores, 24 GB, macOS 26 (darwin 25.4.0), 2026-10-05, measured while other jobs held the machine at a load average near 49 (an idle machine ran each step about 3x faster):
+
+| Step | Time | Speed |
+|---|---|---|
+| keyframes, whole cut (640 px JPEGs), 59 frames | 1.08 s | |
+| scene preview, scene 3 (720p24 x264, 21 s, bus mix) | 9.56 s | 2.2x |
+| scene preview, whole cut (720p24 x264, bus mix) | 21.26 s | 4.7x |
+| audio tier, bus mix with ducking and loudnorm + 5 stems (WAV) | 7.40 s | 13.4x |
+| full render 1080p24, h264_videotoolbox | 17.52 s | 5.7x |
+| full render 1080p24, libx264 fast | 27.94 s | 3.5x |
+| QA pass on the 1080p render | 5.52 s | |
+| delivery queue encode 1080p, h264_videotoolbox | 32.78 s | 3.0x |
+| Deliver render path (deliveryPath.js): 94 s cut at 1080p, intermediate + queued h264_videotoolbox | 13.5 s | 7.0x |
+
+The canvas exporter's own throughput is measured by `VELORN_TEST_NATIVE_ENCODE=1 npm run check:export-worker-scheduling` (one still image, 720p24, 6 s): 144 frames in 1.27 s on the same machine.
+
 ---
 
 ## 7) Documentation and Release Notes

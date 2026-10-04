@@ -107,6 +107,7 @@
   },
   "license": "GPL-3.0-only",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
     "@derhuerst/ffprobe-static": "5.3.0",
     "@modelcontextprotocol/sdk": "1.18.0",
     "@xyflow/react": "^12.10.2",
@@ -162,6 +163,9 @@
       "src/studio/vendor/**/*",
       "src/studio/intents/variants.js",
       "src/studio/captions/**/*",
+      "src/studio/audio/**/*",
+      "src/studio/review/**/*",
+      "src/studio/critic/**/*",
       "build/icon.png",
       "package.json",
       "!node_modules/ffmpeg-static/ffmpeg*",

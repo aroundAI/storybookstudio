@@ -220,9 +220,9 @@ The card with `scene: null` is the whole timeline (caption re-timing, beds, mark
 | `studio_add_captions` | agent | Brand-styled captions inside the aspect's safe area. `{language, style?}` | built over FILM-2016's `intents/captions.js`; styles the cues on the language's captions clip (a StoryBook rough cut has them); with none, transcribe first |
 | `studio_add_graphic` | agent | Brand graphics | not available yet (FILM-2018) |
 | `studio_create_variant` | agent | `short` (a 9:16 cut of a shorts candidate, the strongest line or a range, reframed on the subject, captions in the 9:16 safe area) and `hook` (N five-second openings, each exported) variants | built (FILM-2017); `language` is FILM-2019 |
-| `studio_review` | agent | QA, then the critic | not available yet (FILM-2014) |
-| `studio_repair` | agent | One plan for QA issues, previewed and applied like `studio_edit` | compiled by FILM-2014's `intents/repair.js` when the build has it, else not available yet |
-| `studio_render_preview` | agent | Preview render and QA | not available yet (FILM-2014) |
+| `studio_review` | agent | Renders the scope (keyframes, 720p preview, bus mix with stems), runs QA, then the critic. `{scope?, versionId?}` → `{pass, issues, qa, critic, skipped}` | built (FILM-2014, `electron/studio/reviewTools.js`); the visual critic is skipped, and says so, without a configured vision model |
+| `studio_repair` | agent | One plan for QA issues by `repairIntent`, same preview/apply flow. `{issues, previewOnly?, planId?}` | built (FILM-2014's `intents/repair.js`); issues no edit fixes come back as notes |
+| `studio_render_preview` | agent | A preview tier and QA on it. `{scope?, range?, timeline?, quality?: keyframes, scene, audio, full}` | built (FILM-2014, `electron/studio/previewRender.js`) |
 | `studio_check_updates` | agent | Has the episode changed in StoryBook? Proposes a replacement plan | built over FILM-2011's re-sync |
 | `studio_apply_updates` | agent | Previews and applies that plan into a "Sync from StoryBook" version; a regenerated shot's old sound is removed; `TARGET_CHANGED` when StoryBook changed again since the proposal | built |
 | `studio_open_episode` | agent, expert | Starts the FILM-2011 pull; returns a `jobId`. `{episodeId}` | built over FILM-2011 |
@@ -252,7 +252,7 @@ A tool another spec builds answers `isError` with `{"error": {"code": "VALIDATIO
 
 Bounds come from `storybook/policy.json` (StoryBook's edit policy, else its defaults); no compiler hard-codes a policy bound. A cut is a ripple `extract_range` because Velorn's `trim_clips` does not ripple: a trim alone leaves a gap and slips dialogue off its picture. Cuts run latest first, so each step's times are those of the timeline it was planned on.
 
-`autoRepair: true` runs apply → QA → repair up to 3 rounds inside the one version and returns only the final cards. Repair plans come from FILM-2014's repair compiler; until FILM-2014's review is passed to the server the loop runs one round and says why.
+`autoRepair: true` runs apply → QA → repair up to 3 rounds inside the one version and returns only the final cards; the review and the repair are FILM-2014's `studio_review` and repair intent. A server started without the preview renderer runs one round and says why.
 
 The in-app agent (the Agent tab, `src/services/agentTools.js`) lists the same 18 tools and calls them through `studio:callCapability`, the same handler an MCP client reaches, so both get the same cards.
 
@@ -262,11 +262,10 @@ The in-app agent (the Agent tab, `src/services/agentTools.js`) lists the same 18
 
 ```bash
 npm run ai-eval -- --agent oracle                      # the compilers alone: a scripted agent, no model, no cost
-npm i -D @anthropic-ai/sdk                             # once, for a model-driven run
 STUDIO_EVAL_MODEL=claude-opus-5-5 ANTHROPIC_API_KEY=... npm run ai-eval -- --agent model --out .ai-eval/today --baseline .ai-eval/last/results.json
 ```
 
-Which model drives the agent is the owner's choice (phase 20 open question 2); any model id works, and the cost table in the script covers the current Claude models. QA counts once FILM-2014 provides it; until then the QA pass rate is reported as unmeasured and the gate compares cost only.
+Which model drives the agent is the owner's choice (phase 20 open question 2); any model id works, and the cost table in the script covers the current Claude models. The eval does not call `studio_review` yet (its fixture episodes have no media), so the QA pass rate is reported as unmeasured and the gate compares cost only.
 
 ## Recommended Workflows
 
