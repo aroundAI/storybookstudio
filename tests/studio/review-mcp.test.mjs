@@ -29,9 +29,12 @@ afterEach(async () => {
   await harness?.close()
 })
 
+// Reviews render the whole cut; a 3-core CI runner needs more than the SDK's 60 s default.
+const REQUEST_TIMEOUT_MS = 10 * 60 * 1000
+
 const call = async (name, args, { profile = null } = {}) => {
   const target = profile ? await connectSdkClient(harness, { profile }) : client
-  const result = await target.callTool({ name, arguments: args })
+  const result = await target.callTool({ name, arguments: args }, undefined, { timeout: REQUEST_TIMEOUT_MS })
   if (profile) await target.close()
   return { result, body: parseToolResult(result) }
 }

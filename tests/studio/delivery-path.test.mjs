@@ -71,7 +71,7 @@ test('a planted fault fails the delivery QA: a timeline with a 3 s hole renders 
   assert.ok(checked.qa.issues.some((i) => i.type === 'black_frames' && i.timeRange.start >= 18.5 && i.timeRange.start <= 19.5), JSON.stringify(checked.qa.issues))
 })
 
-test('on macOS the delivery encode uses VideoToolbox through the queue, and a 94 s 1080p render runs faster than real time', { skip: process.platform !== 'darwin' && 'VideoToolbox is macOS only' }, async () => {
+test('on macOS the delivery encode uses VideoToolbox through the queue, and a 94 s 1080p render runs faster than real time', { skip: process.platform !== 'darwin' && 'VideoToolbox is macOS only' }, async (t) => {
   const service = queue({ probeHardwareEncoder: async () => ({ ok: true }) })
   const delivery = createDeliveryPath({ ffmpegPath: FFMPEG, ffprobePath: FFPROBE, getMediaPreparation: () => service })
   const preset = resolvePreset('youtube_16x9', { timeline: project.timelines[0], policy: fixture.policy })
@@ -79,10 +79,17 @@ test('on macOS the delivery encode uses VideoToolbox through the queue, and a 94
   const started = Date.now()
   const rendered = await delivery.render({ project, projectDir: dir, timelineId: project.currentTimelineId, preset, language: 'en', outputPath })
   const seconds = (Date.now() - started) / 1000
-  assert.equal(rendered.encoder, 'h264_videotoolbox', rendered.fallbackReason || '')
-  assert.equal(rendered.hardware, true)
   const info = await probe(FFPROBE, outputPath)
   assert.deepEqual([info.video.width, info.video.height], [1920, 1080])
+  if (!rendered.hardware) {
+    // A VM without a GPU (GitHub's macOS runners) cannot open a VideoToolbox
+    // session: the queue falls back to x264 and says why.
+    assert.equal(rendered.encoder, 'libx264')
+    assert.match(rendered.fallbackReason || '', /videotoolbox|compression session/i)
+    t.skip(`no VideoToolbox session here, fell back to x264: ${String(rendered.fallbackReason).split('\n')[0].slice(0, 160)}`)
+    return
+  }
+  assert.equal(rendered.encoder, 'h264_videotoolbox')
   assert.ok(rendered.durationSeconds / seconds > 1, `${rendered.durationSeconds} s rendered in ${seconds.toFixed(1)} s`)
   console.log(`# delivery 1080p ${rendered.durationSeconds} s via ${rendered.encoder}: ${seconds.toFixed(1)} s (${(rendered.durationSeconds / seconds).toFixed(1)}x real time)`)
 })
