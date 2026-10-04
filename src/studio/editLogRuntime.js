@@ -13,6 +13,7 @@ import { useTimelineStore } from '../stores/timelineStore'
 import { createElectronEditsSink } from './editsSink.js'
 import { attachUserEditLogger, createOpLog, wrapMcpActionRunner } from './oplog.js'
 import { createVersionStore } from './versions.js'
+import { createElectronProjectFs, openFromPackage } from './openFromPackage.js'
 
 // Store actions that are a person editing the timeline. Selection, playback,
 // zoom, caches, previews and project loading are not edits and are absent.
@@ -163,4 +164,22 @@ export async function createStudioVersion(name, options) {
 export async function restoreStudioVersion(versionId, options) {
   if (!active) throw new Error('No Studio project is open.')
   return active.versions.restoreVersion(versionId, options)
+}
+
+// studio:buildProject, the entry FILM-2011's pull job calls once the media is
+// on disk: writes the rough cut into projectPath, opens it, and saves the
+// 'Rough cut' version. projectStore imports this module, hence the dynamic import.
+export async function openStudioProjectFromPackage(pkg, probedAssets, { projectPath, brand, policy, options, api = globalThis.window?.electronAPI } = {}) {
+  const { useProjectStore } = await import('../stores/projectStore')
+  return openFromPackage({
+    package: pkg,
+    probedAssets,
+    brand,
+    policy,
+    options,
+    projectPath,
+    fs: createElectronProjectFs(api),
+    openProject: (path) => useProjectStore.getState().openProject(path),
+    createVersion: (name, versionOptions) => createStudioVersion(name, versionOptions),
+  })
 }

@@ -1,0 +1,3238 @@
+{
+  "project": {
+    "name": "Night Lab (5-shots) - E01 The Night the Lab Went Dark (5-shots)",
+    "version": "1.2",
+    "created": "2026-10-04T12:00:00.000Z",
+    "modified": "2026-10-04T12:00:00.000Z",
+    "settings": {
+      "width": 1920,
+      "height": 1080,
+      "fps": 24,
+      "aspectRatio": "1920:1080"
+    },
+    "timelines": [
+      {
+        "id": "tl-master",
+        "name": "Master",
+        "color": null,
+        "folderId": null,
+        "created": "2026-10-04T12:00:00.000Z",
+        "modified": "2026-10-04T12:00:00.000Z",
+        "width": 1920,
+        "height": 1080,
+        "fps": 24,
+        "duration": 60,
+        "zoom": 100,
+        "tracks": [
+          {
+            "id": "video-2",
+            "name": "Captions (en)",
+            "type": "video",
+            "muted": false,
+            "locked": false,
+            "visible": true,
+            "role": "captions",
+            "language": "en"
+          },
+          {
+            "id": "video-1",
+            "name": "Shots",
+            "type": "video",
+            "muted": false,
+            "locked": false,
+            "visible": true
+          },
+          {
+            "id": "audio-1",
+            "name": "Dialogue (en)",
+            "type": "audio",
+            "channels": "stereo",
+            "muted": false,
+            "locked": false,
+            "visible": true,
+            "bus": "dialogue",
+            "language": "en"
+          },
+          {
+            "id": "audio-2",
+            "name": "Shot audio",
+            "type": "audio",
+            "channels": "stereo",
+            "muted": false,
+            "locked": false,
+            "visible": true,
+            "bus": "shotaudio"
+          },
+          {
+            "id": "audio-3",
+            "name": "Music",
+            "type": "audio",
+            "channels": "stereo",
+            "muted": false,
+            "locked": false,
+            "visible": true,
+            "bus": "music"
+          },
+          {
+            "id": "audio-4",
+            "name": "SFX",
+            "type": "audio",
+            "channels": "stereo",
+            "muted": false,
+            "locked": false,
+            "visible": true,
+            "bus": "sfx"
+          },
+          {
+            "id": "audio-5",
+            "name": "Ambience",
+            "type": "audio",
+            "channels": "stereo",
+            "muted": false,
+            "locked": false,
+            "visible": true,
+            "bus": "ambience"
+          }
+        ],
+        "clips": [
+          {
+            "id": "clip-1",
+            "trackId": "video-1",
+            "assetId": "sb-shot-e661db7d-ef76-48f7-9e31-5103fd62ff85",
+            "name": "S1.1 MAYA reacts to the alarm (shot 1).",
+            "startTime": 0,
+            "duration": 4,
+            "sourceDuration": 4.5,
+            "trimStart": 0.2,
+            "trimEnd": 4.2,
+            "sourceFps": 24,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "color": "#5a7a9e",
+            "type": "video",
+            "enabled": true,
+            "compositeLowerLayers": "auto",
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": 1,
+                "shotId": "e661db7d-ef76-48f7-9e31-5103fd62ff85",
+                "role": "generated_video"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "none",
+              "storybook": {
+                "shotId": "e661db7d-ef76-48f7-9e31-5103fd62ff85",
+                "sequenceNumber": 1,
+                "transitionType": "cut"
+              }
+            },
+            "linkGroupId": "sb-link-e661db7d-ef76-48f7-9e31-5103fd62ff85",
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-2",
+            "trackId": "video-1",
+            "assetId": "sb-shot-d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+            "name": "S1.2 ARJUN reacts to the alarm (shot 2).",
+            "startTime": 4,
+            "duration": 5,
+            "sourceDuration": 5.5,
+            "trimStart": 0.2,
+            "trimEnd": 5.2,
+            "sourceFps": 24,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "color": "#7a6a9e",
+            "type": "video",
+            "enabled": true,
+            "compositeLowerLayers": "auto",
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": 1,
+                "shotId": "d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+                "role": "generated_video"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "none",
+              "storybook": {
+                "shotId": "d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+                "sequenceNumber": 2,
+                "transitionType": "continuation"
+              }
+            },
+            "linkGroupId": "sb-link-d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-3",
+            "trackId": "video-1",
+            "assetId": "sb-shot-f9b0707d-d3c3-4df3-9183-908a80a67361",
+            "name": "S1.3 MAYA reacts to the alarm (shot 3).",
+            "startTime": 9,
+            "duration": 6,
+            "sourceDuration": 6.5,
+            "trimStart": 0.2,
+            "trimEnd": 6.2,
+            "sourceFps": 24,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "color": "#b06a8a",
+            "type": "video",
+            "enabled": true,
+            "compositeLowerLayers": "auto",
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": 1,
+                "shotId": "f9b0707d-d3c3-4df3-9183-908a80a67361",
+                "role": "generated_video"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "none",
+              "storybook": {
+                "shotId": "f9b0707d-d3c3-4df3-9183-908a80a67361",
+                "sequenceNumber": 3,
+                "transitionType": "cut"
+              }
+            },
+            "linkGroupId": "sb-link-f9b0707d-d3c3-4df3-9183-908a80a67361",
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-4",
+            "trackId": "video-1",
+            "assetId": "sb-shot-0bde8baf-361c-4e2a-8af7-029821cce87e",
+            "name": "S1.4 ARJUN reacts to the alarm (shot 4).",
+            "startTime": 15,
+            "duration": 4,
+            "sourceDuration": 4.5,
+            "trimStart": 0.2,
+            "trimEnd": 4.2,
+            "sourceFps": 24,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "color": "#4a8a7a",
+            "type": "video",
+            "enabled": true,
+            "compositeLowerLayers": "auto",
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": 1,
+                "shotId": "0bde8baf-361c-4e2a-8af7-029821cce87e",
+                "role": "generated_video"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "none",
+              "storybook": {
+                "shotId": "0bde8baf-361c-4e2a-8af7-029821cce87e",
+                "sequenceNumber": 4,
+                "transitionType": "match_cut"
+              }
+            },
+            "linkGroupId": "sb-link-0bde8baf-361c-4e2a-8af7-029821cce87e",
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-5",
+            "trackId": "video-1",
+            "assetId": "sb-shot-ef144c81-b8bb-4b66-a6a2-3be85eb07937",
+            "name": "S2.1 MAYA reacts to the alarm (shot 5).",
+            "startTime": 19,
+            "duration": 5,
+            "sourceDuration": 5,
+            "trimStart": 0,
+            "trimEnd": 5,
+            "sourceFps": null,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "color": "#6a7080",
+            "type": "video",
+            "enabled": true,
+            "compositeLowerLayers": "auto",
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": 2,
+                "shotId": "ef144c81-b8bb-4b66-a6a2-3be85eb07937",
+                "role": "generated_video"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "none",
+              "storybook": {
+                "shotId": "ef144c81-b8bb-4b66-a6a2-3be85eb07937",
+                "sequenceNumber": 5,
+                "transitionType": "cut"
+              }
+            },
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-6",
+            "trackId": "audio-1",
+            "assetId": "sb-dlg-c5267c6e-7ec1-4cfb-96dc-7d90dc34f2eb",
+            "name": "MAYA 1 (en)",
+            "startTime": 0.4166666666666667,
+            "duration": 1.5833333333333333,
+            "sourceDuration": 1.6,
+            "trimStart": 0,
+            "trimEnd": 1.5833333333333333,
+            "sourceFps": null,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "gainDb": 0,
+            "fadeIn": 0,
+            "fadeOut": 0,
+            "color": "#565C6B",
+            "type": "audio",
+            "enabled": true,
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": 1,
+                "shotId": "e661db7d-ef76-48f7-9e31-5103fd62ff85",
+                "role": "dialogue"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "language",
+              "language": "en",
+              "storybook": {
+                "dialogueId": "c5267c6e-7ec1-4cfb-96dc-7d90dc34f2eb",
+                "sequenceNumber": 1
+              }
+            },
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-7",
+            "trackId": "audio-1",
+            "assetId": "sb-dlg-0146215d-67e1-4bd9-b82c-304dad552a69",
+            "name": "ARJUN 2 (en)",
+            "startTime": 2.4166666666666665,
+            "duration": 1.5833333333333333,
+            "sourceDuration": 1.6,
+            "trimStart": 0,
+            "trimEnd": 1.5833333333333333,
+            "sourceFps": null,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "gainDb": 0,
+            "fadeIn": 0,
+            "fadeOut": 0,
+            "color": "#565C6B",
+            "type": "audio",
+            "enabled": true,
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": 1,
+                "shotId": "e661db7d-ef76-48f7-9e31-5103fd62ff85",
+                "role": "dialogue"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "language",
+              "language": "en",
+              "storybook": {
+                "dialogueId": "0146215d-67e1-4bd9-b82c-304dad552a69",
+                "sequenceNumber": 2
+              }
+            },
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-8",
+            "trackId": "audio-1",
+            "assetId": "sb-dlg-b9912816-2e14-466c-be04-fc762ec34b10",
+            "name": "ARJUN 3 (en)",
+            "startTime": 4.416666666666667,
+            "duration": 1.5833333333333333,
+            "sourceDuration": 1.6,
+            "trimStart": 0,
+            "trimEnd": 1.5833333333333333,
+            "sourceFps": null,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "gainDb": 0,
+            "fadeIn": 0,
+            "fadeOut": 0,
+            "color": "#565C6B",
+            "type": "audio",
+            "enabled": true,
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": 1,
+                "shotId": "d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+                "role": "dialogue"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "language",
+              "language": "en",
+              "storybook": {
+                "dialogueId": "b9912816-2e14-466c-be04-fc762ec34b10",
+                "sequenceNumber": 3
+              }
+            },
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-9",
+            "trackId": "audio-1",
+            "assetId": "sb-dlg-9fce82f0-c628-4291-aa45-3bdff786310c",
+            "name": "MAYA 4 (en)",
+            "startTime": 6.916666666666667,
+            "duration": 1.5833333333333333,
+            "sourceDuration": 1.6,
+            "trimStart": 0,
+            "trimEnd": 1.5833333333333333,
+            "sourceFps": null,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "gainDb": 0,
+            "fadeIn": 0,
+            "fadeOut": 0,
+            "color": "#565C6B",
+            "type": "audio",
+            "enabled": true,
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": 1,
+                "shotId": "d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+                "role": "dialogue"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "language",
+              "language": "en",
+              "storybook": {
+                "dialogueId": "9fce82f0-c628-4291-aa45-3bdff786310c",
+                "sequenceNumber": 4
+              }
+            },
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-10",
+            "trackId": "audio-1",
+            "assetId": "sb-dlg-8228b01f-757d-4c52-984f-65e5e108f482",
+            "name": "MAYA 5 (en)",
+            "startTime": 9.416666666666666,
+            "duration": 1.5833333333333333,
+            "sourceDuration": 1.6,
+            "trimStart": 0,
+            "trimEnd": 1.5833333333333333,
+            "sourceFps": null,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "gainDb": 0,
+            "fadeIn": 0,
+            "fadeOut": 0,
+            "color": "#565C6B",
+            "type": "audio",
+            "enabled": true,
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": 1,
+                "shotId": "f9b0707d-d3c3-4df3-9183-908a80a67361",
+                "role": "dialogue"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "language",
+              "language": "en",
+              "storybook": {
+                "dialogueId": "8228b01f-757d-4c52-984f-65e5e108f482",
+                "sequenceNumber": 5
+              }
+            },
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-11",
+            "trackId": "audio-1",
+            "assetId": "sb-dlg-94d892dc-a19f-4f0b-82c7-c39ad1f64db2",
+            "name": "ARJUN 6 (en)",
+            "startTime": 12.416666666666666,
+            "duration": 1.5833333333333333,
+            "sourceDuration": 1.6,
+            "trimStart": 0,
+            "trimEnd": 1.5833333333333333,
+            "sourceFps": null,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "gainDb": 0,
+            "fadeIn": 0,
+            "fadeOut": 0,
+            "color": "#565C6B",
+            "type": "audio",
+            "enabled": true,
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": 1,
+                "shotId": "f9b0707d-d3c3-4df3-9183-908a80a67361",
+                "role": "dialogue"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "language",
+              "language": "en",
+              "storybook": {
+                "dialogueId": "94d892dc-a19f-4f0b-82c7-c39ad1f64db2",
+                "sequenceNumber": 6
+              }
+            },
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-12",
+            "trackId": "audio-1",
+            "assetId": "sb-dlg-8ed5e1bd-760e-4740-badd-50758ac3872a",
+            "name": "ARJUN 7 (en)",
+            "startTime": 15.416666666666666,
+            "duration": 1.5833333333333333,
+            "sourceDuration": 1.6,
+            "trimStart": 0,
+            "trimEnd": 1.5833333333333333,
+            "sourceFps": null,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "gainDb": 0,
+            "fadeIn": 0,
+            "fadeOut": 0,
+            "color": "#565C6B",
+            "type": "audio",
+            "enabled": true,
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": 1,
+                "shotId": "0bde8baf-361c-4e2a-8af7-029821cce87e",
+                "role": "dialogue"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "language",
+              "language": "en",
+              "storybook": {
+                "dialogueId": "8ed5e1bd-760e-4740-badd-50758ac3872a",
+                "sequenceNumber": 7
+              }
+            },
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-13",
+            "trackId": "audio-1",
+            "assetId": "sb-dlg-834403e4-04dd-4d63-ad52-d6f91ccac67e",
+            "name": "MAYA 8 (en)",
+            "startTime": 17.416666666666668,
+            "duration": 1.5833333333333333,
+            "sourceDuration": 1.6,
+            "trimStart": 0,
+            "trimEnd": 1.5833333333333333,
+            "sourceFps": null,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "gainDb": 0,
+            "fadeIn": 0,
+            "fadeOut": 0,
+            "color": "#565C6B",
+            "type": "audio",
+            "enabled": true,
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": 1,
+                "shotId": "0bde8baf-361c-4e2a-8af7-029821cce87e",
+                "role": "dialogue"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "language",
+              "language": "en",
+              "storybook": {
+                "dialogueId": "834403e4-04dd-4d63-ad52-d6f91ccac67e",
+                "sequenceNumber": 8
+              }
+            },
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-14",
+            "trackId": "audio-1",
+            "assetId": "sb-dlg-b8482079-7559-4936-a177-407d4320f830",
+            "name": "MAYA 9 (en)",
+            "startTime": 19.416666666666668,
+            "duration": 1.5833333333333333,
+            "sourceDuration": 1.6,
+            "trimStart": 0,
+            "trimEnd": 1.5833333333333333,
+            "sourceFps": null,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "gainDb": 0,
+            "fadeIn": 0,
+            "fadeOut": 0,
+            "color": "#565C6B",
+            "type": "audio",
+            "enabled": true,
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": 2,
+                "shotId": "ef144c81-b8bb-4b66-a6a2-3be85eb07937",
+                "role": "dialogue"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "language",
+              "language": "en",
+              "storybook": {
+                "dialogueId": "b8482079-7559-4936-a177-407d4320f830",
+                "sequenceNumber": 9
+              }
+            },
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-15",
+            "trackId": "audio-1",
+            "assetId": "sb-dlg-670f6501-850d-45a8-8214-d304b330ef21",
+            "name": "ARJUN 10 (en)",
+            "startTime": 21.916666666666668,
+            "duration": 1.5833333333333333,
+            "sourceDuration": 1.6,
+            "trimStart": 0,
+            "trimEnd": 1.5833333333333333,
+            "sourceFps": null,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "gainDb": 0,
+            "fadeIn": 0,
+            "fadeOut": 0,
+            "color": "#565C6B",
+            "type": "audio",
+            "enabled": true,
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": 2,
+                "shotId": "ef144c81-b8bb-4b66-a6a2-3be85eb07937",
+                "role": "dialogue"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "language",
+              "language": "en",
+              "storybook": {
+                "dialogueId": "670f6501-850d-45a8-8214-d304b330ef21",
+                "sequenceNumber": 10
+              }
+            },
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-16",
+            "trackId": "audio-2",
+            "assetId": "sb-shot-e661db7d-ef76-48f7-9e31-5103fd62ff85",
+            "name": "S1.1 MAYA reacts to the alarm (shot 1).",
+            "startTime": 0,
+            "duration": 4,
+            "sourceDuration": 4.5,
+            "trimStart": 0.2,
+            "trimEnd": 4.2,
+            "sourceFps": null,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "gainDb": 0,
+            "fadeIn": 0,
+            "fadeOut": 0,
+            "color": "#6B7280",
+            "type": "audio",
+            "enabled": true,
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": 1,
+                "shotId": "e661db7d-ef76-48f7-9e31-5103fd62ff85",
+                "role": "generated_video"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "none",
+              "bus": "shotaudio",
+              "linkedVideoClipId": "clip-1",
+              "embeddedAudioFromVideoAsset": true
+            },
+            "linkGroupId": "sb-link-e661db7d-ef76-48f7-9e31-5103fd62ff85",
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-17",
+            "trackId": "audio-2",
+            "assetId": "sb-shot-d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+            "name": "S1.2 ARJUN reacts to the alarm (shot 2).",
+            "startTime": 4,
+            "duration": 5,
+            "sourceDuration": 5.5,
+            "trimStart": 0.2,
+            "trimEnd": 5.2,
+            "sourceFps": null,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "gainDb": 0,
+            "fadeIn": 0,
+            "fadeOut": 0,
+            "color": "#6B7280",
+            "type": "audio",
+            "enabled": true,
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": 1,
+                "shotId": "d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+                "role": "generated_video"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "none",
+              "bus": "shotaudio",
+              "linkedVideoClipId": "clip-2",
+              "embeddedAudioFromVideoAsset": true
+            },
+            "linkGroupId": "sb-link-d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-18",
+            "trackId": "audio-2",
+            "assetId": "sb-shot-f9b0707d-d3c3-4df3-9183-908a80a67361",
+            "name": "S1.3 MAYA reacts to the alarm (shot 3).",
+            "startTime": 9,
+            "duration": 6,
+            "sourceDuration": 6.5,
+            "trimStart": 0.2,
+            "trimEnd": 6.2,
+            "sourceFps": null,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "gainDb": 0,
+            "fadeIn": 0,
+            "fadeOut": 0,
+            "color": "#6B7280",
+            "type": "audio",
+            "enabled": true,
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": 1,
+                "shotId": "f9b0707d-d3c3-4df3-9183-908a80a67361",
+                "role": "generated_video"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "none",
+              "bus": "shotaudio",
+              "linkedVideoClipId": "clip-3",
+              "embeddedAudioFromVideoAsset": true
+            },
+            "linkGroupId": "sb-link-f9b0707d-d3c3-4df3-9183-908a80a67361",
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-19",
+            "trackId": "audio-2",
+            "assetId": "sb-shot-0bde8baf-361c-4e2a-8af7-029821cce87e",
+            "name": "S1.4 ARJUN reacts to the alarm (shot 4).",
+            "startTime": 15,
+            "duration": 4,
+            "sourceDuration": 4.5,
+            "trimStart": 0.2,
+            "trimEnd": 4.2,
+            "sourceFps": null,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "gainDb": 0,
+            "fadeIn": 0,
+            "fadeOut": 0,
+            "color": "#6B7280",
+            "type": "audio",
+            "enabled": true,
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": 1,
+                "shotId": "0bde8baf-361c-4e2a-8af7-029821cce87e",
+                "role": "generated_video"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "none",
+              "bus": "shotaudio",
+              "linkedVideoClipId": "clip-4",
+              "embeddedAudioFromVideoAsset": true
+            },
+            "linkGroupId": "sb-link-0bde8baf-361c-4e2a-8af7-029821cce87e",
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-20",
+            "trackId": "audio-3",
+            "assetId": "sb-audio-f6aaab11-e3af-4f28-9007-c16131506496",
+            "name": "Night lab theme",
+            "startTime": 0,
+            "duration": 24,
+            "sourceDuration": 24,
+            "trimStart": 0,
+            "trimEnd": 24,
+            "sourceFps": null,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "gainDb": -4.44,
+            "fadeIn": 0,
+            "fadeOut": 0,
+            "color": "#4a8a6a",
+            "type": "audio",
+            "enabled": true,
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": null,
+                "shotId": null,
+                "role": "music"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "none",
+              "bus": "music",
+              "storybook": {
+                "audioTrackId": "f6aaab11-e3af-4f28-9007-c16131506496",
+                "volume": 0.6,
+                "loopable": true,
+                "piece": 0
+              }
+            },
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-21",
+            "trackId": "audio-4",
+            "assetId": "sb-audio-29dc594d-4cb1-4152-af25-385ac66b00e7",
+            "name": "Alarm",
+            "startTime": 3,
+            "duration": 2,
+            "sourceDuration": 2,
+            "trimStart": 0,
+            "trimEnd": 2,
+            "sourceFps": null,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "gainDb": -0.92,
+            "fadeIn": 0,
+            "fadeOut": 0,
+            "color": "#8a6a9a",
+            "type": "audio",
+            "enabled": true,
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": null,
+                "shotId": null,
+                "role": "sfx"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "none",
+              "bus": "sfx",
+              "storybook": {
+                "audioTrackId": "29dc594d-4cb1-4152-af25-385ac66b00e7",
+                "volume": 0.9,
+                "loopable": false,
+                "piece": 0
+              }
+            },
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-22",
+            "trackId": "audio-5",
+            "assetId": "sb-audio-6f043d36-e8ff-43bb-96fa-0390fb1e9548",
+            "name": "Rain on glass",
+            "startTime": 0,
+            "duration": 24,
+            "sourceDuration": 24,
+            "trimStart": 0,
+            "trimEnd": 24,
+            "sourceFps": null,
+            "timelineFps": 24,
+            "sourceTimeScale": 1,
+            "speed": 1,
+            "reverse": false,
+            "gainDb": -10.46,
+            "fadeIn": 0,
+            "fadeOut": 0,
+            "color": "#4a7a8a",
+            "type": "audio",
+            "enabled": true,
+            "url": null,
+            "thumbnail": null,
+            "metadata": {
+              "semantic": {
+                "scene": null,
+                "shotId": null,
+                "role": "ambience"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "none",
+              "bus": "ambience",
+              "storybook": {
+                "audioTrackId": "6f043d36-e8ff-43bb-96fa-0390fb1e9548",
+                "volume": 0.3,
+                "loopable": true,
+                "piece": 0
+              }
+            },
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          },
+          {
+            "id": "clip-23",
+            "trackId": "video-2",
+            "assetId": null,
+            "name": "Captions (en)",
+            "startTime": 0,
+            "duration": 23.5,
+            "sourceDuration": 23.5,
+            "trimStart": 0,
+            "trimEnd": 23.5,
+            "color": "#3E6B5C",
+            "type": "captions",
+            "enabled": true,
+            "compositeLowerLayers": "auto",
+            "url": null,
+            "thumbnail": null,
+            "captions": {
+              "preset": {
+                "id": "kinetic-traditional",
+                "fontFamily": "Inter",
+                "textColor": "#FFFFFF",
+                "subtitleColor": "#FFFFFF"
+              },
+              "cues": [
+                {
+                  "id": "cue-44c0f21c-4ee6-4745-89c9-722282129848",
+                  "start": 0.4,
+                  "end": 2,
+                  "text": "Line 1: MAYA says what the scene needs, in about ten words."
+                },
+                {
+                  "id": "cue-31d8658f-7188-427a-9f2b-8370e44daab4",
+                  "start": 2.4,
+                  "end": 4,
+                  "text": "Line 2: ARJUN says what the scene needs, in about ten words."
+                },
+                {
+                  "id": "cue-cb75edd9-b3e1-448e-8f1d-a025509ae509",
+                  "start": 4.4,
+                  "end": 6,
+                  "text": "Line 3: ARJUN says what the scene needs, in about ten words."
+                },
+                {
+                  "id": "cue-1694ec0b-b34f-474c-9157-60d133db2305",
+                  "start": 6.9,
+                  "end": 8.5,
+                  "text": "Line 4: MAYA says what the scene needs, in about ten words."
+                },
+                {
+                  "id": "cue-59da1f4e-6914-414c-8e62-e7ab7dbd7ab6",
+                  "start": 9.4,
+                  "end": 11,
+                  "text": "Line 5: MAYA says what the scene needs, in about ten words."
+                },
+                {
+                  "id": "cue-67feff31-acf7-4959-a8e0-ba544cf3761e",
+                  "start": 12.4,
+                  "end": 14,
+                  "text": "Line 6: ARJUN says what the scene needs, in about ten words."
+                },
+                {
+                  "id": "cue-a6b8f09d-255f-43c6-87bb-bc9284177f41",
+                  "start": 15.4,
+                  "end": 17,
+                  "text": "Line 7: ARJUN says what the scene needs, in about ten words."
+                },
+                {
+                  "id": "cue-e83fffc6-cd92-4fbd-ac98-d42b6b950f49",
+                  "start": 17.4,
+                  "end": 19,
+                  "text": "Line 8: MAYA says what the scene needs, in about ten words."
+                },
+                {
+                  "id": "cue-1117aa2a-fb2e-486c-b7c9-52df21e2dc98",
+                  "start": 19.4,
+                  "end": 21,
+                  "text": "Line 9: MAYA says what the scene needs, in about ten words."
+                },
+                {
+                  "id": "cue-438e099f-2118-4772-a37d-a58c039d99a7",
+                  "start": 21.9,
+                  "end": 23.5,
+                  "text": "Line 10: ARJUN says what the scene needs, in about ten words."
+                }
+              ],
+              "workspace": {
+                "version": 1,
+                "presetId": "kinetic-traditional",
+                "storybook": {
+                  "captionId": "8895508f-c418-497a-9080-f65dfe6dbb01",
+                  "stylePreset": "standard"
+                }
+              }
+            },
+            "metadata": {
+              "semantic": {
+                "scene": null,
+                "shotId": null,
+                "role": "caption"
+              },
+              "origin": {
+                "versionId": null,
+                "opId": null,
+                "by": "ai"
+              },
+              "languageDependency": "language",
+              "language": "en",
+              "storybook": {
+                "captionId": "8895508f-c418-497a-9080-f65dfe6dbb01"
+              }
+            },
+            "transform": {
+              "positionX": 0,
+              "positionY": 0,
+              "positionZ": 0,
+              "scaleX": 100,
+              "scaleY": 100,
+              "scaleLinked": true,
+              "rotation": 0,
+              "rotationX": 0,
+              "rotationY": 0,
+              "perspective": 1200,
+              "anchorX": 50,
+              "anchorY": 50,
+              "opacity": 100,
+              "flipH": false,
+              "flipV": false,
+              "cropTop": 0,
+              "cropBottom": 0,
+              "cropLeft": 0,
+              "cropRight": 0,
+              "motionBlurEnabled": false,
+              "motionBlurMode": "auto",
+              "motionBlurSamples": 8,
+              "motionBlurShutter": 180,
+              "blendMode": "normal",
+              "blur": 0
+            }
+          }
+        ],
+        "transitions": [],
+        "markers": [
+          {
+            "id": "marker-1",
+            "time": 0,
+            "label": "INT. RESEARCH LAB - NIGHT (1)",
+            "color": "#f5c451",
+            "scene": 1
+          },
+          {
+            "id": "marker-2",
+            "time": 19,
+            "label": "INT. RESEARCH LAB - NIGHT (2)",
+            "color": "#f5c451",
+            "scene": 2
+          }
+        ],
+        "clipCounter": 24,
+        "transitionCounter": 1,
+        "markerCounter": 3,
+        "snappingEnabled": true,
+        "snappingThreshold": 10,
+        "rippleEditMode": false,
+        "studio": {
+          "kind": "master",
+          "variantOf": null,
+          "aspect": "16:9",
+          "language": "en"
+        }
+      }
+    ],
+    "currentTimelineId": "tl-master",
+    "assets": [
+      {
+        "id": "sb-shot-e661db7d-ef76-48f7-9e31-5103fd62ff85",
+        "name": "S1.1 MAYA reacts to the alarm (shot 1).",
+        "type": "video",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-1",
+        "role": "generated_video",
+        "semantic": {
+          "scene": 1,
+          "shotId": "e661db7d-ef76-48f7-9e31-5103fd62ff85",
+          "characters": [
+            "MAYA",
+            "ARJUN"
+          ],
+          "purpose": "MAYA reacts to the alarm (shot 1).",
+          "emotion": "urgent",
+          "prompt": "Subject: MAYA, early thirties, short dark hair, brown eyes, lab coat over a grey sweater. Action: MAYA turns toward the console as the alarm starts, breath catching. Scene: a dim research lab at night, blue monitor light, rain on the windows. Style: medium close-up, slow push-in, 35mm, shallow depth of field. Sounds: alarm tone, rain, server hum. Negative: no subtitles, no captions, no watermark. (shot 1)",
+          "continuationFrom": null,
+          "cameraDirection": "slow push-in",
+          "sequenceNumber": 1
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "shot.video",
+          "ref": "e661db7d-ef76-48f7-9e31-5103fd62ff85",
+          "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/e661db7d-ef76-48f7-9e31-5103fd62ff85/video/shot-1.mp4",
+          "sha256": null,
+          "bytes": 2000087
+        },
+        "path": "assets/video/shot-1.mp4",
+        "size": 2000087,
+        "mimeType": "video/mp4",
+        "duration": 4.5,
+        "width": 1920,
+        "height": 1080,
+        "settings": {
+          "duration": 4.5,
+          "fps": 24,
+          "width": 1920,
+          "height": 1080,
+          "codecs": {
+            "video": "h264",
+            "audio": "aac"
+          }
+        },
+        "hasAudio": true,
+        "audioEnabled": true
+      },
+      {
+        "id": "sb-first-e661db7d-ef76-48f7-9e31-5103fd62ff85",
+        "name": "S1.1 first frame",
+        "type": "image",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-1",
+        "role": "image",
+        "semantic": {
+          "scene": 1,
+          "shotId": "e661db7d-ef76-48f7-9e31-5103fd62ff85",
+          "characters": [
+            "MAYA",
+            "ARJUN"
+          ],
+          "purpose": "first_frame",
+          "emotion": null,
+          "prompt": null,
+          "continuationFrom": null
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "shot.firstFrame",
+          "ref": "e661db7d-ef76-48f7-9e31-5103fd62ff85",
+          "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/e661db7d-ef76-48f7-9e31-5103fd62ff85/image/first-1.png",
+          "sha256": null,
+          "bytes": 180585
+        },
+        "path": "assets/images/first-1.png",
+        "size": 180585,
+        "mimeType": "image/png",
+        "duration": null,
+        "width": 1920,
+        "height": 1080,
+        "settings": {
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      {
+        "id": "sb-last-e661db7d-ef76-48f7-9e31-5103fd62ff85",
+        "name": "S1.1 last frame",
+        "type": "image",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-1",
+        "role": "image",
+        "semantic": {
+          "scene": 1,
+          "shotId": "e661db7d-ef76-48f7-9e31-5103fd62ff85",
+          "characters": [
+            "MAYA",
+            "ARJUN"
+          ],
+          "purpose": "last_frame",
+          "emotion": null,
+          "prompt": null,
+          "continuationFrom": null
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "shot.lastFrame",
+          "ref": "e661db7d-ef76-48f7-9e31-5103fd62ff85",
+          "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/e661db7d-ef76-48f7-9e31-5103fd62ff85/image/last-1.png",
+          "sha256": null,
+          "bytes": 180980
+        },
+        "path": "assets/images/last-1.png",
+        "size": 180980,
+        "mimeType": "image/png",
+        "duration": null,
+        "width": 1920,
+        "height": 1080,
+        "settings": {
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      {
+        "id": "sb-shot-d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+        "name": "S1.2 ARJUN reacts to the alarm (shot 2).",
+        "type": "video",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-1",
+        "role": "generated_video",
+        "semantic": {
+          "scene": 1,
+          "shotId": "d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+          "characters": [
+            "ARJUN",
+            "MAYA"
+          ],
+          "purpose": "ARJUN reacts to the alarm (shot 2).",
+          "emotion": "relieved",
+          "prompt": "Subject: ARJUN, early thirties, short dark hair, brown eyes, lab coat over a grey sweater. Action: ARJUN turns toward the console as the alarm starts, breath catching. Scene: a dim research lab at night, blue monitor light, rain on the windows. Style: medium close-up, slow push-in, 35mm, shallow depth of field. Sounds: alarm tone, rain, server hum. Negative: no subtitles, no captions, no watermark. (shot 2)",
+          "continuationFrom": "e661db7d-ef76-48f7-9e31-5103fd62ff85",
+          "cameraDirection": "static",
+          "sequenceNumber": 2
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "shot.video",
+          "ref": "d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+          "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/d13dc27a-4c76-4ea6-8231-1a96ede3aef9/video/shot-2.mp4",
+          "sha256": null,
+          "bytes": 2000252
+        },
+        "path": "assets/video/shot-2.mp4",
+        "size": 2000252,
+        "mimeType": "video/mp4",
+        "duration": 5.5,
+        "width": 1920,
+        "height": 1080,
+        "settings": {
+          "duration": 5.5,
+          "fps": 24,
+          "width": 1920,
+          "height": 1080,
+          "codecs": {
+            "video": "h264",
+            "audio": "aac"
+          }
+        },
+        "hasAudio": true,
+        "audioEnabled": true
+      },
+      {
+        "id": "sb-first-d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+        "name": "S1.2 first frame",
+        "type": "image",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-1",
+        "role": "image",
+        "semantic": {
+          "scene": 1,
+          "shotId": "d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+          "characters": [
+            "ARJUN",
+            "MAYA"
+          ],
+          "purpose": "first_frame",
+          "emotion": null,
+          "prompt": null,
+          "continuationFrom": null
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "shot.firstFrame",
+          "ref": "d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+          "key": null,
+          "sha256": null,
+          "bytes": null
+        },
+        "path": null,
+        "size": null,
+        "mimeType": null,
+        "duration": null,
+        "width": null,
+        "height": null,
+        "settings": {},
+        "offline": {
+          "reason": "outside_project"
+        }
+      },
+      {
+        "id": "sb-last-d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+        "name": "S1.2 last frame",
+        "type": "image",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-1",
+        "role": "image",
+        "semantic": {
+          "scene": 1,
+          "shotId": "d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+          "characters": [
+            "ARJUN",
+            "MAYA"
+          ],
+          "purpose": "last_frame",
+          "emotion": null,
+          "prompt": null,
+          "continuationFrom": null
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "shot.lastFrame",
+          "ref": "d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+          "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/d13dc27a-4c76-4ea6-8231-1a96ede3aef9/image/last-2.png",
+          "sha256": null,
+          "bytes": 180220
+        },
+        "path": "assets/images/last-2.png",
+        "size": 180220,
+        "mimeType": "image/png",
+        "duration": null,
+        "width": 1920,
+        "height": 1080,
+        "settings": {
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      {
+        "id": "sb-shot-f9b0707d-d3c3-4df3-9183-908a80a67361",
+        "name": "S1.3 MAYA reacts to the alarm (shot 3).",
+        "type": "video",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-1",
+        "role": "generated_video",
+        "semantic": {
+          "scene": 1,
+          "shotId": "f9b0707d-d3c3-4df3-9183-908a80a67361",
+          "characters": [
+            "MAYA",
+            "ARJUN"
+          ],
+          "purpose": "MAYA reacts to the alarm (shot 3).",
+          "emotion": "urgent",
+          "prompt": "Subject: MAYA, early thirties, short dark hair, brown eyes, lab coat over a grey sweater. Action: MAYA turns toward the console as the alarm starts, breath catching. Scene: a dim research lab at night, blue monitor light, rain on the windows. Style: medium close-up, slow push-in, 35mm, shallow depth of field. Sounds: alarm tone, rain, server hum. Negative: no subtitles, no captions, no watermark. (shot 3)",
+          "continuationFrom": null,
+          "cameraDirection": "slow push-in",
+          "sequenceNumber": 3
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "shot.video",
+          "ref": "f9b0707d-d3c3-4df3-9183-908a80a67361",
+          "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/f9b0707d-d3c3-4df3-9183-908a80a67361/video/shot-3.mp4",
+          "sha256": null,
+          "bytes": 2000496
+        },
+        "path": "assets/video/shot-3.mp4",
+        "size": 2000496,
+        "mimeType": "video/mp4",
+        "duration": 6.5,
+        "width": 1920,
+        "height": 1080,
+        "settings": {
+          "duration": 6.5,
+          "fps": 24,
+          "width": 1920,
+          "height": 1080,
+          "codecs": {
+            "video": "h264",
+            "audio": "aac"
+          }
+        },
+        "hasAudio": true,
+        "audioEnabled": true
+      },
+      {
+        "id": "sb-first-f9b0707d-d3c3-4df3-9183-908a80a67361",
+        "name": "S1.3 first frame",
+        "type": "image",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-1",
+        "role": "image",
+        "semantic": {
+          "scene": 1,
+          "shotId": "f9b0707d-d3c3-4df3-9183-908a80a67361",
+          "characters": [
+            "MAYA",
+            "ARJUN"
+          ],
+          "purpose": "first_frame",
+          "emotion": null,
+          "prompt": null,
+          "continuationFrom": null
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "shot.firstFrame",
+          "ref": "f9b0707d-d3c3-4df3-9183-908a80a67361",
+          "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/f9b0707d-d3c3-4df3-9183-908a80a67361/image/first-3.png",
+          "sha256": null,
+          "bytes": 180837
+        },
+        "path": "assets/images/first-3.png",
+        "size": 180837,
+        "mimeType": "image/png",
+        "duration": null,
+        "width": 1920,
+        "height": 1080,
+        "settings": {
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      {
+        "id": "sb-last-f9b0707d-d3c3-4df3-9183-908a80a67361",
+        "name": "S1.3 last frame",
+        "type": "image",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-1",
+        "role": "image",
+        "semantic": {
+          "scene": 1,
+          "shotId": "f9b0707d-d3c3-4df3-9183-908a80a67361",
+          "characters": [
+            "MAYA",
+            "ARJUN"
+          ],
+          "purpose": "last_frame",
+          "emotion": null,
+          "prompt": null,
+          "continuationFrom": null
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "shot.lastFrame",
+          "ref": "f9b0707d-d3c3-4df3-9183-908a80a67361",
+          "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/f9b0707d-d3c3-4df3-9183-908a80a67361/image/last-3.png",
+          "sha256": null,
+          "bytes": 180144
+        },
+        "path": "assets/images/last-3.png",
+        "size": 180144,
+        "mimeType": "image/png",
+        "duration": null,
+        "width": 1920,
+        "height": 1080,
+        "settings": {
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      {
+        "id": "sb-shot-0bde8baf-361c-4e2a-8af7-029821cce87e",
+        "name": "S1.4 ARJUN reacts to the alarm (shot 4).",
+        "type": "video",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-1",
+        "role": "generated_video",
+        "semantic": {
+          "scene": 1,
+          "shotId": "0bde8baf-361c-4e2a-8af7-029821cce87e",
+          "characters": [
+            "ARJUN",
+            "MAYA"
+          ],
+          "purpose": "ARJUN reacts to the alarm (shot 4).",
+          "emotion": "relieved",
+          "prompt": "Subject: ARJUN, early thirties, short dark hair, brown eyes, lab coat over a grey sweater. Action: ARJUN turns toward the console as the alarm starts, breath catching. Scene: a dim research lab at night, blue monitor light, rain on the windows. Style: medium close-up, slow push-in, 35mm, shallow depth of field. Sounds: alarm tone, rain, server hum. Negative: no subtitles, no captions, no watermark. (shot 4)",
+          "continuationFrom": null,
+          "cameraDirection": "static",
+          "sequenceNumber": 4
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "shot.video",
+          "ref": "0bde8baf-361c-4e2a-8af7-029821cce87e",
+          "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/0bde8baf-361c-4e2a-8af7-029821cce87e/video/shot-4.mp4",
+          "sha256": null,
+          "bytes": 2000433
+        },
+        "path": "assets/video/shot-4.mp4",
+        "size": 2000433,
+        "mimeType": "video/mp4",
+        "duration": 4.5,
+        "width": 1920,
+        "height": 1080,
+        "settings": {
+          "duration": 4.5,
+          "fps": 24,
+          "width": 1920,
+          "height": 1080,
+          "codecs": {
+            "video": "h264",
+            "audio": "aac"
+          }
+        },
+        "hasAudio": true,
+        "audioEnabled": true
+      },
+      {
+        "id": "sb-first-0bde8baf-361c-4e2a-8af7-029821cce87e",
+        "name": "S1.4 first frame",
+        "type": "image",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-1",
+        "role": "image",
+        "semantic": {
+          "scene": 1,
+          "shotId": "0bde8baf-361c-4e2a-8af7-029821cce87e",
+          "characters": [
+            "ARJUN",
+            "MAYA"
+          ],
+          "purpose": "first_frame",
+          "emotion": null,
+          "prompt": null,
+          "continuationFrom": null
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "shot.firstFrame",
+          "ref": "0bde8baf-361c-4e2a-8af7-029821cce87e",
+          "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/0bde8baf-361c-4e2a-8af7-029821cce87e/image/first-4.png",
+          "sha256": null,
+          "bytes": 180101
+        },
+        "path": "assets/images/first-4.png",
+        "size": 180101,
+        "mimeType": "image/png",
+        "duration": null,
+        "width": 1920,
+        "height": 1080,
+        "settings": {
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      {
+        "id": "sb-last-0bde8baf-361c-4e2a-8af7-029821cce87e",
+        "name": "S1.4 last frame",
+        "type": "image",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-1",
+        "role": "image",
+        "semantic": {
+          "scene": 1,
+          "shotId": "0bde8baf-361c-4e2a-8af7-029821cce87e",
+          "characters": [
+            "ARJUN",
+            "MAYA"
+          ],
+          "purpose": "last_frame",
+          "emotion": null,
+          "prompt": null,
+          "continuationFrom": null
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "shot.lastFrame",
+          "ref": "0bde8baf-361c-4e2a-8af7-029821cce87e",
+          "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/0bde8baf-361c-4e2a-8af7-029821cce87e/image/last-4.png",
+          "sha256": null,
+          "bytes": 180498
+        },
+        "path": "assets/images/last-4.png",
+        "size": 180498,
+        "mimeType": "image/png",
+        "duration": null,
+        "width": 1920,
+        "height": 1080,
+        "settings": {
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      {
+        "id": "sb-shot-ef144c81-b8bb-4b66-a6a2-3be85eb07937",
+        "name": "S2.1 MAYA reacts to the alarm (shot 5).",
+        "type": "video",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-2",
+        "role": "generated_video",
+        "semantic": {
+          "scene": 2,
+          "shotId": "ef144c81-b8bb-4b66-a6a2-3be85eb07937",
+          "characters": [
+            "MAYA",
+            "ARJUN"
+          ],
+          "purpose": "MAYA reacts to the alarm (shot 5).",
+          "emotion": "urgent",
+          "prompt": "Subject: MAYA, early thirties, short dark hair, brown eyes, lab coat over a grey sweater. Action: MAYA turns toward the console as the alarm starts, breath catching. Scene: a dim research lab at night, blue monitor light, rain on the windows. Style: medium close-up, slow push-in, 35mm, shallow depth of field. Sounds: alarm tone, rain, server hum. Negative: no subtitles, no captions, no watermark. (shot 5)",
+          "continuationFrom": null,
+          "cameraDirection": "slow push-in",
+          "sequenceNumber": 5
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "shot.video",
+          "ref": "ef144c81-b8bb-4b66-a6a2-3be85eb07937",
+          "key": null,
+          "sha256": null,
+          "bytes": null
+        },
+        "path": null,
+        "size": null,
+        "mimeType": null,
+        "duration": null,
+        "width": null,
+        "height": null,
+        "settings": {},
+        "offline": {
+          "reason": "not_generated"
+        },
+        "hasAudio": false,
+        "audioEnabled": false
+      },
+      {
+        "id": "sb-first-ef144c81-b8bb-4b66-a6a2-3be85eb07937",
+        "name": "S2.1 first frame",
+        "type": "image",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-2",
+        "role": "image",
+        "semantic": {
+          "scene": 2,
+          "shotId": "ef144c81-b8bb-4b66-a6a2-3be85eb07937",
+          "characters": [
+            "MAYA",
+            "ARJUN"
+          ],
+          "purpose": "first_frame",
+          "emotion": null,
+          "prompt": null,
+          "continuationFrom": null
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "shot.firstFrame",
+          "ref": "ef144c81-b8bb-4b66-a6a2-3be85eb07937",
+          "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/ef144c81-b8bb-4b66-a6a2-3be85eb07937/image/first-5.png",
+          "sha256": null,
+          "bytes": 180867
+        },
+        "path": "assets/images/first-5.png",
+        "size": 180867,
+        "mimeType": "image/png",
+        "duration": null,
+        "width": 1920,
+        "height": 1080,
+        "settings": {
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      {
+        "id": "sb-dlg-c5267c6e-7ec1-4cfb-96dc-7d90dc34f2eb",
+        "name": "MAYA 1 (en)",
+        "type": "audio",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-1",
+        "role": "dialogue",
+        "semantic": {
+          "scene": 1,
+          "shotId": "e661db7d-ef76-48f7-9e31-5103fd62ff85",
+          "characters": [
+            "MAYA"
+          ],
+          "purpose": "dialogue",
+          "emotion": "urgent",
+          "prompt": null,
+          "continuationFrom": null,
+          "text": "Line 1: MAYA says what the scene needs, in about ten words.",
+          "language": "en"
+        },
+        "languageDependency": "language",
+        "language": "en",
+        "storybook": {
+          "source": "dialogue.audio",
+          "ref": "c5267c6e-7ec1-4cfb-96dc-7d90dc34f2eb",
+          "key": "audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/c5267c6e-7ec1-4cfb-96dc-7d90dc34f2eb_1.mp3",
+          "sha256": null,
+          "bytes": 24757
+        },
+        "path": "assets/audio/c5267c6e-7ec1-4cfb-96dc-7d90dc34f2eb_1.mp3",
+        "size": 24757,
+        "mimeType": "audio/mpeg",
+        "duration": 1.6,
+        "width": null,
+        "height": null,
+        "settings": {
+          "duration": 1.6,
+          "codecs": {
+            "audio": "mp3"
+          }
+        }
+      },
+      {
+        "id": "sb-dlg-0146215d-67e1-4bd9-b82c-304dad552a69",
+        "name": "ARJUN 2 (en)",
+        "type": "audio",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-1",
+        "role": "dialogue",
+        "semantic": {
+          "scene": 1,
+          "shotId": "e661db7d-ef76-48f7-9e31-5103fd62ff85",
+          "characters": [
+            "ARJUN"
+          ],
+          "purpose": "dialogue",
+          "emotion": "curious",
+          "prompt": null,
+          "continuationFrom": null,
+          "text": "Line 2: ARJUN says what the scene needs, in about ten words.",
+          "language": "en"
+        },
+        "languageDependency": "language",
+        "language": "en",
+        "storybook": {
+          "source": "dialogue.audio",
+          "ref": "0146215d-67e1-4bd9-b82c-304dad552a69",
+          "key": "audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/0146215d-67e1-4bd9-b82c-304dad552a69_1.mp3",
+          "sha256": null,
+          "bytes": 24516
+        },
+        "path": "assets/audio/0146215d-67e1-4bd9-b82c-304dad552a69_1.mp3",
+        "size": 24516,
+        "mimeType": "audio/mpeg",
+        "duration": 1.6,
+        "width": null,
+        "height": null,
+        "settings": {
+          "duration": 1.6,
+          "codecs": {
+            "audio": "mp3"
+          }
+        }
+      },
+      {
+        "id": "sb-dlg-b9912816-2e14-466c-be04-fc762ec34b10",
+        "name": "ARJUN 3 (en)",
+        "type": "audio",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-1",
+        "role": "dialogue",
+        "semantic": {
+          "scene": 1,
+          "shotId": "d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+          "characters": [
+            "ARJUN"
+          ],
+          "purpose": "dialogue",
+          "emotion": "relieved",
+          "prompt": null,
+          "continuationFrom": null,
+          "text": "Line 3: ARJUN says what the scene needs, in about ten words.",
+          "language": "en"
+        },
+        "languageDependency": "language",
+        "language": "en",
+        "storybook": {
+          "source": "dialogue.audio",
+          "ref": "b9912816-2e14-466c-be04-fc762ec34b10",
+          "key": null,
+          "sha256": null,
+          "bytes": null
+        },
+        "path": null,
+        "size": null,
+        "mimeType": null,
+        "duration": null,
+        "width": null,
+        "height": null,
+        "settings": {},
+        "offline": {
+          "reason": "missing"
+        }
+      },
+      {
+        "id": "sb-dlg-9fce82f0-c628-4291-aa45-3bdff786310c",
+        "name": "MAYA 4 (en)",
+        "type": "audio",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-1",
+        "role": "dialogue",
+        "semantic": {
+          "scene": 1,
+          "shotId": "d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+          "characters": [
+            "MAYA"
+          ],
+          "purpose": "dialogue",
+          "emotion": "calm",
+          "prompt": null,
+          "continuationFrom": null,
+          "text": "Line 4: MAYA says what the scene needs, in about ten words.",
+          "language": "en"
+        },
+        "languageDependency": "language",
+        "language": "en",
+        "storybook": {
+          "source": "dialogue.audio",
+          "ref": "9fce82f0-c628-4291-aa45-3bdff786310c",
+          "key": "audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/9fce82f0-c628-4291-aa45-3bdff786310c_1.mp3",
+          "sha256": null,
+          "bytes": 24645
+        },
+        "path": "assets/audio/9fce82f0-c628-4291-aa45-3bdff786310c_1.mp3",
+        "size": 24645,
+        "mimeType": "audio/mpeg",
+        "duration": 1.6,
+        "width": null,
+        "height": null,
+        "settings": {
+          "duration": 1.6,
+          "codecs": {
+            "audio": "mp3"
+          }
+        }
+      },
+      {
+        "id": "sb-dlg-8228b01f-757d-4c52-984f-65e5e108f482",
+        "name": "MAYA 5 (en)",
+        "type": "audio",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-1",
+        "role": "dialogue",
+        "semantic": {
+          "scene": 1,
+          "shotId": "f9b0707d-d3c3-4df3-9183-908a80a67361",
+          "characters": [
+            "MAYA"
+          ],
+          "purpose": "dialogue",
+          "emotion": "urgent",
+          "prompt": null,
+          "continuationFrom": null,
+          "text": "Line 5: MAYA says what the scene needs, in about ten words.",
+          "language": "en"
+        },
+        "languageDependency": "language",
+        "language": "en",
+        "storybook": {
+          "source": "dialogue.audio",
+          "ref": "8228b01f-757d-4c52-984f-65e5e108f482",
+          "key": "audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/8228b01f-757d-4c52-984f-65e5e108f482_1.mp3",
+          "sha256": null,
+          "bytes": 24020
+        },
+        "path": "assets/audio/8228b01f-757d-4c52-984f-65e5e108f482_1.mp3",
+        "size": 24020,
+        "mimeType": "audio/mpeg",
+        "duration": 1.6,
+        "width": null,
+        "height": null,
+        "settings": {
+          "duration": 1.6,
+          "codecs": {
+            "audio": "mp3"
+          }
+        }
+      },
+      {
+        "id": "sb-dlg-94d892dc-a19f-4f0b-82c7-c39ad1f64db2",
+        "name": "ARJUN 6 (en)",
+        "type": "audio",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-1",
+        "role": "dialogue",
+        "semantic": {
+          "scene": 1,
+          "shotId": "f9b0707d-d3c3-4df3-9183-908a80a67361",
+          "characters": [
+            "ARJUN"
+          ],
+          "purpose": "dialogue",
+          "emotion": "curious",
+          "prompt": null,
+          "continuationFrom": null,
+          "text": "Line 6: ARJUN says what the scene needs, in about ten words.",
+          "language": "en"
+        },
+        "languageDependency": "language",
+        "language": "en",
+        "storybook": {
+          "source": "dialogue.audio",
+          "ref": "94d892dc-a19f-4f0b-82c7-c39ad1f64db2",
+          "key": "audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/94d892dc-a19f-4f0b-82c7-c39ad1f64db2_1.mp3",
+          "sha256": null,
+          "bytes": 24712
+        },
+        "path": "assets/audio/94d892dc-a19f-4f0b-82c7-c39ad1f64db2_1.mp3",
+        "size": 24712,
+        "mimeType": "audio/mpeg",
+        "duration": 1.6,
+        "width": null,
+        "height": null,
+        "settings": {
+          "duration": 1.6,
+          "codecs": {
+            "audio": "mp3"
+          }
+        }
+      },
+      {
+        "id": "sb-dlg-8ed5e1bd-760e-4740-badd-50758ac3872a",
+        "name": "ARJUN 7 (en)",
+        "type": "audio",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-1",
+        "role": "dialogue",
+        "semantic": {
+          "scene": 1,
+          "shotId": "0bde8baf-361c-4e2a-8af7-029821cce87e",
+          "characters": [
+            "ARJUN"
+          ],
+          "purpose": "dialogue",
+          "emotion": "relieved",
+          "prompt": null,
+          "continuationFrom": null,
+          "text": "Line 7: ARJUN says what the scene needs, in about ten words.",
+          "language": "en"
+        },
+        "languageDependency": "language",
+        "language": "en",
+        "storybook": {
+          "source": "dialogue.audio",
+          "ref": "8ed5e1bd-760e-4740-badd-50758ac3872a",
+          "key": "audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/8ed5e1bd-760e-4740-badd-50758ac3872a_1.mp3",
+          "sha256": null,
+          "bytes": 24816
+        },
+        "path": "assets/audio/8ed5e1bd-760e-4740-badd-50758ac3872a_1.mp3",
+        "size": 24816,
+        "mimeType": "audio/mpeg",
+        "duration": 1.6,
+        "width": null,
+        "height": null,
+        "settings": {
+          "duration": 1.6,
+          "codecs": {
+            "audio": "mp3"
+          }
+        }
+      },
+      {
+        "id": "sb-dlg-834403e4-04dd-4d63-ad52-d6f91ccac67e",
+        "name": "MAYA 8 (en)",
+        "type": "audio",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-1",
+        "role": "dialogue",
+        "semantic": {
+          "scene": 1,
+          "shotId": "0bde8baf-361c-4e2a-8af7-029821cce87e",
+          "characters": [
+            "MAYA"
+          ],
+          "purpose": "dialogue",
+          "emotion": "calm",
+          "prompt": null,
+          "continuationFrom": null,
+          "text": "Line 8: MAYA says what the scene needs, in about ten words.",
+          "language": "en"
+        },
+        "languageDependency": "language",
+        "language": "en",
+        "storybook": {
+          "source": "dialogue.audio",
+          "ref": "834403e4-04dd-4d63-ad52-d6f91ccac67e",
+          "key": "audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/834403e4-04dd-4d63-ad52-d6f91ccac67e_1.mp3",
+          "sha256": null,
+          "bytes": 24042
+        },
+        "path": "assets/audio/834403e4-04dd-4d63-ad52-d6f91ccac67e_1.mp3",
+        "size": 24042,
+        "mimeType": "audio/mpeg",
+        "duration": 1.6,
+        "width": null,
+        "height": null,
+        "settings": {
+          "duration": 1.6,
+          "codecs": {
+            "audio": "mp3"
+          }
+        }
+      },
+      {
+        "id": "sb-dlg-b8482079-7559-4936-a177-407d4320f830",
+        "name": "MAYA 9 (en)",
+        "type": "audio",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-2",
+        "role": "dialogue",
+        "semantic": {
+          "scene": 2,
+          "shotId": "ef144c81-b8bb-4b66-a6a2-3be85eb07937",
+          "characters": [
+            "MAYA"
+          ],
+          "purpose": "dialogue",
+          "emotion": "urgent",
+          "prompt": null,
+          "continuationFrom": null,
+          "text": "Line 9: MAYA says what the scene needs, in about ten words.",
+          "language": "en"
+        },
+        "languageDependency": "language",
+        "language": "en",
+        "storybook": {
+          "source": "dialogue.audio",
+          "ref": "b8482079-7559-4936-a177-407d4320f830",
+          "key": null,
+          "sha256": null,
+          "bytes": null
+        },
+        "path": null,
+        "size": null,
+        "mimeType": null,
+        "duration": null,
+        "width": null,
+        "height": null,
+        "settings": {},
+        "offline": {
+          "reason": "not_generated"
+        }
+      },
+      {
+        "id": "sb-dlg-670f6501-850d-45a8-8214-d304b330ef21",
+        "name": "ARJUN 10 (en)",
+        "type": "audio",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-2",
+        "role": "dialogue",
+        "semantic": {
+          "scene": 2,
+          "shotId": "ef144c81-b8bb-4b66-a6a2-3be85eb07937",
+          "characters": [
+            "ARJUN"
+          ],
+          "purpose": "dialogue",
+          "emotion": "curious",
+          "prompt": null,
+          "continuationFrom": null,
+          "text": "Line 10: ARJUN says what the scene needs, in about ten words.",
+          "language": "en"
+        },
+        "languageDependency": "language",
+        "language": "en",
+        "storybook": {
+          "source": "dialogue.audio",
+          "ref": "670f6501-850d-45a8-8214-d304b330ef21",
+          "key": null,
+          "sha256": null,
+          "bytes": null
+        },
+        "path": null,
+        "size": null,
+        "mimeType": null,
+        "duration": null,
+        "width": null,
+        "height": null,
+        "settings": {},
+        "offline": {
+          "reason": "not_generated"
+        }
+      },
+      {
+        "id": "sb-audio-f6aaab11-e3af-4f28-9007-c16131506496",
+        "name": "Night lab theme",
+        "type": "audio",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-3",
+        "role": "music",
+        "semantic": {
+          "scene": null,
+          "shotId": null,
+          "characters": [],
+          "purpose": "music",
+          "emotion": null,
+          "prompt": null,
+          "continuationFrom": null,
+          "tags": [
+            "tense",
+            "electronic"
+          ]
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "audioTracks.media",
+          "ref": "f6aaab11-e3af-4f28-9007-c16131506496",
+          "key": "audio/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/music/a4f4f2c6-b07f-4ad7-a985-814638ee3a29.mp3",
+          "sha256": null,
+          "bytes": 24140
+        },
+        "path": "assets/audio/a4f4f2c6-b07f-4ad7-a985-814638ee3a29.mp3",
+        "size": 24140,
+        "mimeType": "audio/mpeg",
+        "duration": 24,
+        "width": null,
+        "height": null,
+        "settings": {
+          "duration": 24,
+          "codecs": {
+            "audio": "mp3"
+          }
+        }
+      },
+      {
+        "id": "sb-audio-29dc594d-4cb1-4152-af25-385ac66b00e7",
+        "name": "Alarm",
+        "type": "audio",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-3",
+        "role": "sfx",
+        "semantic": {
+          "scene": null,
+          "shotId": null,
+          "characters": [],
+          "purpose": "sfx",
+          "emotion": null,
+          "prompt": null,
+          "continuationFrom": null,
+          "tags": []
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "audioTracks.media",
+          "ref": "29dc594d-4cb1-4152-af25-385ac66b00e7",
+          "key": "audio/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/sfx/f20e65ad-2908-4aa9-ace6-24170b301375.mp3",
+          "sha256": null,
+          "bytes": 24301
+        },
+        "path": "assets/audio/f20e65ad-2908-4aa9-ace6-24170b301375.mp3",
+        "size": 24301,
+        "mimeType": "audio/mpeg",
+        "duration": 2,
+        "width": null,
+        "height": null,
+        "settings": {
+          "duration": 2,
+          "codecs": {
+            "audio": "mp3"
+          }
+        }
+      },
+      {
+        "id": "sb-audio-6f043d36-e8ff-43bb-96fa-0390fb1e9548",
+        "name": "Rain on glass",
+        "type": "audio",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-3",
+        "role": "ambience",
+        "semantic": {
+          "scene": null,
+          "shotId": null,
+          "characters": [],
+          "purpose": "ambience",
+          "emotion": null,
+          "prompt": null,
+          "continuationFrom": null,
+          "tags": []
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "audioTracks.media",
+          "ref": "6f043d36-e8ff-43bb-96fa-0390fb1e9548",
+          "key": "audio/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/ambient/e3acdeb6-5fbf-4e29-86a3-39c6c3e30dfa.mp3",
+          "sha256": null,
+          "bytes": 24436
+        },
+        "path": "assets/audio/e3acdeb6-5fbf-4e29-86a3-39c6c3e30dfa.mp3",
+        "size": 24436,
+        "mimeType": "audio/mpeg",
+        "duration": 24,
+        "width": null,
+        "height": null,
+        "settings": {
+          "duration": 24,
+          "codecs": {
+            "audio": "mp3"
+          }
+        }
+      },
+      {
+        "id": "sb-char-aea2e964-47e8-432d-b694-67eb2f00b84d-1",
+        "name": "ARJUN",
+        "type": "image",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-4",
+        "role": "image",
+        "semantic": {
+          "scene": null,
+          "shotId": null,
+          "characters": [
+            "ARJUN"
+          ],
+          "purpose": "character_reference",
+          "emotion": null,
+          "prompt": null,
+          "continuationFrom": null
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "characters.referenceImages",
+          "ref": "aea2e964-47e8-432d-b694-67eb2f00b84d",
+          "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/assets/characters/arjun.png",
+          "sha256": null,
+          "bytes": 180964
+        },
+        "path": "assets/images/arjun.png",
+        "size": 180964,
+        "mimeType": "image/png",
+        "duration": null,
+        "width": 1920,
+        "height": 1080,
+        "settings": {
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      {
+        "id": "sb-char-aea2e964-47e8-432d-b694-67eb2f00b84d-2",
+        "name": "ARJUN reference 1",
+        "type": "image",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-4",
+        "role": "image",
+        "semantic": {
+          "scene": null,
+          "shotId": null,
+          "characters": [
+            "ARJUN"
+          ],
+          "purpose": "character_reference",
+          "emotion": null,
+          "prompt": null,
+          "continuationFrom": null
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "characters.referenceImages",
+          "ref": "aea2e964-47e8-432d-b694-67eb2f00b84d",
+          "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/assets/characters/arjun-ref.png",
+          "sha256": null,
+          "bytes": 180848
+        },
+        "path": "assets/images/arjun-ref.png",
+        "size": 180848,
+        "mimeType": "image/png",
+        "duration": null,
+        "width": 1920,
+        "height": 1080,
+        "settings": {
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      {
+        "id": "sb-char-c3a4b3f0-ae0c-44d1-b821-2f0ebb3e8d63-1",
+        "name": "MAYA",
+        "type": "image",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-4",
+        "role": "image",
+        "semantic": {
+          "scene": null,
+          "shotId": null,
+          "characters": [
+            "MAYA"
+          ],
+          "purpose": "character_reference",
+          "emotion": null,
+          "prompt": null,
+          "continuationFrom": null
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "characters.referenceImages",
+          "ref": "c3a4b3f0-ae0c-44d1-b821-2f0ebb3e8d63",
+          "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/assets/characters/maya.png",
+          "sha256": "40d19f094b3753043faa851de0f3f21b427215c40cc8133c4f0ca1df01963e70",
+          "bytes": 180770
+        },
+        "path": "assets/images/maya.png",
+        "size": 180770,
+        "mimeType": "image/png",
+        "duration": null,
+        "width": 1920,
+        "height": 1080,
+        "settings": {
+          "width": 1920,
+          "height": 1080
+        }
+      },
+      {
+        "id": "sb-char-c3a4b3f0-ae0c-44d1-b821-2f0ebb3e8d63-2",
+        "name": "MAYA reference 1",
+        "type": "image",
+        "url": null,
+        "isImported": true,
+        "imported": "2026-10-04T12:00:00.000Z",
+        "folderId": "folder-4",
+        "role": "image",
+        "semantic": {
+          "scene": null,
+          "shotId": null,
+          "characters": [
+            "MAYA"
+          ],
+          "purpose": "character_reference",
+          "emotion": null,
+          "prompt": null,
+          "continuationFrom": null
+        },
+        "languageDependency": "none",
+        "storybook": {
+          "source": "characters.referenceImages",
+          "ref": "c3a4b3f0-ae0c-44d1-b821-2f0ebb3e8d63",
+          "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/assets/characters/maya-ref.png",
+          "sha256": null,
+          "bytes": 180408
+        },
+        "path": "assets/images/maya-ref.png",
+        "size": 180408,
+        "mimeType": "image/png",
+        "duration": null,
+        "width": 1920,
+        "height": 1080,
+        "settings": {
+          "width": 1920,
+          "height": 1080
+        }
+      }
+    ],
+    "folders": [
+      {
+        "id": "folder-1",
+        "name": "Scene 1 - INT. RESEARCH LAB - NIGHT (1)",
+        "parentId": null,
+        "color": null,
+        "createdAt": "2026-10-04T12:00:00.000Z"
+      },
+      {
+        "id": "folder-2",
+        "name": "Scene 2 - INT. RESEARCH LAB - NIGHT (2)",
+        "parentId": null,
+        "color": null,
+        "createdAt": "2026-10-04T12:00:00.000Z"
+      },
+      {
+        "id": "folder-3",
+        "name": "Music and sound",
+        "parentId": null,
+        "color": null,
+        "createdAt": "2026-10-04T12:00:00.000Z"
+      },
+      {
+        "id": "folder-4",
+        "name": "Characters",
+        "parentId": null,
+        "color": null,
+        "createdAt": "2026-10-04T12:00:00.000Z"
+      }
+    ],
+    "folderCounter": 5,
+    "generateWorkspace": null,
+    "studio": {
+      "schema": "editgraph/1",
+      "episodeId": "7efe836f-faaa-48bf-9eb5-0f647bbb4f49",
+      "currentVersion": null,
+      "audioBuses": {
+        "dialogue": {
+          "gainDb": 0
+        },
+        "music": {
+          "gainDb": 0,
+          "duckUnder": "dialogue",
+          "duckDb": -8,
+          "attackMs": 120,
+          "releaseMs": 400
+        },
+        "sfx": {
+          "gainDb": 0
+        },
+        "ambience": {
+          "gainDb": 0
+        },
+        "shotaudio": {
+          "gainDb": 0,
+          "duckUnder": "dialogue",
+          "duckDb": -8,
+          "attackMs": 120,
+          "releaseMs": 400
+        },
+        "master": {
+          "limiterLufs": -14
+        }
+      },
+      "storybook": {
+        "projectId": "1c5db1cb-03e5-4a40-ae7c-eae5e74a0700",
+        "episodeId": "7efe836f-faaa-48bf-9eb5-0f647bbb4f49",
+        "episodeVersion": 7,
+        "etag": "v7-aba507ee57d42240422d7e214919008625357451",
+        "languages": [
+          "en"
+        ]
+      }
+    }
+  },
+  "warnings": [
+    {
+      "code": "media_offline",
+      "source": "shot.firstFrame",
+      "ref": "d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+      "assetId": "sb-first-d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+      "reason": "outside_project",
+      "key": null
+    },
+    {
+      "code": "media_offline",
+      "source": "shot.video",
+      "ref": "ef144c81-b8bb-4b66-a6a2-3be85eb07937",
+      "assetId": "sb-shot-ef144c81-b8bb-4b66-a6a2-3be85eb07937",
+      "reason": "not_generated",
+      "key": null
+    },
+    {
+      "code": "media_offline",
+      "source": "dialogue.audio",
+      "ref": "b9912816-2e14-466c-be04-fc762ec34b10",
+      "assetId": "sb-dlg-b9912816-2e14-466c-be04-fc762ec34b10",
+      "reason": "missing",
+      "key": null
+    },
+    {
+      "code": "media_offline",
+      "source": "dialogue.audio",
+      "ref": "b8482079-7559-4936-a177-407d4320f830",
+      "assetId": "sb-dlg-b8482079-7559-4936-a177-407d4320f830",
+      "reason": "not_generated",
+      "key": null
+    },
+    {
+      "code": "media_offline",
+      "source": "dialogue.audio",
+      "ref": "670f6501-850d-45a8-8214-d304b330ef21",
+      "assetId": "sb-dlg-670f6501-850d-45a8-8214-d304b330ef21",
+      "reason": "not_generated",
+      "key": null
+    }
+  ],
+  "files": {
+    "storybook/package.json": {
+      "bytes": 31469,
+      "sha256": "e950629d0229d4b3d3db6275f76a4f01a616fc37e2d75bc7bc9614c544d07a1f"
+    },
+    "storybook/link.json": {
+      "bytes": 254,
+      "sha256": "87e77b88599e252eda916a5748eb09be1b1d0cd927d4ae0957c4822b37688ac2"
+    },
+    "storybook/brand.json": {
+      "bytes": 560,
+      "sha256": "7ef77c33c3d433843f6a76d478c729d333fdfcf45cc42b72bee6d18840837f9d"
+    },
+    "storybook/policy.json": {
+      "bytes": 444,
+      "sha256": "8f17604b4c984d4c3ae7677f2d385ff213daa0355991227d19006522d9cd44da"
+    }
+  }
+}

@@ -20,7 +20,7 @@ Both profiles are served on `http://127.0.0.1:19790/mcp`, chosen by `?profile=ag
 ### IN1 Edit package
 - **In:** `get_edit_package({episodeId, ifNoneMatch?})` on StoryBook's `/api/mcp`, called by the main-process cloud client only.
 - **Out:** `EditPackageSchema` (`storybook-edit-package/1`): `scenes` (from the screenplay), `shots` (sequence order, `timeline_start_seconds`, trims, transition, prompt, primary subject, continuation link, first and last frames), `dialogue` (per line, with `language` and `timeline_start_seconds`), `audioTracks` (music, sfx, ambience with loopable flag and tags), `captions` (segments per language), `characters`, `shortsCandidates`, `dubbed` (dubbed lines per language), `brand`, `editPolicy`, `analyticsHints`, `etag`. Every media entry is `{url, sha256, bytes, mime}` or `null` with a reason.
-- **Guarantees:** The package is a read-only snapshot, stored as pulled in `storybook/package.json`. A matching `ifNoneMatch` returns `{unchanged: true, etag}`. `analyticsHints.retention` is measured drop-offs or `[]` with `reason: 'unmeasured'`; it is never zero-filled or invented. Signed URLs expire after 3600 s and are never logged.
+- **Guarantees:** The package is a read-only snapshot, stored as pulled in `storybook/package.json` with each URL's signature (query string) removed. A matching `ifNoneMatch` returns `{unchanged: true, etag}`. `analyticsHints.retention` is measured drop-offs or `[]` with `reason: 'unmeasured'`; it is never zero-filled or invented. Signed URLs expire after 3600 s and are never logged.
 - **Built by:** FILM-2001 (StoryBook). The schema is defined once in `@kit/desktop-integration` and copied into `src/studio/contracts/` with a drift test.
 
 ### IN2 Brand
@@ -38,7 +38,7 @@ Both profiles are served on `http://127.0.0.1:19790/mcp`, chosen by `?profile=ag
 ### IN4 Probed assets
 - **In:** Downloaded media under `assets/`.
 - **Out:** Per file: sha256 verified against the package, ffprobe `{duration, fps, width, height, codecs, hasAudio}`. A file that fails verification twice is marked offline.
-- **Guarantees:** No clip references an unverified file. An offline asset surfaces in `check_media_health` and in readiness (L2).
+- **Guarantees:** No asset points at an unverified file. A slot with no verified file (a `url: null` slot, or one not downloaded) becomes an offline asset: `path: null`, `offline: {reason}`, listed in the builder's `warnings`; its clip keeps its planned place until `relink_asset` points it at a file. An offline asset surfaces in `check_media_health` and in readiness (L2).
 - **Built by:** FILM-2011 (`electron/studio/pull.js`).
 
 ### IN5 Project document
@@ -216,8 +216,8 @@ The order is L1 to L8. L9 can happen at any point after L3.
 
 ### L3 Rough cut
 - **In:** IN1..IN4.
-- **Out:** A project document (IN5) built by `projectBuilder(package, probedAssets, brand, policy)`. It has one master timeline, shots on `video-1`, a dialogue track per language, music, sfx and ambience on their buses, a captions track, one marker per scene, and Veo shot audio ducked under dialogue.
-- **Guarantees:** The builder is pure, so the same inputs produce the same project.
+- **Out:** A project document (IN5) built by `buildProject({package, probedAssets, brand, policy})` in `src/studio/projectBuilder.js`, which returns `{project, files, warnings}`: `files` are `storybook/{package,link,brand,policy}.json`, `warnings` what could not be placed as planned. The project has one master timeline at the episode's aspect and fps, shots on `video-1` (at `timelineStartSeconds`, else packed by `sequenceNumber`), a dialogue track per language (dubs at their `timingAdjustment` speed; non-primary languages muted), Shot audio, Music, SFX and Ambience tracks with `bus` fields and `audio_tracks.volume` as clip gain, a live captions track per language (the primary one visible), one marker per scene at its first shot, an asset folder per scene, and Veo shot audio linked to its picture and ducked under dialogue (`project.studio.audioBuses`). `openStudioProjectFromPackage(package, probedAssets, {projectPath})` in `src/studio/editLogRuntime.js` writes it, opens it and saves the version `Rough cut` by `ai`.
+- **Guarantees:** The builder is pure, so the same inputs produce the same project. Clips are on frames and within their files, so opening the project moves nothing; stock Velorn v0.3.36 opens it and keeps the Studio fields through a save.
 - **Built by:** FILM-2012.
 
 ### L4 Plan and preview
