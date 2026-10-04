@@ -20,6 +20,7 @@ import { useAssetsStore } from './assetsStore'
 import { captureAndSaveProjectThumbnail } from '../utils/projectThumbnail'
 import { markProjectClean } from '../services/projectDirtyTracker'
 import { ACCEPTED_PROJECT_VERSIONS, PROJECT_VERSION_BASE, resolveOpenedProjectVersion } from '../studio/projectVersion.js'
+import { startStudioEditLog, stopStudioEditLog } from '../studio/editLogRuntime.js'
 import {
   createDefaultFlowAiProjectData,
   normalizeFlowAiProjectData,
@@ -139,7 +140,7 @@ const hydrateActiveOpticalFlowCaches = (projectHandle) => {
     })
 }
 
-const normalizeOpenedProjectData = (projectData) => {
+export const normalizeOpenedProjectData = (projectData) => {
   const normalizedProject = { ...(projectData || {}) }
 
   if (normalizedProject.timeline && !normalizedProject.timelines) {
@@ -180,6 +181,7 @@ const normalizeOpenedProjectData = (projectData) => {
 
 const hydrateOpenedProjectSession = async (projectHandleOrPath, rawProjectData, set) => {
   const { projectData, currentTimelineId, currentTimeline } = normalizeOpenedProjectData(rawProjectData)
+  await stopStudioEditLog()
 
   const timelineFps = currentTimeline?.fps || projectData?.settings?.fps || 24
   useTimelineStore.getState().loadFromProject(currentTimeline, projectData.assets, timelineFps)
@@ -226,6 +228,14 @@ const hydrateOpenedProjectSession = async (projectHandleOrPath, rawProjectData, 
   // Hydration replaced every watched store slice; none of it is an unsaved
   // user change.
   markProjectClean()
+
+  // From here on, applied MCP actions and hand edits append to the project's
+  // edits/oplog.jsonl (FILM-2012). Electron projects only: the log needs a path.
+  try {
+    await startStudioEditLog({ projectPath: projectHandleOrPath, projectStore: useProjectStore })
+  } catch (error) {
+    console.warn('Studio op log could not be opened; edits will not be logged:', error)
+  }
 
   // Auto-relinked media means the project file on disk still holds dead
   // old-machine paths; persist the repaired records now so the fix is
@@ -465,6 +475,7 @@ export const useProjectStore = create(
           }
           
           // Load the first timeline into the timeline store
+          await stopStudioEditLog()
           useTimelineStore.getState().loadFromProject(defaultTimeline, projectData.assets, fps)
           await useAssetsStore.getState().loadFromProject(
             projectData.assets,
@@ -483,6 +494,11 @@ export const useProjectStore = create(
             recentProjects: [recentProject, ...state.recentProjects.filter(p => p.name !== name)].slice(0, 10),
             isLoading: false,
           }))
+          try {
+            await startStudioEditLog({ projectPath: projectHandleOrPath, projectStore: useProjectStore })
+          } catch (error) {
+            console.warn('Studio op log could not be opened; edits will not be logged:', error)
+          }
           
           return projectData
         } catch (err) {
@@ -830,6 +846,7 @@ export const useProjectStore = create(
         if (!finishCompoundFocus()) return false
         // Save before closing
         await get().saveProject()
+        await stopStudioEditLog()
         
         // Clear current project handle from storage
         await removeStoredDirectoryHandle('currentProject')

@@ -64,6 +64,7 @@ import {
   handleGenerateCaptions,
 } from './mcpCaptions'
 import { createCheckpointStore } from '../studio/checkpointStore'
+import { runMcpActionWithEditLog } from '../studio/editLogRuntime.js'
 
 export const MCP_ACTION_BRIDGE_VERSION = 6
 
@@ -8933,7 +8934,8 @@ async function handleMcpAction(request = {}) {
 }
 
 export async function runMcpAction(action, payload = {}) {
-  return handleMcpAction({ action, payload })
+  // Applied actions append to <project>/edits/oplog.jsonl (FILM-2012).
+  return runMcpActionWithEditLog(action, payload, (nextAction, nextPayload) => handleMcpAction({ action: nextAction, payload: nextPayload }))
 }
 
 export function startMcpActionBridge() {
