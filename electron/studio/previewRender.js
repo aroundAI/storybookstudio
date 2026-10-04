@@ -39,6 +39,7 @@ const loadGraph = () => import('../../src/studio/review/renderGraph.js')
 const loadLayout = () => import('../../src/studio/review/captionLayout.js')
 const loadBusMix = () => import('./audioBusMix.mjs')
 const loadBuses = () => import('../../src/studio/audio/buses.js')
+const loadCaptionMargins = () => import('../../src/studio/captions/layout.js')
 
 function findFont(explicit) {
   if (explicit) return fs.existsSync(explicit) ? explicit : null
@@ -125,8 +126,8 @@ function createPreviewRenderer(options = {}) {
     return { dir, width: size.width, height: size.height, count: frames.length, frames, ms: Date.now() - started, captionsDrawn: Boolean(fontFile) || cues.length === 0 }
   }
 
-  async function mixInputs(plan, project, projectDir, timelineId) {
-    const clips = plan.audioClips(project, { timelineId, projectDir })
+  async function mixInputs(plan, project, projectDir, timelineId, language = null) {
+    const clips = plan.audioClips(project, { timelineId, projectDir, language })
     await Promise.all(clips.map(async (clip) => { clip.hasAudio = clip.file ? await hasAudio(clip.file) : false }))
     return clips
   }
@@ -144,12 +145,12 @@ function createPreviewRenderer(options = {}) {
   // bus graph, the export's own: sidechain ducking under dialogue and the
   // loudnorm pass to the master target, so the preview sounds like the
   // delivery. A plain Velorn project sums its tracks with the master gain.
-  async function renderAudioMix({ project, projectDir, timelineId = null, range = null, scene = null, stems = false, output = null, policy = null, signal } = {}) {
+  async function renderAudioMix({ project, projectDir, timelineId = null, range = null, scene = null, stems = false, output = null, policy = null, language = null, loudnessTargetLufs = null, signal } = {}) {
     const started = Date.now()
     const [plan, graph] = await Promise.all([loadPlan(), loadGraph()])
     const [from, to] = resolveRange(plan, project, { range, scene, timelineId })
     const timeline = plan.activeTimeline(project, timelineId)
-    const clips = await mixInputs(plan, project, projectDir, timelineId)
+    const clips = await mixInputs(plan, project, projectDir, timelineId, language)
     const file = output || path.join(projectDir, PREVIEW_DIR, `mix-${Math.round(from * 1000)}-${Math.round(to * 1000)}.wav`)
     await fsp.mkdir(path.dirname(file), { recursive: true })
     const stemFiles = {}
@@ -168,7 +169,7 @@ function createPreviewRenderer(options = {}) {
         ? await runStudioBusMix({
           ffmpegPath, inputs, buses, outputPath: file, totalDuration: to - from,
           masterGain: 10 ** (plan.masterGainDb(timeline) / 20),
-          loudnessTargetLufs: buses.master.limiterLufs,
+          loudnessTargetLufs: Number.isFinite(loudnessTargetLufs) ? loudnessTargetLufs : buses.master.limiterLufs,
           stems: stems ? { directory: stemDir, baseName: path.basename(file, '.wav') } : null,
         })
         : null
@@ -202,19 +203,28 @@ function createPreviewRenderer(options = {}) {
 
   // Tier 2 (and the full-size render the timings and delivery checks use):
   // picture + bus mix + subtitle boxes for a scene or range, encoded H.264.
-  async function renderVideo({ project, projectDir, timelineId = null, range = null, scene = null, output = null, shortSide = SCENE_PREVIEW_SHORT_SIDE, fullSize = false, fps = SCENE_PREVIEW_FPS, encoder = 'libx264', preferProxy = true, captions = true, audio = true, policy = null, signal } = {}) {
+  // `size` ({width, height}) renders at a delivery preset's frame;
+  // `captionsSafeArea` (an aspect) places every cue FILM-2016's way inside that
+  // aspect's safe area, as a burned delivery must; encoder 'intermediate' is
+  // a near-lossless .mov with PCM audio for the media-preparation queue's
+  // delivery encode.
+  async function renderVideo({ project, projectDir, timelineId = null, range = null, scene = null, output = null, shortSide = SCENE_PREVIEW_SHORT_SIDE, fullSize = false, size: frameOverride = null, fps = SCENE_PREVIEW_FPS, encoder = 'libx264', preferProxy = true, captions = true, captionsSafeArea = null, audio = true, policy = null, language = null, loudnessTargetLufs = null, signal } = {}) {
     const started = Date.now()
     const [plan, graph, layout] = await Promise.all([loadPlan(), loadGraph(), loadLayout()])
     const [from, to] = resolveRange(plan, project, { range, scene, timelineId })
     const frame = plan.timelineFrame(project, timelineId)
-    const size = fullSize ? graph.frameSize(frame) : graph.frameSize(frame, { shortSide })
+    const size = frameOverride ? graph.frameSize(frameOverride) : fullSize ? graph.frameSize(frame) : graph.frameSize(frame, { shortSide })
     const segments = plan.pictureSegments(project, { timelineId, projectDir, preferProxy })
     const video = graph.sceneVideoGraph(segments, { from, to, size, fps })
     const chains = [video.filter]
     let videoOut = video.out
     const workDir = path.join(projectDir, PREVIEW_DIR, `.work-${crypto.randomUUID()}`)
     try {
-      const cues = captions && fontFile ? plan.captionCues(project, { timelineId }).filter((entry) => entry.end > from && entry.start < to) : []
+      let cues = captions && fontFile ? plan.captionCues(project, { timelineId, language }).filter((entry) => entry.end > from && entry.start < to) : []
+      if (captionsSafeArea && cues.length) {
+        const { safeAreaFor } = await loadCaptionMargins()
+        cues = cues.map((entry) => (entry.cue.globalOverrides?.safeArea ? entry : { ...entry, cue: { ...entry.cue, globalOverrides: { ...(entry.cue.globalOverrides || {}), safeArea: safeAreaFor(captionsSafeArea), aspect: captionsSafeArea } } }))
+      }
       if (cues.length) {
         const textFileFor = await writeCueTexts(workDir, cues, layout, size)
         const draw = graph.captionDrawtextFilters(cues, size, { fontFile, textFileFor, from, to, timeOffset: from })
@@ -223,24 +233,27 @@ function createPreviewRenderer(options = {}) {
       }
       const inputs = [...video.inputs]
       let audioOut = null
+      let mixed = null
       if (audio) {
-        const mix = await renderAudioMix({ project, projectDir, timelineId, range: [from, to], output: path.join(workDir, 'mix.wav'), policy, signal })
-        inputs.push(['-i', mix.file])
+        mixed = await renderAudioMix({ project, projectDir, timelineId, range: [from, to], output: path.join(workDir, 'mix.wav'), policy, language, loudnessTargetLufs, signal })
+        inputs.push(['-i', mixed.file])
         audioOut = `${inputs.length - 1}:a`
       }
       const file = output || path.join(projectDir, PREVIEW_DIR, Number.isInteger(scene) ? `scene-${scene}.mp4` : `range-${Math.round(from * 1000)}-${Math.round(to * 1000)}.mp4`)
       await fsp.mkdir(path.dirname(file), { recursive: true })
-      const encode = encoder === 'h264_videotoolbox'
+      const encode = encoder === 'intermediate'
+        ? ['-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '10']
+        : encoder === 'h264_videotoolbox'
         ? ['-c:v', 'h264_videotoolbox', '-b:v', fullSize ? '12M' : '4M', '-allow_sw', '0', '-realtime', '1']
         : encoder === 'h264_nvenc'
           ? ['-c:v', 'h264_nvenc', '-preset', 'p2', '-cq', '23']
           : ['-c:v', 'libx264', '-preset', fullSize ? 'fast' : 'veryfast', '-crf', fullSize ? '20' : '26']
       const args = ['-loglevel', 'error', ...inputs.flat(), '-filter_complex', chains.join(';'), '-map', `[${videoOut}]`]
-      if (audioOut) args.push('-map', audioOut, '-c:a', 'aac', '-b:a', '192k', '-ar', '48000')
-      args.push(...encode, '-pix_fmt', 'yuv420p', '-r', String(fps), '-movflags', '+faststart', '-t', String(to - from), '-y', file)
+      if (audioOut) args.push('-map', audioOut, ...(encoder === 'intermediate' ? ['-c:a', 'pcm_s16le'] : ['-c:a', 'aac', '-b:a', '192k']), '-ar', '48000')
+      args.push(...encode, '-pix_fmt', 'yuv420p', '-r', String(fps), ...(encoder === 'intermediate' ? [] : ['-movflags', '+faststart']), '-t', String(to - from), '-y', file)
       await runFfmpegOrThrow(ffmpegPath, args, { signal })
       const ms = Date.now() - started
-      return { file, range: [from, to], duration: to - from, width: size.width, height: size.height, fps, encoder, ms, realtimeFactor: (to - from) / (ms / 1000) }
+      return { file, range: [from, to], duration: to - from, width: size.width, height: size.height, fps, encoder, ms, realtimeFactor: (to - from) / (ms / 1000), captionCues: cues.length, audioClips: mixed?.clips ?? 0, loudness: mixed?.loudness ?? null }
     } finally {
       await fsp.rm(workDir, { recursive: true, force: true }).catch(() => {})
     }

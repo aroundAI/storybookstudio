@@ -171,8 +171,16 @@ export function busOfClip(clip, track) {
   return ROLE_BUS[clip?.metadata?.semantic?.role] || 'sfx'
 }
 
+// A clip sounds in a render of `language` when it, or its track, has no
+// language or that one (a dubbed lane plays only in its own render).
+export const inLanguage = (clip, track, language) => {
+  if (!language) return true
+  const own = clip?.metadata?.language ?? track?.language ?? null
+  return own === null || own === language
+}
+
 // Every audible audio clip with what the mix needs: file, timing, gains, fades, bus.
-export function audioClips(project, { timelineId = null, projectDir = null } = {}) {
+export function audioClips(project, { timelineId = null, projectDir = null, language = null } = {}) {
   const timeline = activeTimeline(project, timelineId)
   if (!timeline) return []
   const tracks = trackMap(timeline)
@@ -181,7 +189,7 @@ export function audioClips(project, { timelineId = null, projectDir = null } = {
   return (timeline.clips || [])
     .filter((clip) => {
       const track = tracks.get(clip.trackId)
-      return track?.type === 'audio' && !track.muted && (!soloed || track.solo) && clip.enabled !== false && num(clip.duration) > EPS
+      return track?.type === 'audio' && !track.muted && (!soloed || track.solo) && clip.enabled !== false && num(clip.duration) > EPS && inLanguage(clip, track, language)
     })
     .map((clip) => {
       const track = tracks.get(clip.trackId)
@@ -214,14 +222,14 @@ export const masterGainDb = (timeline) => volumeToDb(timeline?.masterAudioVolume
 
 // Caption cues in timeline seconds. A live captions clip stores cue times
 // relative to its own source start (trimStart), like any clip.
-export function captionCues(project, { timelineId = null } = {}) {
+export function captionCues(project, { timelineId = null, language = null } = {}) {
   const timeline = activeTimeline(project, timelineId)
   if (!timeline) return []
   const tracks = trackMap(timeline)
   const out = []
   for (const clip of timeline.clips || []) {
     const track = tracks.get(clip.trackId)
-    if (clip.type !== 'captions' || clip.enabled === false || track?.visible === false) continue
+    if (clip.type !== 'captions' || clip.enabled === false || track?.visible === false || !inLanguage(clip, track, language)) continue
     const offset = clipStart(clip) - num(clip.trimStart)
     for (const cue of clip.captions?.cues || []) {
       const start = offset + num(cue.start)

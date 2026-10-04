@@ -110,6 +110,8 @@ const studioMain = createStudioMain({
   getMcpServer: () => mcpServer,
   getFfprobePath: () => ffprobePath,
   getFfmpegPath: () => ffmpegPath,
+  // FILM-2014: delivery encodes wait their turn in the media-preparation queue.
+  getMediaPreparation: () => mediaPreparation,
 })
 let downloadSaveDialogHandlerInstalled = false
 let downloadCounter = 0

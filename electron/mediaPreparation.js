@@ -19,7 +19,7 @@ function proxyHeight(value) {
 // queue and its hardware-encoder fallback like the playback tiers.
 const evenSize = (value, fallback) => Math.max(2, Math.round((Number(value) > 0 ? Number(value) : fallback) / 2) * 2)
 
-function buildMediaPreparationArgs({ kind, inputPath, tempOutputPath, targetHeight, targetWidth, fps, encoder, threads = 2 }) {
+function buildMediaPreparationArgs({ kind, inputPath, tempOutputPath, targetHeight, targetWidth, targetBitrateKbps, fps, encoder, threads = 2 }) {
   const proxy = kind === 'proxy'
   const delivery = kind === 'delivery'
   const filters = []
@@ -36,9 +36,12 @@ function buildMediaPreparationArgs({ kind, inputPath, tempOutputPath, targetHeig
   args.push('-c:v', encoder)
   if (delivery) {
     // Platform uploads: quality over seek speed, a 2 s GOP, B-frames allowed.
-    if (encoder === 'h264_nvenc') args.push('-preset', 'p4', '-rc', 'vbr', '-cq', '19', '-b:v', '0')
-    else if (encoder === 'h264_videotoolbox') args.push('-b:v', `${Math.max(6, Math.round((evenSize(targetWidth, 1920) * evenSize(targetHeight, 1080)) / 160000))}M`, '-allow_sw', '0')
-    else args.push('-preset', 'fast', '-crf', '20')
+    // A preset's bitrate when it names one (FILM-2017's DELIVERY_PRESETS), else quality-based.
+    const kbps = Number(targetBitrateKbps) > 0 ? Math.round(Number(targetBitrateKbps)) : null
+    const capped = kbps ? ['-b:v', `${kbps}k`, '-maxrate', `${Math.round(kbps * 1.5)}k`, '-bufsize', `${kbps * 2}k`] : null
+    if (encoder === 'h264_nvenc') args.push('-preset', 'p4', '-rc', 'vbr', ...(capped || ['-cq', '19', '-b:v', '0']))
+    else if (encoder === 'h264_videotoolbox') args.push(...(capped ? capped.slice(0, 2) : ['-b:v', `${Math.max(6, Math.round((evenSize(targetWidth, 1920) * evenSize(targetHeight, 1080)) / 160000))}M`]), '-allow_sw', '0')
+    else args.push('-preset', 'fast', ...(capped || ['-crf', '20']))
     args.push('-threads', String(threads), '-g', String(Math.round((Number(fps) || 24) * 2)), '-pix_fmt', 'yuv420p',
       '-movflags', '+faststart', '-c:a', 'aac', '-b:a', '192k',
       '-ar', '48000', '-ac', '2', '-progress', 'pipe:1', '-nostats', tempOutputPath)
@@ -366,7 +369,7 @@ function createMediaPreparationService({
     }
     if (!job) {
       job = { id: randomUUID(), key, kind, inputPath, outputPath, targetHeight: options.targetHeight,
-        targetWidth: options.targetWidth, bypassQueue,
+        targetWidth: options.targetWidth, targetBitrateKbps: options.targetBitrateKbps, bypassQueue,
         status: 'queued', progress: null, encoder: null, hardware: false, fallbackReason: null,
         subscribers: new Map(), process: null, cancelled: false }
       jobs.set(job.id, job)
