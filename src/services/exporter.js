@@ -27,6 +27,7 @@ import { createAudioEqChain } from './audioEqChain'
 import { clampTrackVolume, hasAudioSolo, isAudioTrackAudible, trackPanToStereoPosition, trackVolumeToLinearGain } from '../utils/audioTrackAudibility'
 import { collectAudioMixClips, countExpectedAudioMixClips } from '../../electron/audioMixEligibility.mjs'
 import { studioMixRequest } from '../studio/audio/exportOptions.js'
+import { applyDeliveryPresetFilter } from '../studio/delivery/exportFilter.js'
 import { getEnabledAudioInserts, hasEnabledAudioInserts } from '../utils/audioInserts'
 import { buildInsertChain } from './audioInsertChain'
 import {
@@ -1136,7 +1137,8 @@ const formatAudioMixDropError = (skipped, includedCount, expectedCount) => {
 const runExportTimeline = async (options, onProgress, scheduler) => {
   // Compound children are a read-only render view. Preserve their original
   // local clocks; parent trims limit visibility rather than slicing media.
-  const timelineState = getCompoundRenderState(useTimelineStore.getState())
+  // FILM-2017: a delivery preset's caption policy and language.
+  const timelineState = applyDeliveryPresetFilter(getCompoundRenderState(useTimelineStore.getState()), options)
   if (timelineState.compoundRenderErrors?.length > 0) {
     throw new Error(`Cannot export: ${timelineState.compoundRenderErrors.join(' ')}`)
   }

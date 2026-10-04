@@ -107,6 +107,7 @@ const studioMain = createStudioMain({
   getMainWindow: () => mainWindow,
   getMcpServer: () => mcpServer,
   getFfprobePath: () => ffprobePath,
+  getFfmpegPath: () => ffmpegPath,
 })
 let downloadSaveDialogHandlerInstalled = false
 let downloadCounter = 0
@@ -7819,6 +7820,8 @@ app.whenReady().then(async () => {
     getStudioCloud: () => studioMain.cloud,
     emitPlanProposed: (proposal) => studioMain.emitPlanProposed(proposal),
   })
+  // FILM-2017: set_auto_reframe and set_focal_point run in electron/studio/deliver.js.
+  mcpServer.studioTools = studioMain.deliver.expertTools
   mcpServer.start()
     .then((status) => {
       console.log(`[MCP] StorybookStudio MCP server running at ${status.url}`)

@@ -307,6 +307,9 @@ function createStudioCloud({ app, ipcMain, shell, secrets, getMainWindow, isMain
     openEpisode,
     getJobStatus: (jobId) => jobs.get(jobId),
     checkUpdates: () => resync.check(),
+    // FILM-2017's delivery: the open pulled project and its StoryBook client.
+    clientFor,
+    getOpenProject: () => open,
     onReady() {
       const origin = activeOrigin()
       if (origin) auth.resume(origin)

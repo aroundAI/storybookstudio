@@ -67,6 +67,7 @@ import { createCheckpointStore } from '../studio/checkpointStore'
 import { runMcpActionWithEditLog } from '../studio/editLogRuntime.js'
 import { handleSetAudioBuses } from '../studio/audio/busActions.js'
 import { handleStudioAction, isStudioRendererAction, publishSnapshotNow } from '../studio/capabilityRuntime.js'
+import { insertStudioTimeline, prepareStudioDelivery } from '../studio/delivery/rendererActions.js'
 
 export const MCP_ACTION_BRIDGE_VERSION = 7
 
@@ -6702,6 +6703,9 @@ async function handleExportTimeline(payload = {}) {
   await api.createDirectory(outputFolder)
   const defaultOutputPath = await api.pathJoin(outputFolder, `${filename}_${Date.now()}.${outputExtension}`)
   const outputPath = String(payload.outputPath || '').trim() || defaultOutputPath
+  // FILM-2017: a preset render goes to renders/<version>/, which may not exist yet.
+  const outputFolderOfPath = outputPath.slice(0, Math.max(outputPath.lastIndexOf('/'), outputPath.lastIndexOf('\\')))
+  if (outputFolderOfPath && outputFolderOfPath !== outputFolder) await api.createDirectory(outputFolderOfPath)
 
   const options = {
     filename,
@@ -6737,6 +6741,9 @@ async function handleExportTimeline(payload = {}) {
       ? 'fill'
       : 'fit',
     outputPath,
+    // FILM-2017: a delivery preset's caption policy and language (export_delivery_batch presets).
+    captionPolicy: ['burn', 'sidecar', 'none'].includes(payload.captionPolicy) ? payload.captionPolicy : null,
+    language: typeof payload.language === 'string' && payload.language ? payload.language : null,
   }
 
   const assets = Array.isArray(assetsState.assets) ? assetsState.assets : []
@@ -8935,6 +8942,11 @@ async function handleMcpAction(request = {}) {
       return handleExportTimeline(request.payload || {})
     case 'export_fcpxml':
       return handleExportFcpXml(request.payload || {})
+    // FILM-2017: delivery and variants (src/studio/delivery/rendererActions.js).
+    case 'studio_insert_timeline':
+      return insertStudioTimeline(request.payload || {})
+    case 'studio_prepare_delivery':
+      return prepareStudioDelivery(request.payload || {})
     default:
       throw new Error(`Unknown MCP action: ${request.action || 'unknown'}`)
   }

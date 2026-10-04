@@ -121,6 +121,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
       recordEvent: (args) => ipcRenderer.invoke('studio:recordEvent', args),
       networkOnline: () => ipcRenderer.invoke('studio:networkOnline'),
       rendererReady: () => ipcRenderer.invoke('studio:rendererReady'),
+      // FILM-2017: the Deliver screen and variants.
+      deliverSummary: (args) => ipcRenderer.invoke('studio:deliverSummary', args),
+      deliverConfirm: (args) => ipcRenderer.invoke('studio:deliverConfirm', args),
+      deliverStart: (args) => ipcRenderer.invoke('studio:deliverStart', args),
+      deliverRetry: (args) => ipcRenderer.invoke('studio:deliverRetry', args),
+      createVariant: (args) => ipcRenderer.invoke('studio:createVariant', args),
+      chooseExportFolder: () => ipcRenderer.invoke('studio:chooseExportFolder'),
       onAuthChanged: subscribe('studio:auth-changed'),
       onJobProgress: subscribe('studio:job-progress'),
       onPullReady: subscribe('studio:pull-ready'),
