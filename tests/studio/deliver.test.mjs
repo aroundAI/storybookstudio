@@ -222,3 +222,79 @@ test('Export to file: the same presets and a QA report in a folder, with no sign
   assert.equal(report.qa.pass, true)
   assert.equal(storybook.calls.length, 0, 'nothing went to StoryBook')
 })
+
+// The Deliver screen and MCP compute the summary, then deliver after the
+// user confirms. The editor's live document carries save-time stamps
+// (timeline.modified, the playhead, zoom) that move between those calls; the
+// hash must survive that and change only with what the render shows. And a
+// summary is a read: through FILM-2012's op-log wrapper it adds no line.
+function liveEditor(dir) {
+  const file = path.join(dir, 'project.comfystudio')
+  let reads = 0
+  let document = JSON.parse(fs.readFileSync(file, 'utf8'))
+  // The renderer's mcp:action handler, as src/services/mcpActions.js runs it.
+  const handle = async (action) => {
+    if (action === 'studio_delivery_document') {
+      reads += 1
+      return { previewOnly: true, document: structuredClone(document) }
+    }
+    if (action === 'save_project') {
+      // A save stamps the document, as projectStore.saveProject does.
+      document = { ...document, modified: new Date(Date.now() + reads).toISOString(), timelines: document.timelines.map((timeline) => ({ ...timeline, modified: new Date(Date.now() + reads).toISOString() })) }
+      fs.writeFileSync(file, JSON.stringify(document))
+      return { success: true }
+    }
+    return {}
+  }
+  return {
+    handle,
+    stamp(n) {
+      document = { ...document, timelines: document.timelines.map((timeline) => ({ ...timeline, modified: `2026-10-05T00:00:0${n}.000Z`, playheadPosition: n * 1.5, zoom: 40 + n })) }
+    },
+    edit() {
+      const timelines = structuredClone(document.timelines)
+      timelines[0].clips.find((clip) => clip.type === 'video').duration -= 1
+      document = { ...document, timelines }
+    },
+    get document() { return document },
+  }
+}
+
+test('the summary hash ignores save-time stamps and changes with a real edit', async (t) => {
+  const { dir } = makePulledProject(t)
+  const editor = liveEditor(dir)
+  const deliver = createStudioDeliver({ jobs: createJobRegistry(), getMcpServer: () => ({ performAction: ({ action, payload }) => editor.handle(action, payload), lastSnapshot: { project: { path: dir } } }), render: fakeRender(), qa: passingQa })
+  const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'studio-export-'))
+  t.after(() => fs.rmSync(folder, { recursive: true, force: true }))
+  const args = { presets: ['youtube_16x9'], destination: 'folder', folder }
+  editor.stamp(1)
+  const first = await deliver.studioDeliver(args)
+  editor.stamp(2)
+  const second = await deliver.studioDeliver(args)
+  assert.equal(second.summaryHash, first.summaryHash)
+  // The confirmed summary's token is accepted after the stamps move again.
+  editor.stamp(3)
+  const { token } = deliver.issueConfirmationToken(first.summaryHash)
+  const started = await deliver.studioDeliver({ ...args, confirm: true, confirmationToken: token })
+  assert.equal(started.started, true)
+  // A real edit (a clip one second shorter) changes the hash.
+  editor.edit()
+  const edited = await deliver.studioDeliver(args)
+  assert.notEqual(edited.summaryHash, first.summaryHash)
+})
+
+test('summaries add no op-log line (FILM-2012\'s wrapper around the renderer actions)', async (t) => {
+  const { dir } = makePulledProject(t)
+  const editor = liveEditor(dir)
+  const { createOpLog, wrapMcpActionRunner } = await import('../../src/studio/oplog.js')
+  const { createMemoryEditsSink } = await import('../../src/studio/editsSink.js')
+  const oplog = createOpLog({ sink: createMemoryEditsSink() })
+  const run = wrapMcpActionRunner((action, payload) => editor.handle(action, payload), { oplog, getDocument: () => editor.document })
+  const deliver = createStudioDeliver({ jobs: createJobRegistry(), getMcpServer: () => ({ performAction: ({ action, payload }) => run(action, payload), lastSnapshot: { project: { path: dir } } }) })
+  const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'studio-export-'))
+  t.after(() => fs.rmSync(folder, { recursive: true, force: true }))
+  for (let i = 0; i < 3; i += 1) await deliver.studioDeliver({ presets: ['youtube_16x9', 'shorts_9x16'], destination: 'folder', folder })
+  await deliver.createVariant({ kind: 'short', source: { range: [4, 12] } })
+  await oplog.idle()
+  assert.equal(oplog.entries().length, 0, JSON.stringify(oplog.entries().map((entry) => entry.tool)))
+})
