@@ -1,0 +1,808 @@
+{
+  "schemaId": "storybook-edit-package/1",
+  "etag": "v7-aba507ee57d42240422d7e214919008625357451",
+  "generatedAt": "2026-10-04T12:00:00.000Z",
+  "urlsExpireAt": "2026-10-04T13:00:00.000Z",
+  "project": {
+    "id": "1c5db1cb-03e5-4a40-ae7c-eae5e74a0700",
+    "name": "Night Lab (5-shots)",
+    "slug": "night-lab-5-shots"
+  },
+  "episode": {
+    "id": "7efe836f-faaa-48bf-9eb5-0f647bbb4f49",
+    "projectId": "1c5db1cb-03e5-4a40-ae7c-eae5e74a0700",
+    "number": 1,
+    "title": "The Night the Lab Went Dark (5-shots)",
+    "status": "storyboard",
+    "version": 7,
+    "targetDurationSeconds": 24,
+    "aspect": "16:9",
+    "fps": 24,
+    "language": "en",
+    "languages": [
+      "en"
+    ]
+  },
+  "scenes": [
+    {
+      "number": 1,
+      "heading": "INT. RESEARCH LAB - NIGHT (1)",
+      "description": "The team works the problem in scene 1.",
+      "location": "Research lab",
+      "timeOfDay": "night",
+      "characters": [
+        "MAYA",
+        "ARJUN"
+      ],
+      "estimatedDurationSeconds": 19,
+      "dialogue": [
+        {
+          "character": "MAYA",
+          "text": "Line 1: MAYA says what the scene needs, in about ten words."
+        },
+        {
+          "character": "ARJUN",
+          "text": "Line 2: ARJUN says what the scene needs, in about ten words."
+        },
+        {
+          "character": "ARJUN",
+          "text": "Line 3: ARJUN says what the scene needs, in about ten words."
+        },
+        {
+          "character": "MAYA",
+          "text": "Line 4: MAYA says what the scene needs, in about ten words."
+        },
+        {
+          "character": "MAYA",
+          "text": "Line 5: MAYA says what the scene needs, in about ten words."
+        },
+        {
+          "character": "ARJUN",
+          "text": "Line 6: ARJUN says what the scene needs, in about ten words."
+        },
+        {
+          "character": "ARJUN",
+          "text": "Line 7: ARJUN says what the scene needs, in about ten words."
+        },
+        {
+          "character": "MAYA",
+          "text": "Line 8: MAYA says what the scene needs, in about ten words."
+        }
+      ]
+    },
+    {
+      "number": 2,
+      "heading": "INT. RESEARCH LAB - NIGHT (2)",
+      "description": "The team works the problem in scene 2.",
+      "location": "Research lab",
+      "timeOfDay": "night",
+      "characters": [
+        "MAYA",
+        "ARJUN"
+      ],
+      "estimatedDurationSeconds": 5,
+      "dialogue": [
+        {
+          "character": "MAYA",
+          "text": "Line 9: MAYA says what the scene needs, in about ten words."
+        },
+        {
+          "character": "ARJUN",
+          "text": "Line 10: ARJUN says what the scene needs, in about ten words."
+        }
+      ]
+    }
+  ],
+  "shots": [
+    {
+      "id": "e661db7d-ef76-48f7-9e31-5103fd62ff85",
+      "sceneNumber": 1,
+      "shotNumber": 1,
+      "sequenceNumber": 1,
+      "status": "completed",
+      "durationSeconds": 4,
+      "sourceDurationSeconds": 4.5,
+      "timelineStartSeconds": 0,
+      "trimInSeconds": 0.2,
+      "trimOutSeconds": 4.2,
+      "transitionType": "cut",
+      "prompt": "Subject: MAYA, early thirties, short dark hair, brown eyes, lab coat over a grey sweater. Action: MAYA turns toward the console as the alarm starts, breath catching. Scene: a dim research lab at night, blue monitor light, rain on the windows. Style: medium close-up, slow push-in, 35mm, shallow depth of field. Sounds: alarm tone, rain, server hum. Negative: no subtitles, no captions, no watermark. (shot 1)",
+      "actionDescription": "MAYA reacts to the alarm (shot 1).",
+      "cameraDirection": "slow push-in",
+      "primarySubject": {
+        "type": "character",
+        "name": "MAYA"
+      },
+      "continuationFromShotId": null,
+      "inheritLastFrame": false,
+      "shortsCandidate": false,
+      "video": {
+        "url": "https://storybook-media.r2.example.test/project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/e661db7d-ef76-48f7-9e31-5103fd62ff85/video/shot-1.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=7587f528eee3d6647e25567cfbdd2e49e7751ba26fe523ffabe17ce920aedd0b&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/e661db7d-ef76-48f7-9e31-5103fd62ff85/video/shot-1.mp4",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 2000087,
+        "mime": "video/mp4"
+      },
+      "firstFrame": {
+        "url": "https://storybook-media.r2.example.test/project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/e661db7d-ef76-48f7-9e31-5103fd62ff85/image/first-1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=bdc91ce3c8592504cf12d6bac3269adc5f5670bc6df70feeed919f41276923e9&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/e661db7d-ef76-48f7-9e31-5103fd62ff85/image/first-1.png",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 180585,
+        "mime": "image/png"
+      },
+      "lastFrame": {
+        "url": "https://storybook-media.r2.example.test/project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/e661db7d-ef76-48f7-9e31-5103fd62ff85/image/last-1.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=6d4cd376542aac5383e664cd89cf2bc2e4376ca493919004e1109155498c2a1e&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/e661db7d-ef76-48f7-9e31-5103fd62ff85/image/last-1.png",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 180980,
+        "mime": "image/png"
+      }
+    },
+    {
+      "id": "d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+      "sceneNumber": 1,
+      "shotNumber": 2,
+      "sequenceNumber": 2,
+      "status": "completed",
+      "durationSeconds": 5,
+      "sourceDurationSeconds": 5.5,
+      "timelineStartSeconds": 4,
+      "trimInSeconds": 0.2,
+      "trimOutSeconds": 5.2,
+      "transitionType": "continuation",
+      "prompt": "Subject: ARJUN, early thirties, short dark hair, brown eyes, lab coat over a grey sweater. Action: ARJUN turns toward the console as the alarm starts, breath catching. Scene: a dim research lab at night, blue monitor light, rain on the windows. Style: medium close-up, slow push-in, 35mm, shallow depth of field. Sounds: alarm tone, rain, server hum. Negative: no subtitles, no captions, no watermark. (shot 2)",
+      "actionDescription": "ARJUN reacts to the alarm (shot 2).",
+      "cameraDirection": "static",
+      "primarySubject": {
+        "type": "character",
+        "name": "ARJUN"
+      },
+      "continuationFromShotId": "e661db7d-ef76-48f7-9e31-5103fd62ff85",
+      "inheritLastFrame": true,
+      "shortsCandidate": false,
+      "video": {
+        "url": "https://storybook-media.r2.example.test/project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/d13dc27a-4c76-4ea6-8231-1a96ede3aef9/video/shot-2.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=37ac36f70950405e491d2d2e08af07e15d9b6fceb04b58dbc112f11f557d38f0&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/d13dc27a-4c76-4ea6-8231-1a96ede3aef9/video/shot-2.mp4",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 2000252,
+        "mime": "video/mp4"
+      },
+      "firstFrame": {
+        "url": null,
+        "mediaReason": "outside_project"
+      },
+      "lastFrame": {
+        "url": "https://storybook-media.r2.example.test/project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/d13dc27a-4c76-4ea6-8231-1a96ede3aef9/image/last-2.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=4344d4c87205fd542715eefb9763fa43697624d49be525e1f5f3fc4097460e6f&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/d13dc27a-4c76-4ea6-8231-1a96ede3aef9/image/last-2.png",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 180220,
+        "mime": "image/png"
+      }
+    },
+    {
+      "id": "f9b0707d-d3c3-4df3-9183-908a80a67361",
+      "sceneNumber": 1,
+      "shotNumber": 3,
+      "sequenceNumber": 3,
+      "status": "completed",
+      "durationSeconds": 6,
+      "sourceDurationSeconds": 6.5,
+      "timelineStartSeconds": 9,
+      "trimInSeconds": 0.2,
+      "trimOutSeconds": 6.2,
+      "transitionType": "cut",
+      "prompt": "Subject: MAYA, early thirties, short dark hair, brown eyes, lab coat over a grey sweater. Action: MAYA turns toward the console as the alarm starts, breath catching. Scene: a dim research lab at night, blue monitor light, rain on the windows. Style: medium close-up, slow push-in, 35mm, shallow depth of field. Sounds: alarm tone, rain, server hum. Negative: no subtitles, no captions, no watermark. (shot 3)",
+      "actionDescription": "MAYA reacts to the alarm (shot 3).",
+      "cameraDirection": "slow push-in",
+      "primarySubject": {
+        "type": "character",
+        "name": "MAYA"
+      },
+      "continuationFromShotId": null,
+      "inheritLastFrame": false,
+      "shortsCandidate": false,
+      "video": {
+        "url": "https://storybook-media.r2.example.test/project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/f9b0707d-d3c3-4df3-9183-908a80a67361/video/shot-3.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=b1b8d63fd3577101072f48139c0a7d981eccc681691c8e47e11a80e9723a2ec9&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/f9b0707d-d3c3-4df3-9183-908a80a67361/video/shot-3.mp4",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 2000496,
+        "mime": "video/mp4"
+      },
+      "firstFrame": {
+        "url": "https://storybook-media.r2.example.test/project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/f9b0707d-d3c3-4df3-9183-908a80a67361/image/first-3.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=5d1da17f9602fffd4531ea2950b5038e6cf5482363681f48679668dc88ae8d81&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/f9b0707d-d3c3-4df3-9183-908a80a67361/image/first-3.png",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 180837,
+        "mime": "image/png"
+      },
+      "lastFrame": {
+        "url": "https://storybook-media.r2.example.test/project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/f9b0707d-d3c3-4df3-9183-908a80a67361/image/last-3.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=91186ccafaa1d6838dd727040b6545087ae5be497e02edb2dba2e81fac17662a&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/f9b0707d-d3c3-4df3-9183-908a80a67361/image/last-3.png",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 180144,
+        "mime": "image/png"
+      }
+    },
+    {
+      "id": "0bde8baf-361c-4e2a-8af7-029821cce87e",
+      "sceneNumber": 1,
+      "shotNumber": 4,
+      "sequenceNumber": 4,
+      "status": "completed",
+      "durationSeconds": 4,
+      "sourceDurationSeconds": 4.5,
+      "timelineStartSeconds": 15,
+      "trimInSeconds": 0.2,
+      "trimOutSeconds": 4.2,
+      "transitionType": "match_cut",
+      "prompt": "Subject: ARJUN, early thirties, short dark hair, brown eyes, lab coat over a grey sweater. Action: ARJUN turns toward the console as the alarm starts, breath catching. Scene: a dim research lab at night, blue monitor light, rain on the windows. Style: medium close-up, slow push-in, 35mm, shallow depth of field. Sounds: alarm tone, rain, server hum. Negative: no subtitles, no captions, no watermark. (shot 4)",
+      "actionDescription": "ARJUN reacts to the alarm (shot 4).",
+      "cameraDirection": "static",
+      "primarySubject": {
+        "type": "character",
+        "name": "ARJUN"
+      },
+      "continuationFromShotId": null,
+      "inheritLastFrame": false,
+      "shortsCandidate": true,
+      "video": {
+        "url": "https://storybook-media.r2.example.test/project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/0bde8baf-361c-4e2a-8af7-029821cce87e/video/shot-4.mp4?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=a9a966da867f7d2a6a390c56922438a50c234952a669f5308ffdd70af2f1f972&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/0bde8baf-361c-4e2a-8af7-029821cce87e/video/shot-4.mp4",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 2000433,
+        "mime": "video/mp4"
+      },
+      "firstFrame": {
+        "url": "https://storybook-media.r2.example.test/project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/0bde8baf-361c-4e2a-8af7-029821cce87e/image/first-4.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=5a3dafb837279cece0178ef0906cdc78bd3202a11268a117a5f7288244a5f8f3&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/0bde8baf-361c-4e2a-8af7-029821cce87e/image/first-4.png",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 180101,
+        "mime": "image/png"
+      },
+      "lastFrame": {
+        "url": "https://storybook-media.r2.example.test/project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/0bde8baf-361c-4e2a-8af7-029821cce87e/image/last-4.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=19622dae3ac20debdbea7b9d587864d05ce84757db56a891af48494ee4496b34&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/0bde8baf-361c-4e2a-8af7-029821cce87e/image/last-4.png",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 180498,
+        "mime": "image/png"
+      }
+    },
+    {
+      "id": "ef144c81-b8bb-4b66-a6a2-3be85eb07937",
+      "sceneNumber": 2,
+      "shotNumber": 1,
+      "sequenceNumber": 5,
+      "status": "queued",
+      "durationSeconds": 5,
+      "sourceDurationSeconds": null,
+      "timelineStartSeconds": 19,
+      "trimInSeconds": null,
+      "trimOutSeconds": null,
+      "transitionType": "cut",
+      "prompt": "Subject: MAYA, early thirties, short dark hair, brown eyes, lab coat over a grey sweater. Action: MAYA turns toward the console as the alarm starts, breath catching. Scene: a dim research lab at night, blue monitor light, rain on the windows. Style: medium close-up, slow push-in, 35mm, shallow depth of field. Sounds: alarm tone, rain, server hum. Negative: no subtitles, no captions, no watermark. (shot 5)",
+      "actionDescription": "MAYA reacts to the alarm (shot 5).",
+      "cameraDirection": "slow push-in",
+      "primarySubject": {
+        "type": "character",
+        "name": "MAYA"
+      },
+      "continuationFromShotId": null,
+      "inheritLastFrame": false,
+      "shortsCandidate": false,
+      "video": {
+        "url": null,
+        "mediaReason": "not_generated"
+      },
+      "firstFrame": {
+        "url": "https://storybook-media.r2.example.test/project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/ef144c81-b8bb-4b66-a6a2-3be85eb07937/image/first-5.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=362bc819b20db5d4617fd41c1b60ae381edb76633e4e8bbc7598f5354e4f2050&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/shots/ef144c81-b8bb-4b66-a6a2-3be85eb07937/image/first-5.png",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 180867,
+        "mime": "image/png"
+      },
+      "lastFrame": {
+        "url": null,
+        "mediaReason": "not_generated"
+      }
+    }
+  ],
+  "dialogue": [
+    {
+      "id": "c5267c6e-7ec1-4cfb-96dc-7d90dc34f2eb",
+      "shotId": "e661db7d-ef76-48f7-9e31-5103fd62ff85",
+      "sceneNumber": 1,
+      "sequenceNumber": 1,
+      "characterName": "MAYA",
+      "characterAssetId": "c3a4b3f0-ae0c-44d1-b821-2f0ebb3e8d63",
+      "text": "Line 1: MAYA says what the scene needs, in about ten words.",
+      "emotion": "urgent",
+      "language": "en",
+      "timelineStartSeconds": 0.4,
+      "estimatedDurationSeconds": 1.6,
+      "status": "completed",
+      "audio": {
+        "url": "https://storybook-media.r2.example.test/audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/c5267c6e-7ec1-4cfb-96dc-7d90dc34f2eb_1.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=49452b46be64f6dfbc5387bffb105940e45602620eb0098a6f3162b29cbbb8f2&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/c5267c6e-7ec1-4cfb-96dc-7d90dc34f2eb_1.mp3",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 24757,
+        "mime": "audio/mpeg"
+      }
+    },
+    {
+      "id": "0146215d-67e1-4bd9-b82c-304dad552a69",
+      "shotId": "e661db7d-ef76-48f7-9e31-5103fd62ff85",
+      "sceneNumber": 1,
+      "sequenceNumber": 2,
+      "characterName": "ARJUN",
+      "characterAssetId": "aea2e964-47e8-432d-b694-67eb2f00b84d",
+      "text": "Line 2: ARJUN says what the scene needs, in about ten words.",
+      "emotion": "curious",
+      "language": "en",
+      "timelineStartSeconds": 2.4,
+      "estimatedDurationSeconds": 1.6,
+      "status": "completed",
+      "audio": {
+        "url": "https://storybook-media.r2.example.test/audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/0146215d-67e1-4bd9-b82c-304dad552a69_1.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=6f64c03fa9c64c1924325a3959fd1e67d78b610d1334b51d9a1ada4737eafe92&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/0146215d-67e1-4bd9-b82c-304dad552a69_1.mp3",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 24516,
+        "mime": "audio/mpeg"
+      }
+    },
+    {
+      "id": "b9912816-2e14-466c-be04-fc762ec34b10",
+      "shotId": "d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+      "sceneNumber": 1,
+      "sequenceNumber": 3,
+      "characterName": "ARJUN",
+      "characterAssetId": "aea2e964-47e8-432d-b694-67eb2f00b84d",
+      "text": "Line 3: ARJUN says what the scene needs, in about ten words.",
+      "emotion": "relieved",
+      "language": "en",
+      "timelineStartSeconds": 4.4,
+      "estimatedDurationSeconds": 1.6,
+      "status": "completed",
+      "audio": {
+        "url": null,
+        "mediaReason": "missing"
+      }
+    },
+    {
+      "id": "9fce82f0-c628-4291-aa45-3bdff786310c",
+      "shotId": "d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+      "sceneNumber": 1,
+      "sequenceNumber": 4,
+      "characterName": "MAYA",
+      "characterAssetId": "c3a4b3f0-ae0c-44d1-b821-2f0ebb3e8d63",
+      "text": "Line 4: MAYA says what the scene needs, in about ten words.",
+      "emotion": "calm",
+      "language": "en",
+      "timelineStartSeconds": 6.9,
+      "estimatedDurationSeconds": 1.6,
+      "status": "completed",
+      "audio": {
+        "url": "https://storybook-media.r2.example.test/audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/9fce82f0-c628-4291-aa45-3bdff786310c_1.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=b6358b3ada9bb66f5f5dd5f0f48cffaf3027528cebfeb6719160fa435aa393ac&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/9fce82f0-c628-4291-aa45-3bdff786310c_1.mp3",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 24645,
+        "mime": "audio/mpeg"
+      }
+    },
+    {
+      "id": "8228b01f-757d-4c52-984f-65e5e108f482",
+      "shotId": "f9b0707d-d3c3-4df3-9183-908a80a67361",
+      "sceneNumber": 1,
+      "sequenceNumber": 5,
+      "characterName": "MAYA",
+      "characterAssetId": "c3a4b3f0-ae0c-44d1-b821-2f0ebb3e8d63",
+      "text": "Line 5: MAYA says what the scene needs, in about ten words.",
+      "emotion": "urgent",
+      "language": "en",
+      "timelineStartSeconds": 9.4,
+      "estimatedDurationSeconds": 1.6,
+      "status": "completed",
+      "audio": {
+        "url": "https://storybook-media.r2.example.test/audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/8228b01f-757d-4c52-984f-65e5e108f482_1.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=7d142d3f69ec68d743ca020da4d08cc8d78465aa0ae83c4a36f73c9aec1c7b13&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/8228b01f-757d-4c52-984f-65e5e108f482_1.mp3",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 24020,
+        "mime": "audio/mpeg"
+      }
+    },
+    {
+      "id": "94d892dc-a19f-4f0b-82c7-c39ad1f64db2",
+      "shotId": "f9b0707d-d3c3-4df3-9183-908a80a67361",
+      "sceneNumber": 1,
+      "sequenceNumber": 6,
+      "characterName": "ARJUN",
+      "characterAssetId": "aea2e964-47e8-432d-b694-67eb2f00b84d",
+      "text": "Line 6: ARJUN says what the scene needs, in about ten words.",
+      "emotion": "curious",
+      "language": "en",
+      "timelineStartSeconds": 12.4,
+      "estimatedDurationSeconds": 1.6,
+      "status": "completed",
+      "audio": {
+        "url": "https://storybook-media.r2.example.test/audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/94d892dc-a19f-4f0b-82c7-c39ad1f64db2_1.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=8798f441ee23adf64c0296f46481dc9bba3ef720674c3bfc0bdc3b0e4920fa09&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/94d892dc-a19f-4f0b-82c7-c39ad1f64db2_1.mp3",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 24712,
+        "mime": "audio/mpeg"
+      }
+    },
+    {
+      "id": "8ed5e1bd-760e-4740-badd-50758ac3872a",
+      "shotId": "0bde8baf-361c-4e2a-8af7-029821cce87e",
+      "sceneNumber": 1,
+      "sequenceNumber": 7,
+      "characterName": "ARJUN",
+      "characterAssetId": "aea2e964-47e8-432d-b694-67eb2f00b84d",
+      "text": "Line 7: ARJUN says what the scene needs, in about ten words.",
+      "emotion": "relieved",
+      "language": "en",
+      "timelineStartSeconds": 15.4,
+      "estimatedDurationSeconds": 1.6,
+      "status": "completed",
+      "audio": {
+        "url": "https://storybook-media.r2.example.test/audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/8ed5e1bd-760e-4740-badd-50758ac3872a_1.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=51507f2755b1652cd7ef651912523d8a39ca6920e6cc9489e6e98566bbeeae5c&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/8ed5e1bd-760e-4740-badd-50758ac3872a_1.mp3",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 24816,
+        "mime": "audio/mpeg"
+      }
+    },
+    {
+      "id": "834403e4-04dd-4d63-ad52-d6f91ccac67e",
+      "shotId": "0bde8baf-361c-4e2a-8af7-029821cce87e",
+      "sceneNumber": 1,
+      "sequenceNumber": 8,
+      "characterName": "MAYA",
+      "characterAssetId": "c3a4b3f0-ae0c-44d1-b821-2f0ebb3e8d63",
+      "text": "Line 8: MAYA says what the scene needs, in about ten words.",
+      "emotion": "calm",
+      "language": "en",
+      "timelineStartSeconds": 17.4,
+      "estimatedDurationSeconds": 1.6,
+      "status": "completed",
+      "audio": {
+        "url": "https://storybook-media.r2.example.test/audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/834403e4-04dd-4d63-ad52-d6f91ccac67e_1.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=2b22a8538fd435c885bed4bdadf093a76f01b5a9b87bad8e53b59810a352a293&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "audio/episodes/7efe836f-faaa-48bf-9eb5-0f647bbb4f49/dialogue/834403e4-04dd-4d63-ad52-d6f91ccac67e_1.mp3",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 24042,
+        "mime": "audio/mpeg"
+      }
+    },
+    {
+      "id": "b8482079-7559-4936-a177-407d4320f830",
+      "shotId": "ef144c81-b8bb-4b66-a6a2-3be85eb07937",
+      "sceneNumber": 2,
+      "sequenceNumber": 9,
+      "characterName": "MAYA",
+      "characterAssetId": "c3a4b3f0-ae0c-44d1-b821-2f0ebb3e8d63",
+      "text": "Line 9: MAYA says what the scene needs, in about ten words.",
+      "emotion": "urgent",
+      "language": "en",
+      "timelineStartSeconds": 19.4,
+      "estimatedDurationSeconds": 1.6,
+      "status": "pending",
+      "audio": {
+        "url": null,
+        "mediaReason": "not_generated"
+      }
+    },
+    {
+      "id": "670f6501-850d-45a8-8214-d304b330ef21",
+      "shotId": "ef144c81-b8bb-4b66-a6a2-3be85eb07937",
+      "sceneNumber": 2,
+      "sequenceNumber": 10,
+      "characterName": "ARJUN",
+      "characterAssetId": "aea2e964-47e8-432d-b694-67eb2f00b84d",
+      "text": "Line 10: ARJUN says what the scene needs, in about ten words.",
+      "emotion": "curious",
+      "language": "en",
+      "timelineStartSeconds": 21.9,
+      "estimatedDurationSeconds": 1.6,
+      "status": "pending",
+      "audio": {
+        "url": null,
+        "mediaReason": "not_generated"
+      }
+    }
+  ],
+  "audioTracks": [
+    {
+      "id": "6f043d36-e8ff-43bb-96fa-0390fb1e9548",
+      "type": "ambience",
+      "name": "Rain on glass",
+      "timelineStartSeconds": 0,
+      "durationSeconds": 24,
+      "volume": 0.3,
+      "loopable": true,
+      "tags": [],
+      "audioAssetId": null,
+      "media": {
+        "url": "https://storybook-media.r2.example.test/audio/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/ambient/e3acdeb6-5fbf-4e29-86a3-39c6c3e30dfa.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=635c092a416d2bc263aa8fbbac81522f73967c12e488a937685015c42d93e460&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "audio/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/ambient/e3acdeb6-5fbf-4e29-86a3-39c6c3e30dfa.mp3",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 24436,
+        "mime": "audio/mpeg"
+      }
+    },
+    {
+      "id": "f6aaab11-e3af-4f28-9007-c16131506496",
+      "type": "music",
+      "name": "Night lab theme",
+      "timelineStartSeconds": 0,
+      "durationSeconds": 24,
+      "volume": 0.6,
+      "loopable": true,
+      "tags": [
+        "tense",
+        "electronic"
+      ],
+      "audioAssetId": "a4f4f2c6-b07f-4ad7-a985-814638ee3a29",
+      "media": {
+        "url": "https://storybook-media.r2.example.test/audio/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/music/a4f4f2c6-b07f-4ad7-a985-814638ee3a29.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=75bcd13fa776ca557bc71d4e9d176fe6317b849cb192d83c2d36909308e0313b&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "audio/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/music/a4f4f2c6-b07f-4ad7-a985-814638ee3a29.mp3",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 24140,
+        "mime": "audio/mpeg"
+      }
+    },
+    {
+      "id": "29dc594d-4cb1-4152-af25-385ac66b00e7",
+      "type": "sfx",
+      "name": "Alarm",
+      "timelineStartSeconds": 3,
+      "durationSeconds": 2,
+      "volume": 0.9,
+      "loopable": false,
+      "tags": [],
+      "audioAssetId": null,
+      "media": {
+        "url": "https://storybook-media.r2.example.test/audio/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/sfx/f20e65ad-2908-4aa9-ace6-24170b301375.mp3?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=b4dd52e0220f768190af87f7f4b5f01f6d6a8395fb89dd6f68e53d6afc8f9737&X-Amz-SignedHeaders=host&x-id=GetObject",
+        "key": "audio/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/sfx/f20e65ad-2908-4aa9-ace6-24170b301375.mp3",
+        "sha256": null,
+        "sha256Reason": "not_recorded",
+        "bytes": 24301,
+        "mime": "audio/mpeg"
+      }
+    }
+  ],
+  "captions": [
+    {
+      "language": "en",
+      "captionId": "8895508f-c418-497a-9080-f65dfe6dbb01",
+      "status": "completed",
+      "stylePreset": "standard",
+      "segments": [
+        {
+          "id": "44c0f21c-4ee6-4745-89c9-722282129848",
+          "sequenceNumber": 1,
+          "startSeconds": 0.4,
+          "endSeconds": 2,
+          "text": "Line 1: MAYA says what the scene needs, in about ten words.",
+          "speakerId": "c3a4b3f0-ae0c-44d1-b821-2f0ebb3e8d63"
+        },
+        {
+          "id": "31d8658f-7188-427a-9f2b-8370e44daab4",
+          "sequenceNumber": 2,
+          "startSeconds": 2.4,
+          "endSeconds": 4,
+          "text": "Line 2: ARJUN says what the scene needs, in about ten words.",
+          "speakerId": "aea2e964-47e8-432d-b694-67eb2f00b84d"
+        },
+        {
+          "id": "cb75edd9-b3e1-448e-8f1d-a025509ae509",
+          "sequenceNumber": 3,
+          "startSeconds": 4.4,
+          "endSeconds": 6,
+          "text": "Line 3: ARJUN says what the scene needs, in about ten words.",
+          "speakerId": "aea2e964-47e8-432d-b694-67eb2f00b84d"
+        },
+        {
+          "id": "1694ec0b-b34f-474c-9157-60d133db2305",
+          "sequenceNumber": 4,
+          "startSeconds": 6.9,
+          "endSeconds": 8.5,
+          "text": "Line 4: MAYA says what the scene needs, in about ten words.",
+          "speakerId": "c3a4b3f0-ae0c-44d1-b821-2f0ebb3e8d63"
+        },
+        {
+          "id": "59da1f4e-6914-414c-8e62-e7ab7dbd7ab6",
+          "sequenceNumber": 5,
+          "startSeconds": 9.4,
+          "endSeconds": 11,
+          "text": "Line 5: MAYA says what the scene needs, in about ten words.",
+          "speakerId": "c3a4b3f0-ae0c-44d1-b821-2f0ebb3e8d63"
+        },
+        {
+          "id": "67feff31-acf7-4959-a8e0-ba544cf3761e",
+          "sequenceNumber": 6,
+          "startSeconds": 12.4,
+          "endSeconds": 14,
+          "text": "Line 6: ARJUN says what the scene needs, in about ten words.",
+          "speakerId": "aea2e964-47e8-432d-b694-67eb2f00b84d"
+        },
+        {
+          "id": "a6b8f09d-255f-43c6-87bb-bc9284177f41",
+          "sequenceNumber": 7,
+          "startSeconds": 15.4,
+          "endSeconds": 17,
+          "text": "Line 7: ARJUN says what the scene needs, in about ten words.",
+          "speakerId": "aea2e964-47e8-432d-b694-67eb2f00b84d"
+        },
+        {
+          "id": "e83fffc6-cd92-4fbd-ac98-d42b6b950f49",
+          "sequenceNumber": 8,
+          "startSeconds": 17.4,
+          "endSeconds": 19,
+          "text": "Line 8: MAYA says what the scene needs, in about ten words.",
+          "speakerId": "c3a4b3f0-ae0c-44d1-b821-2f0ebb3e8d63"
+        },
+        {
+          "id": "1117aa2a-fb2e-486c-b7c9-52df21e2dc98",
+          "sequenceNumber": 9,
+          "startSeconds": 19.4,
+          "endSeconds": 21,
+          "text": "Line 9: MAYA says what the scene needs, in about ten words.",
+          "speakerId": "c3a4b3f0-ae0c-44d1-b821-2f0ebb3e8d63"
+        },
+        {
+          "id": "438e099f-2118-4772-a37d-a58c039d99a7",
+          "sequenceNumber": 10,
+          "startSeconds": 21.9,
+          "endSeconds": 23.5,
+          "text": "Line 10: ARJUN says what the scene needs, in about ten words.",
+          "speakerId": "aea2e964-47e8-432d-b694-67eb2f00b84d"
+        }
+      ]
+    }
+  ],
+  "characters": [
+    {
+      "assetId": "aea2e964-47e8-432d-b694-67eb2f00b84d",
+      "name": "ARJUN",
+      "role": "supporting",
+      "description": "ARJUN, the supporting of the series.",
+      "voiceId": "voice-arjun",
+      "referenceImages": [
+        {
+          "url": "https://storybook-media.r2.example.test/project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/assets/characters/arjun.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=51e4affa7ccbf9a79e22f18089b6f0e02050ab1d58d9eb07c1af86636acd778a&X-Amz-SignedHeaders=host&x-id=GetObject",
+          "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/assets/characters/arjun.png",
+          "sha256": null,
+          "sha256Reason": "not_recorded",
+          "bytes": 180964,
+          "mime": "image/png"
+        },
+        {
+          "url": "https://storybook-media.r2.example.test/project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/assets/characters/arjun-ref.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=0b20b51ee01e8135ab325f5610f77bd77756db34063813a4f40eb10ae862d58e&X-Amz-SignedHeaders=host&x-id=GetObject",
+          "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/assets/characters/arjun-ref.png",
+          "sha256": null,
+          "sha256Reason": "not_recorded",
+          "bytes": 180848,
+          "mime": "image/png"
+        }
+      ]
+    },
+    {
+      "assetId": "c3a4b3f0-ae0c-44d1-b821-2f0ebb3e8d63",
+      "name": "MAYA",
+      "role": "protagonist",
+      "description": "MAYA, the protagonist of the series.",
+      "voiceId": "voice-maya",
+      "referenceImages": [
+        {
+          "url": "https://storybook-media.r2.example.test/project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/assets/characters/maya.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=e97a920cb238a8073a2f2df9c683a7c4ba5837ad036f587dc50027a7c3dd0b98&X-Amz-SignedHeaders=host&x-id=GetObject",
+          "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/assets/characters/maya.png",
+          "sha256": "40d19f094b3753043faa851de0f3f21b427215c40cc8133c4f0ca1df01963e70",
+          "bytes": 180770,
+          "mime": "image/png"
+        },
+        {
+          "url": "https://storybook-media.r2.example.test/project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/assets/characters/maya-ref.png?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=FIXTUREKEY%2F20261004%2Fauto%2Fs3%2Faws4_request&X-Amz-Date=20261004T120000Z&X-Amz-Expires=3600&X-Amz-Signature=7e98e061e06ceed0f03fccbf746fe8560af87d196a93f0dca8f5fa7e17f727f5&X-Amz-SignedHeaders=host&x-id=GetObject",
+          "key": "project-assets/projects/1c5db1cb-03e5-4a40-ae7c-eae5e74a0700/assets/characters/maya-ref.png",
+          "sha256": null,
+          "sha256Reason": "not_recorded",
+          "bytes": 180408,
+          "mime": "image/png"
+        }
+      ]
+    }
+  ],
+  "shortsCandidates": [
+    {
+      "id": "6af59cea-fd39-494a-9362-9f8d90892efd",
+      "startSeconds": 4,
+      "endSeconds": 22,
+      "durationSeconds": 18,
+      "viralScore": 8,
+      "hookType": "question",
+      "title": "Who cut the power?",
+      "sourceShotId": "d13dc27a-4c76-4ea6-8231-1a96ede3aef9",
+      "status": "pending"
+    }
+  ],
+  "dubbed": [],
+  "brand": {
+    "fonts": {
+      "heading": "Inter",
+      "body": "Inter"
+    },
+    "colors": {
+      "primary": "#2563EB",
+      "secondary": "#F59E0B",
+      "background": "#000000",
+      "captionText": "#FFFFFF",
+      "captionBackground": "#000000"
+    },
+    "captionStyle": {
+      "fontSize": 48,
+      "position": "bottom",
+      "maxCharsPerLine": 32,
+      "background": "box",
+      "emphasis": "none"
+    },
+    "logo": {
+      "assetId": null,
+      "position": "top-right",
+      "opacity": 0.8
+    },
+    "introAssetId": null,
+    "outroAssetId": null,
+    "transitionStyle": "cut",
+    "musicStyle": []
+  },
+  "editPolicy": {
+    "targetDurationSeconds": null,
+    "minShotLength": 1.2,
+    "maxShotLength": 6,
+    "transitions": {
+      "preferred": [
+        "cut",
+        "dissolve"
+      ],
+      "maxDuration": 0.4
+    },
+    "music": {
+      "enabled": true,
+      "duckUnderDialogue": true,
+      "duckDb": -8
+    },
+    "captions": {
+      "enabled": true,
+      "style": "brand"
+    },
+    "visual": {
+      "avoidRepeatedShots": true,
+      "avoidExtremeZoom": true
+    },
+    "loudnessTargetLufs": -14
+  },
+  "analyticsHints": {
+    "retention": [],
+    "publishId": null,
+    "reason": "unmeasured"
+  }
+}

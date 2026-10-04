@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync, writeFileSync } from 'node:fs'
 import test from 'node:test'
 
-import { ExplainWhyReportSchema } from '../../src/studio/contracts/explain-why-report.schema.js'
+import { ExplainWhyReportSchema } from '../../src/studio/contracts/explain-why-report.schema.mjs'
 import { createMemoryEditsSink } from '../../src/studio/editsSink.js'
 import { OPLOG_PATH, attachUserEditLogger, createOpLog, parseOpLog, wrapMcpActionRunner } from '../../src/studio/oplog.js'
 import { buildExplainWhyReport, formatExplainWhyText } from '../../src/studio/report.js'
@@ -141,14 +141,18 @@ test('fixture log -> the explain-why report: the figures, by hand', async () => 
   assert.equal(report.aiOps, 4)
   assert.equal(report.userOps, 1)
   assert.deepEqual(report.explain.scenes.map((s) => [s.scene, s.durationBefore, s.durationAfter]), [[1, 14.9, 11.2], [2, 11, 10], [3, 7, 7]])
-  assert.deepEqual(report.explain.scenes[0].changes.map((c) => [c.kind, c.label, c.reason]), [
+  assert.deepEqual(report.explain.scenes[0].changes.map((c) => [c.action, c.target, c.reason]), [
     ['trimmed', 'Shot 1.2', 'Information already given by dialogue'],
     ['removed', 'Shot 1.4', 'Duplicate establishing shot'],
   ])
   // A ripple shift is not a move; a change of order is.
-  assert.deepEqual(report.explain.scenes[2].changes.map((c) => [c.kind, c.label, c.after.startTime]), [['moved', 'Shot 3.5', 21.2], ['moved', 'Shot 3.1', 24.2]])
-  assert.deepEqual(report.explain.scenes[1].changes.map((c) => [c.kind, c.by, c.reason]), [['trimmed', 'user', null]])
-  assert.deepEqual(report.explain.audio.map((a) => [a.kind, a.label, a.before, a.after, a.reason]), [['gain', 'Music', 0, -8, 'Dialogue was masked at 0:42-0:47']])
+  assert.deepEqual(report.explain.scenes[2].changes.map((c) => [c.action, c.target, c.startAfter, c.detail]), [['moved', 'Shot 3.5', 21.2, 'to 0:21.2'], ['moved', 'Shot 3.1', 24.2, 'to 0:24.2']])
+  // The user's trim carries no reason of its own; the schema needs one.
+  assert.deepEqual(report.explain.scenes[1].changes.map((c) => [c.action, c.by, c.reason, c.before, c.after]), [['trimmed', 'user', 'Hand edit', 6, 5]])
+  assert.deepEqual(report.explain.audio.map((a) => [a.target, a.change, a.reason, a.before, a.after]), [['Music', '-8.0 dB', 'Dialogue was masked at 0:42-0:47', 0, -8]])
+  assert.deepEqual(report.versions.map((v) => [v.id, v.label, v.parentId, v.origin]), [['v1', 'Rough cut', null, 'rough_cut'], ['v2', 'AI cut v2', 'v1', 'ai']])
+  // The cut's style for FILM-2006: seven shots remain; the hook is not classified yet.
+  assert.deepEqual(report.style, { shotCount: 7, hookType: null })
   assert.equal(report.explain.scenesKept, 3)
   assert.equal(report.explain.scenesTotal, 3)
 
@@ -170,11 +174,27 @@ test('the report of a version with no QA run says so', async () => {
   const log = parseOpLog(readText('report-oplog.jsonl'))
   const report = buildExplainWhyReport({ log, versions: versions.list(), versionId: 'v2', before, after })
   assert.equal(report.explain.qa, null)
-  assert.equal(report.explain.target, null)
+  assert.equal(report.explain.targetDuration, null)
   assert.match(formatExplainWhyText(report), /^QA {8}not run$/m)
 })
 
 test('an unknown version id refuses', async () => {
   const { versions, before, after } = await runSession()
   assert.throws(() => buildExplainWhyReport({ log: [], versions: versions.list(), versionId: 'v7', before, after }), /Unknown version v7/)
+})
+
+test('a version with no picture leaves style out (unmeasured, never zero), and changes outside a scene stay out of scenes', async () => {
+  const { versions, before, after } = await runSession()
+  const log = parseOpLog(readText('report-oplog.jsonl'))
+  const audioOnly = (document) => ({ ...document, timelines: document.timelines.map((t) => ({ ...t, clips: t.clips.filter((c) => c.trackId !== 'video-1') })) })
+  const report = buildExplainWhyReport({ log, versions: versions.list(), versionId: 'v2', before: audioOnly(before), after: audioOnly(after) })
+  assert.equal('style' in report, false)
+  assert.equal(ExplainWhyReportSchema.safeParse(report).success, true)
+
+  const unscened = (document) => ({ ...document, timelines: document.timelines.map((t) => ({ ...t, clips: t.clips.map((c) => (c.id === 'c12' ? { ...c, metadata: {} } : c)) })) })
+  const moved = buildExplainWhyReport({ log, versions: versions.list(), versionId: 'v2', before: unscened(before), after: unscened(after) })
+  assert.equal(moved.explain.scenes.every((scene) => Number.isInteger(scene.scene) && scene.scene >= 1), true)
+  assert.deepEqual(moved.explain.unassigned.changes.map((c) => [c.action, c.target]), [['trimmed', 'Shot 1.2']])
+  assert.equal(ExplainWhyReportSchema.safeParse(moved).success, true)
+  assert.match(formatExplainWhyText(moved), /^Unassigned /m)
 })
