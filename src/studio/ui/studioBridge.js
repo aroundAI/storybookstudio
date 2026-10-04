@@ -14,7 +14,8 @@ function deliveryProgress(state, job) {
   const base = { ...state.delivery, phase: job.phase, done: job.done, total: job.total }
   if (job.status === 'failed') return { delivery: { ...base, status: 'failed', error: job.error || 'The delivery failed.', code: job.failure?.code ?? null } }
   if (job.status !== 'done') return { delivery: { ...base, status: DELIVERY_PHASES[job.phase] || 'sending' } }
-  const renders = job.result?.renders || []
+  // A StoryBook delivery lists its files as renders; an export to a folder as files.
+  const renders = job.result?.renders || job.result?.files || []
   const qa = Object.fromEntries(renders.filter((render) => render.qa).map((render) => [`${render.preset}-${render.language}`, render.qa]))
   const failing = Object.values(qa).filter((result) => !result.pass).length
   const exported = job.result?.destination === 'folder'
