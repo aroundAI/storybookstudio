@@ -160,3 +160,11 @@ export function blockInsideSafeRect(layout, epsilon = 0.5) {
   if (!inside(box.x, box.y, box.x + box.width, box.y + box.height)) return false
   return layout.lines.every((line) => line.words.every((word) => inside(word.x, line.baseline - word.size, word.x + word.width, line.baseline + word.size * 0.3)))
 }
+
+// Is a pixel rectangle {x, y, width, height} inside the aspect's safe area
+// of a width × height frame? (FILM-2014's QA, FILM-2017's variants.)
+export function isInsideSafeArea(rect, aspect, { width, height }, epsilon = 0.5) {
+  const safe = safeRectPx(safeAreaFor(aspect), width, height)
+  return rect.x >= safe.x - epsilon && rect.y >= safe.y - epsilon
+    && rect.x + rect.width <= safe.x + safe.width + epsilon && rect.y + rect.height <= safe.y + safe.height + epsilon
+}

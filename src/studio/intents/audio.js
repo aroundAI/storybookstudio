@@ -68,8 +68,15 @@ function audioClips(context, scope) {
     .map((clip) => ({ clip, track: tracks.get(clip.trackId), bus: busForTrack(tracks.get(clip.trackId)) ?? 'none' }))
 }
 
+// Loudness of a clip: context.loudness[clipId].integratedLufs, else the
+// get_audio_analysis result FILM-2013's compile.js read for it
+// (context.reads.audioAnalysis: Map clipId → result).
+const fromAnalysis = (result) => result?.loudness?.integratedLufsApprox ?? result?.analysis?.loudness?.integratedLufsApprox ?? result?.result?.loudness?.integratedLufsApprox
 const measured = (context, clip) => {
-  const value = context?.loudness?.[clip.id]?.integratedLufs
+  const direct = context?.loudness?.[clip.id]?.integratedLufs
+  if (Number.isFinite(direct)) return direct
+  const analysis = context?.reads?.audioAnalysis
+  const value = fromAnalysis(analysis instanceof Map ? analysis.get(clip.id) : analysis?.[clip.id])
   return Number.isFinite(value) ? value : null
 }
 
@@ -216,14 +223,45 @@ function compileFade({ scope, params, context }) {
   return { steps, reasons, expected: { fades: steps.reduce((sum, entry) => sum + entry.arguments.clipIds.length, 0) } }
 }
 
-export function compileAudioIntent({ intent, scope = 'episode', params = {}, context = {}, policy: policyInput = {} } = {}) {
-  if (!AUDIO_INTENTS.includes(intent)) return refuse(`Unknown audio intent "${intent}" (${AUDIO_INTENTS.join(', ')}).`)
-  const policy = EditPolicySchema.parse(policyInput ?? {})
-  const args = { scope, params: params || {}, context, policy }
+const compileByIntent = (intent, args) => {
   switch (intent) {
     case 'duck': return compileDuck(args)
     case 'normalize': return compileNormalize(args)
     case 'balance': return compileBalance(args)
     default: return compileFade(args)
   }
+}
+
+// Two call forms, one result:
+//   compileAudioIntent({ intent, scope, params, context, policy })
+//   compileAudioIntent(intent, context, scope, params, policy)   (FILM-2013's compile.js)
+// With context.userEditedClipIds (a Set), the result names the clips a
+// step touches that the user edited by hand (touchesUserEdits, contract A5).
+export function compileAudioIntent(first, ...rest) {
+  const { intent, scope = 'episode', params = {}, context = {}, policy: policyInput } = typeof first === 'string'
+    ? { intent: first, context: rest[0] ?? {}, scope: rest[1] ?? 'episode', params: rest[2] ?? {}, policy: rest[3] }
+    : (first ?? {})
+  if (!AUDIO_INTENTS.includes(intent)) return refuse(`Unknown audio intent "${intent}" (${AUDIO_INTENTS.join(', ')}).`)
+  const policy = EditPolicySchema.parse(policyInput ?? context?.policy ?? {})
+  const result = compileByIntent(intent, { scope, params: params || {}, context, policy })
+  const edited = context?.userEditedClipIds
+  if (edited && typeof edited.has === 'function') {
+    const touched = [...new Set(result.steps.flatMap((entry) => entry.arguments.clipIds || (entry.arguments.clipId ? [entry.arguments.clipId] : [])))]
+    result.touchesUserEdits = touched.filter((id) => edited.has(id))
+  }
+  return result
+}
+
+// Compile-time reads (contract A2): the get_audio_analysis calls balance and
+// normalize need for clips in scope with no loudness yet. compile.js runs
+// them and passes the results as context.reads.audioAnalysis.
+export function reads(context, scope = 'episode', params = {}) {
+  const intent = params?.intent
+  if (intent !== 'balance' && intent !== 'normalize') return []
+  const wanted = intent === 'balance'
+    ? [...audioClips(context, scope).filter((entry) => entry.bus === DIALOGUE_BUS), ...audioClips(context, 'episode').filter((entry) => entry.bus === 'music')]
+    : audioClips(context, scope).filter((entry) => entry.bus === DIALOGUE_BUS)
+  return [...new Map(wanted.map((entry) => [entry.clip.id, entry.clip])).values()]
+    .filter((clip) => measured(context, clip) === null)
+    .map((clip) => ({ tool: 'get_audio_analysis', arguments: { clipId: clip.id, includeLoudnessCurve: false } }))
 }

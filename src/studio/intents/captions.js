@@ -111,3 +111,12 @@ export function compileCaptionsAfterTranscription({ cues, params = {}, context =
     qa: [{ check: 'caption_safe_area', language, clipId: clip?.id ?? null, aspect }],
   }
 }
+
+// FILM-2013's compile.js call form: compileCaptions(context, scope, params, policy)
+// with context.brand (BrandSchema-parsed or raw) and context.timeline.
+export const compileCaptions = (context = {}, scope = 'episode', params = {}, policy = context?.policy) => (
+  compileCaptionsIntent({ intent: 'add_captions', scope, params, context, policy, brand: context?.brand })
+)
+export const compileCaptionsPlacement = (context = {}, cues = [], params = {}, policy = context?.policy) => (
+  compileCaptionsAfterTranscription({ cues, params, context, policy, brand: context?.brand })
+)

@@ -147,3 +147,27 @@ test('an unknown intent or a project without buses is refused, never a partial p
   const plain = { timeline: context.timeline, audioBuses: null }
   for (const intent of ['duck', 'normalize', 'balance']) assert.ok(compileAudioIntent({ intent, context: plain }).refused, intent)
 })
+
+test("FILM-2013's call form: positional args, loudness from get_audio_analysis reads, reads() lists what is unmeasured, touchesUserEdits", async () => {
+  const { reads } = await import('../../src/studio/intents/audio.js')
+  const { context, timeline } = roughCut()
+  const scope = { scenes: [1] }
+  const wanted = reads(context, scope, { intent: 'balance' })
+  assert.ok(wanted.length > 0)
+  assert.ok(wanted.every((entry) => entry.tool === 'get_audio_analysis' && entry.arguments.includeLoudnessCurve === false))
+  const [bed] = clipsOn(timeline, 'music')
+  assert.ok(wanted.some((entry) => entry.arguments.clipId === bed.id), 'the bed is read for a scene-scoped balance')
+  assert.deepEqual(reads(context, scope, { intent: 'duck' }), [])
+  // compile.js passes the analysis results as a Map
+  const audioAnalysis = new Map(wanted.map((entry) => [entry.arguments.clipId, { loudness: { integratedLufsApprox: entry.arguments.clipId === bed.id ? -20 : -26 } }]))
+  const firstLine = clipsOn(timeline, 'dialogue').find((clip) => clip.metadata.semantic.scene === 1)
+  const full = { ...context, reads: { audioAnalysis }, userEditedClipIds: new Set([firstLine.id]) }
+  assert.deepEqual(reads(full, scope, { intent: 'balance' }), [], 'nothing left to read')
+  const plan = compileAudioIntent('balance', full, scope, {}, {})
+  assert.equal(plan.refused, undefined)
+  everyStepHasAReason(plan)
+  assert.deepEqual(plan.touchesUserEdits, [], 'one scene: only the music bus moves')
+  const levelled = compileAudioIntent('normalize', full, scope, {}, {})
+  assert.ok(levelled.touchesUserEdits.includes(firstLine.id), 'levelling the hand-edited line is flagged')
+  assert.deepEqual(compileAudioIntent('duck', context, 'episode', { duckDb: -12 }, {}).steps[0].arguments.buses.music.duckDb, -12)
+})

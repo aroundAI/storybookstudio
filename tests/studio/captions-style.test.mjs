@@ -203,3 +203,12 @@ test('a cue without a safe area still draws the upstream way (stock Velorn capti
   assert.equal(drawn.text.length, 1, 'one centred line')
   assert.equal(drawn.text[0].text, 'Stock subtitle')
 })
+
+test('isInsideSafeArea: a box in the bottom 25 % or the right 15 % of a 9:16 frame is outside', async () => {
+  const { isInsideSafeArea } = await import('../../src/studio/captions/style.js')
+  const frame = { width: 1080, height: 1920 }
+  assert.equal(isInsideSafeArea({ x: 100, y: 1200, width: 700, height: 200 }, '9:16', frame), true)
+  assert.equal(isInsideSafeArea({ x: 100, y: 1400, width: 700, height: 200 }, '9:16', frame), false)
+  assert.equal(isInsideSafeArea({ x: 100, y: 1200, width: 850, height: 200 }, '9:16', frame), false)
+  assert.equal(isInsideSafeArea({ x: 100, y: 900, width: 1700, height: 60 }, '16:9', { width: 1920, height: 1080 }), true)
+})

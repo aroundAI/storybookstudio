@@ -9,7 +9,7 @@ import { BrandSchema } from '../contracts/brand.schema.mjs'
 import { EditPolicySchema } from '../contracts/edit-policy.schema.mjs'
 import { approximateMeasure, aspectOf, blockInsideSafeRect, layoutCue, normalizeWord, safeAreaFor } from './layout.js'
 
-export { SAFE_AREAS, safeAreaFor, safeRectPx, aspectOf, layoutSubtitleBlock, layoutCue, blockInsideSafeRect } from './layout.js'
+export { SAFE_AREAS, safeAreaFor, safeRectPx, aspectOf, layoutSubtitleBlock, layoutCue, blockInsideSafeRect, isInsideSafeArea } from './layout.js'
 
 export const STUDIO_CAPTION_PRESET_ID = 'kinetic-traditional'
 // The subtitle renderer sizes text at 4.5 % of the short side; BrandSchema

@@ -103,3 +103,17 @@ test('update_caption_cues (the real handler): styled cues and a clip preset land
   const buses = extractTools(serverSource).find((entry) => entry.name === 'set_audio_buses')
   assert.deepEqual(buses.inputSchema.required, ['buses'])
 })
+
+test('update_caption_cues (the real handler) on one language leaves the other language clip as it was', async () => {
+  const { handleUpdateCaptionCues, useTimelineStore } = await loadCaptionHandler()
+  const cue = (id, text) => ({ id, start: 0, end: 2, text, globalOverrides: { subtitlePosition: 'action-safe' } })
+  const hi = { id: 'cap-hi', type: 'captions', trackId: 'video-3', startTime: 0, duration: 2, sourceDuration: 2, trimStart: 0, trimEnd: 2, captions: { preset: { id: 'kinetic-traditional' }, cues: [cue('h1', 'नमस्ते')] } }
+  const en = { id: 'cap-en', type: 'captions', trackId: 'video-2', startTime: 0, duration: 2, sourceDuration: 2, trimStart: 0, trimEnd: 2, captions: { preset: { id: 'kinetic-traditional' }, cues: [cue('e1', 'hello')] } }
+  useTimelineStore.setState({ clips: [en, hi], duration: 60 })
+  const before = JSON.stringify(useTimelineStore.getState().clips.find((clip) => clip.id === 'cap-en'))
+  handleUpdateCaptionCues({ clipId: 'cap-hi', cues: [{ id: 'h1', start: 0, end: 2, text: 'नमस्ते', globalOverrides: { safeArea: { left: 0.05, right: 0.15, top: 0.08, bottom: 0.25 } } }], preset: { fontFamily: 'Noto Sans Devanagari' } })
+  const clips = useTimelineStore.getState().clips
+  assert.equal(clips.length, 2, 'both captions clips remain')
+  assert.equal(JSON.stringify(clips.find((clip) => clip.id === 'cap-en')), before)
+  assert.equal(clips.find((clip) => clip.id === 'cap-hi').captions.preset.fontFamily, 'Noto Sans Devanagari')
+})

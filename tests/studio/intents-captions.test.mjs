@@ -137,3 +137,20 @@ test('transcription of a bussed project hears dialogue and shot audio; music, sf
   await mixTimelineAudioToWav({})
   assert.deepEqual(Object.fromEntries(sent.tracks.map((track) => [track.id, track.muted])), { a1: false, a2: false, a3: true, a4: true, a5: false })
 })
+
+test('two caption languages: styling one never touches the other (no generate_captions, which drops other captions clips)', async () => {
+  const { compileCaptions, compileCaptionsPlacement } = await import('../../src/studio/intents/captions.js')
+  const { timeline } = roughCut(60)
+  const en = captionsClipFor({ timeline }, 'en')
+  const hi = captionsClipFor({ timeline }, 'hi')
+  assert.ok(en && hi && en.id !== hi.id)
+  for (const [language, clip] of [['en', en], ['hi', hi]]) {
+    const plan = compileCaptionsPlacement({ timeline, brand }, draft, { language })
+    assert.deepEqual(plan.steps.map((entry) => entry.tool), ['update_caption_cues'], language)
+    assert.equal(plan.steps[0].arguments.clipId, clip.id, `${language} targets its own clip by id`)
+    assert.equal(plan.steps.some((entry) => entry.arguments.target === 'clip'), false, 'never "the first captions clip"')
+  }
+  // a third language with no clip is refused rather than placed over the others
+  assert.match(compileCaptionsPlacement({ timeline, brand }, draft, { language: 'fr' }).refused.reason, /no captions clip for fr/)
+  assert.equal(compileCaptions({ timeline, brand }, 'episode', { language: 'hi' }).steps[0].arguments.language, 'Hindi')
+})
