@@ -12,9 +12,20 @@ const DELIVERY_PHASES = { render: 'rendering', qa: 'rendering', prepare: 'render
 function deliveryProgress(state, job) {
   if (!state.delivery || state.delivery.jobId !== job.id) return {}
   const base = { ...state.delivery, phase: job.phase, done: job.done, total: job.total }
-  if (job.status === 'failed') return { delivery: { ...base, status: 'failed', error: job.error || 'The delivery failed.', code: job.failure?.code ?? null } }
+  if (job.status === 'failed') {
+    const failed = { ...base, status: 'failed', error: job.error || 'The delivery failed.', code: job.failure?.code ?? null }
+    // QA_FAILED names the file and carries its QA: show it, with its issues.
+    const { render, qa } = job.failure?.details || {}
+    if (job.failure?.code !== 'QA_FAILED' || !render || !qa) return { delivery: failed }
+    const count = (qa.issues || []).length
+    return {
+      delivery: { ...failed, qa: { ...(state.delivery.qa || {}), [render]: qa } },
+      qaAnnouncement: `QA stopped the delivery: ${render} has ${count} issue${count === 1 ? '' : 's'}.`,
+    }
+  }
   if (job.status !== 'done') return { delivery: { ...base, status: DELIVERY_PHASES[job.phase] || 'sending' } }
-  const renders = job.result?.renders || []
+  // A StoryBook delivery lists its files as renders; an export to a folder as files.
+  const renders = job.result?.renders || job.result?.files || []
   const qa = Object.fromEntries(renders.filter((render) => render.qa).map((render) => [`${render.preset}-${render.language}`, render.qa]))
   const failing = Object.values(qa).filter((result) => !result.pass).length
   const exported = job.result?.destination === 'folder'
