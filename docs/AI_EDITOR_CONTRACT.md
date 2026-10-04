@@ -11,9 +11,9 @@ Each clause has an id, its inputs (**In**), its outputs (**Out**), the invariant
 - **Intent**: a named editing goal (`tighten_pacing`). An **intent compiler** is a pure function `(context, scope, params, policy) => ActionPlan` in `src/studio/intents/`.
 - **Action plan**: an ordered list of primitive calls with one reason per step (A1).
 - **Version**: a named snapshot of the timeline document plus the op range since its parent (FILM-2012).
-- **Scope**†: `{ scenes?: number[], range?: [start, end], clipIds?: string[], timelineId?: string }`. An empty scope means the active timeline.
+- **Scope**: `{ scene?: number, scenes?: number[], range?: [start, end], clipIds?: string[], timelineId?: string }`. An empty scope means the active timeline. An unknown scene, or a timeline other than the active one, is `VALIDATION_FAILED` (FILM-2013 adopted this shape and added `scene`).
 
-Both profiles are served on `http://127.0.0.1:19790/mcp`, chosen by `?profile=agent|expert` or the equivalent header, and both require the bearer secret (S1).
+Both profiles are served on `http://127.0.0.1:19790/mcp`, chosen by `?profile=agent|expert` or the `X-MCP-Profile` header (any other value is a `400`), and both require the bearer secret (S1). `agent`, the default, lists the 18 capability tools; `expert` lists Velorn's 130 tools plus the 6 lifecycle tools (`studio_open_episode`, `studio_get_job_status`, `studio_check_readiness`, `studio_create_version`, `studio_restore_version`, `studio_deliver`). Each profile refuses the other's tools.
 
 ## 1. Inputs
 
@@ -55,7 +55,7 @@ Perception never changes the document. Every perception verb is callable at any 
 - **In:** `studio_get_context({scope?})`.
 - **Out:** Screenplay scenes with dialogue text, the scene map (P2), policy, brand summary, timeline summary (tracks, clip count, duration), versions, last QA result.
 - **Guarantees:** This is the one call an agent makes first. Its output is derived from IN1..IN5 and the live snapshot, never cached across a document change.
-- **Built by:** FILM-2013 (`src/studio/context.js`). Composes `get_project`, `get_timeline`, `get_assets`.
+- **Built by:** FILM-2013 (`src/studio/context.js`), assembled in the renderer on every call from the live document, the op log, the versions and the `storybook/` files beside the project.
 
 ### P2 Scene map
 - **In:** The project document.
@@ -106,7 +106,7 @@ These are Velorn's tools, grouped by verb. An action plan (A1) is built only fro
 | --- | --- | --- | --- |
 | E1 | Timeline items | `set_playhead`, `select_clips`, markers (`add_timeline_markers`, `remove_timeline_markers`, `set_timeline_marker_properties`), `set_in_out_range`, tracks (`add_track`, `update_track`, `remove_track`), timelines (`create_timeline`, `switch_timeline`, `rename_timeline`, `duplicate_timeline`, `delete_timeline`) | A variant is a duplicated timeline with `timeline.studio.kind = variant` (FILM-2017) |
 | E2 | Clips | `add_asset_to_timeline`, `add_assets_to_timeline`, `move_clips`, `delete_clips` (ripple), `duplicate_clip`, `replace_clip_with_asset`, `set_clips_enabled`, `set_clip_label_color` | |
-| E3 | Trims | `trim_clips`, `split_clip`, `extract_range`, `set_clip_speed` | `split_clip`, `extract_range` and `set_clip_speed` are not plan-writable today (G3) |
+| E3 | Trims | `trim_clips`, `split_clip`, `extract_range`, `set_clip_speed` | All plan-writable since FILM-2013 (G3). `trim_clips` does not ripple, so every FILM-2013 cut is a ripple `extract_range` |
 | E4 | Transitions | `add_transition`, `update_transition`, `remove_transitions`, `add_dip_to_black` | Durations capped at `policy.transitions.maxDuration` |
 | E5 | Audio | `set_clip_audio` (gain, fades), `update_track` (volume, pan, mute, inserts), `set_master_audio` (master, limiter), `set_audio_buses` (bus gain, ducking under dialogue, master LUFS; FILM-2016) | No primitive writes a volume envelope; ducking is a bus setting (G4) |
 | E6 | Captions | `transcribe_captions`, `get_caption_status`, `update_caption_cues`, `generate_captions` | Transcription is an async job; it cannot be a plan step |
@@ -120,8 +120,8 @@ These are Velorn's tools, grouped by verb. An action plan (A1) is built only fro
 ## 4. Action plans
 
 ### A1 Plan shape
-- **Out:** `ActionPlan = { steps: [{tool, arguments}], reasons: string[], expected: {durationBefore, durationAfter, perScene: [{scene, before, after}]}, touchesUserEdits†: clipId[] }`.
-- **Guarantees:** `reasons.length === steps.length`. At most 50 steps (`MCP_ACTION_PLAN_MAX_STEPS`). Every step's tool is in `MCP_ACTION_PLAN_WRITABLE_TOOLS`. Every target is an id read at compile time.
+- **Out:** `ActionPlan = { steps: [{tool, arguments}], reasons: string[], scenes: (number|null)[], changes: string[], expected: {durationBefore, durationAfter, perScene: [{scene, before, after}]}, touchesUserEdits: clipId[], notes: [{scene, text}] }`. `scenes` and `changes` (the card's text for each step) align with `steps` like `reasons`; `notes` say what a plan left undone and why (a target not reached, a pause kept for the policy, a clip left because the user edited it). FILM-2013 adopted `touchesUserEdits` and added `scenes`, `changes` and `notes`.
+- **Guarantees:** `reasons.length === steps.length`. At most 50 steps (`MCP_ACTION_PLAN_MAX_STEPS`). Every step's tool is in `MCP_ACTION_PLAN_WRITABLE_TOOLS`. Every target is an id read at compile time. Steps carry no `previewOnly` and no `studioMeta`; the runner adds both. Ripple cuts are emitted latest first, so each step's times are those of the timeline it was planned on.
 - **Built by:** FILM-2013 (`src/studio/compile.js`).
 
 ### A2 Compile-time reads
@@ -131,12 +131,12 @@ These are Velorn's tools, grouped by verb. An action plan (A1) is built only fro
 
 ### A3 Preview
 - **In:** `studio_edit({intent, scope, params?, previewOnly: true})`. `previewOnly` defaults to true on every capability tool.
-- **Out:** Plan cards `[{scene, durationBefore, durationAfter, changes: [{text, reason}]}]` and a draft explain-why report.
-- **Guarantees:** Nothing in the document changes and nothing is logged. The compiler calls each step's own `previewOnly: true` path itself. `run_mcp_action_plan` with `previewOnly` only validates step names and does not exercise the steps.
+- **Out:** Plan cards `[{scene, heading, durationBefore, durationAfter, targetDuration, changes: [{text, reason, tool, step}], touchesYourEdits: [{clipId, label}], notes}]` (the `scene: null` card is the whole timeline), a draft explain-why report, each step's own preview result, and a `planId` that apply needs. The cards are also emitted as `studio:plan-proposed`.
+- **Guarantees:** Nothing in the document changes and nothing is logged. Each step runs through its own primitive's `previewOnly: true` path (in `electron/studio/mcpCapabilities.js`); a step whose preview refuses blocks the plan with `VALIDATION_FAILED` and every step's result. `run_mcp_action_plan` with `previewOnly` only validates step names and does not exercise the steps. Cards depend on nothing but the document and the instruction, so every client gets the same cards.
 - **Built by:** FILM-2013.
 
 ### A4 Apply
-- **In:** The same call with `previewOnly: false`.
+- **In:** The same call with `previewOnly: false` and the preview's `planId` (kept 30 minutes, applied once).
 - **Out:** A new version (L6), the applied steps, the explain-why report in `edits/reports/<versionId>.json`.
 - **Guarantees:** In order: re-base check (A5), `studio_create_version`, `run_mcp_action_plan` with `createCheckpointFirst: true` and `stopOnError: true`. Each applied step appends one line `{op, ts, by: 'ai', session, tool, args, inverse, reason, scene, versionId}` to `edits/oplog.jsonl`. A failed step stops the plan; the version and checkpoint remain for restore.
 - **Built by:** FILM-2013, with the op log from FILM-2012.
@@ -152,15 +152,15 @@ Every intent compiles to an action plan (A1) and reads its bounds from the polic
 | Intent | Tool | Reads | Compiles to | Guarantees | Built by |
 | --- | --- | --- | --- | --- | --- |
 | `hit_duration` | `studio_edit` | P2, P5, policy target | `extract_range`, `trim_clips`, `delete_clips` on lowest-information shots | Every scene keeps at least one clip; result within ±5% of target or the card says why not | FILM-2013 |
-| `tighten_pacing` | `studio_edit` | P3, P5, P4 | `trim_clips` (silences over 0.6 s), `delete_clips` (duplicate establishing shots), `trim_clips` (reactions to `maxShotLength`), `update_transition` (to `transitions.maxDuration`) | No shot shorter than `minShotLength` | FILM-2013 |
-| `remove_dead_air` | `studio_edit` | P5 | `extract_range` with ripple | Only spans in the silence list are cut, so no dialogue word is cut† | FILM-2013 |
+| `tighten_pacing` | `studio_edit` | P2, P5 (`get_audio_analysis`, the design's `detect_silence`) | ripple `extract_range` over all but the captions and bed tracks for silences over 0.6 s (shot boundaries, then inside a shot), repeated shots with no dialogue, and tails over `maxShotLength`; `update_transition` (to `transitions.maxDuration`); `update_caption_cues`, `trim_clips` (beds, captions clip) and `set_timeline_marker_properties` re-time what the cut moved. With `targetSeconds` it cuts only what the target needs | No shot piece shorter than `minShotLength`; no voiced dialogue is cut | FILM-2013 |
+| `remove_dead_air` | `studio_edit` | P5 | `extract_range` with ripple | Only spans with no voiced dialogue (dialogue clips minus their analysed silences) are cut, so no dialogue word is cut | FILM-2013 |
 | `open_with_strongest_line` | `studio_edit` | sound bites (IN5 analysis) | `move_clips`, `trim_clips` | The moved bite is reported with its importance score | FILM-2013 |
-| `keep_music_under_dialogue` | `studio_edit` | P5, buses | music-bus ducking at `music.duckDb` | The dialogue bus is never ducked | FILM-2013, FILM-2016 |
-| `add_broll` | `studio_edit` | P3 (role `broll`) | `add_asset_to_timeline` on an upper track | No b-roll covers a speaker's first line in a scene† | FILM-2013 |
-| `emphasize` | `studio_edit` | P2 | `set_clip_keyframes` punch-in, `update_text_clip` | Punch-in respects `visual.avoidExtremeZoom`† | FILM-2013 |
+| `keep_music_under_dialogue` | `studio_edit` | buses | no primitive: reports the music bus ducking (`project.studio.audioBuses.music`); `studio_edit_audio duck` changes it | The dialogue bus is never ducked | FILM-2013, FILM-2016 |
+| `add_broll` | `studio_edit` | P3 (role `broll`) | `add_track` "B-roll", `add_asset_to_timeline` on it | No b-roll covers a speaker's first line in a scene | FILM-2013 |
+| `emphasize` | `studio_edit` | P2 | `set_clip_keyframes` punch-in, `add_text_clip` | Punch-in capped at 110% while `visual.avoidExtremeZoom` (120% otherwise) | FILM-2013 |
 | `add_cta` | `studio_edit` | IN2 | `add_asset_to_timeline` (outro) or `add_text_clip` in brand fonts; music ducked | Placed in the last 10 s, aligned to the final dialogue | FILM-2013 |
-| `match_brand` | `studio_edit` | IN2 | `update_transition`, `add_dip_to_black`, `add_adjustment_clip`, caption style | Each change is reported with the brand field it came from† | FILM-2013 |
-| `reorder_scenes` | `studio_edit` | P2 | `move_clips` per scene block | Clips keep their relative order inside a scene† | FILM-2013 |
+| `match_brand` | `studio_edit` | IN2 | `add_transition`, `add_dip_to_black`, `remove_transitions` at scene changes; caption style is `studio_add_captions` (FILM-2016) | Each change is reported with the brand field it came from | FILM-2013 |
+| `reorder_scenes` | `studio_edit` | P2 | `move_clips` per scene block | Clips keep their relative order inside a scene; beds stay in place | FILM-2013 |
 | `recut_around_drops` | `studio_edit` | `analyticsHints.retention` | `trim_clips`, `move_clips` around drop timestamps | With `reason: 'unmeasured'` it returns no plan and says so; it never guesses drops | FILM-2013 |
 | `balance` | `studio_edit_audio` | P5, bus stems | `set_clip_audio`, bus gain | Dialogue-to-music ratio per segment within policy | FILM-2016 |
 | `duck` | `studio_edit_audio` | policy | bus `duckDb`, 120 ms attack, 400 ms release | As `keep_music_under_dialogue` | FILM-2016 |
@@ -248,14 +248,14 @@ The order is L1 to L8. L9 can happen at any point after L3.
 - **In:** `studio_check_updates()`, `studio_apply_updates()`. Polling runs every 5 minutes while a project is open.
 - **Out:** Changed shots (by media `key`) and dialogue (by id), and a plan of previewOnly `import_asset_from_path`, `replace_clip_with_asset`, `delete_clips` and `add_asset_to_timeline` steps with a reason each, sent to the AI panel as `studio:plan-proposed`. A regenerated shot's separate shot-audio clip is listed as unresolved: Velorn replaces an audio clip only with an audio asset.
 - **Guarantees:** Changed media lands under new file names. Nothing is applied without approval (A3, A4). The newer package waits in `storybook/package.next.json`.
-- **Built by:** FILM-2011 (`sync.js`), FILM-2013 (tools).
+- **Built by:** FILM-2011 (`sync.js`), FILM-2013 (tools: `studio_apply_updates` previews and applies `storybook/resync-plan.json` into a "Sync from StoryBook" version, then promotes `package.next.json`).
 
 ## 8. Errors and safety
 
 - **S1 Bearer:** Every request to the local MCP server carries `Authorization: Bearer <secret>`. The secret is 32 random bytes, generated on first run in `userData/mcp-secret` (mode 0600) and kept across restarts. A request whose `Host`, or `Origin` when present, is not loopback (`127.0.0.1`, `localhost`, `[::1]`, any port) gets 403, checked first. A missing or wrong bearer then gets 401 with `WWW-Authenticate: Bearer`. A CORS preflight is checked for `Host` and `Origin` only. Settings > Agents (MCP) shows the connect commands, masked until Show. Built by FILM-2010 (`electron/studio/mcpAuth.js`, `mcpSecret.js`).
 - **S2 Tokens:** StoryBook tokens live in the main process under `safeStorage`, in `userData/studio-secrets.json`. When the OS cannot encrypt, storing a secret fails with `SECRETS_UNAVAILABLE`; nothing is written in plaintext. No IPC handler reads the store, so a token never appears in the renderer, the MCP snapshot or the logs. Built by FILM-2010 (`electron/studio/secrets.js`) and FILM-2011.
 - **S3 Delivery confirmation:** See L8. `studio_deliver` is never in `MCP_ACTION_PLAN_WRITABLE_TOOLS`. Every other `studio_*` write tool is.
-- **S4 Not available yet:** A capability tool whose spec has not landed returns `VALIDATION_FAILED "not available yet"`, never a partial result. This covers `studio_render_preview`, `studio_review` and `studio_repair` until FILM-2014; `studio_edit_audio` and `studio_add_captions` until FILM-2016; `studio_deliver` and `studio_create_variant` until FILM-2017; and `studio_add_graphic` until FILM-2018.
+- **S4 Not available yet:** A capability tool whose spec has not landed returns `VALIDATION_FAILED "not available yet"` with `details.availableAfter`, never a partial result. This covers `studio_render_preview`, `studio_review` and `studio_repair` until FILM-2014; `studio_edit_audio` and `studio_add_captions` in a build without FILM-2016's `src/studio/intents/{audio,captions}.js` (the renderer registers them when present); `studio_deliver` with `confirm: true` and `studio_create_variant` until FILM-2017; and `studio_add_graphic` until FILM-2018.
 - **S5 Error codes:** `VALIDATION_FAILED` (bad input or not available), `TARGET_CHANGED` (document or episode changed since preview or pull), `NOT_FOUND`, `FORBIDDEN` (role), `UNAUTHORIZED` (sign in again). StoryBook-side codes pass through unchanged.
 - **S6 Local files:** `comfystudio://` serves only files under the open project folder, `userData` and the app's temp caches, plus exact files the app's own windows asked a URL for through `media:getFileUrl`. Paths are resolved through symlinks first, and any `..` segment is refused. Everything else gets 403. Built by FILM-2010 (`electron/studio/protocolAllowlist.js`).
 
@@ -265,7 +265,9 @@ These come from reading `electron/mcpServer.js` at fork commit 233f35f (Velorn v
 
 - **G1 Tool count.** There are 130 tools, not the 129 the design and specs state; `docs/MCP.md` says 125. `node scripts/capability-matrix.mjs` prints the count.
 - **G2 Plan preview does not preview steps.** `run_mcp_action_plan` with `previewOnly` checks step names and returns them unexecuted. Per-step previews are the compiler's job (A3, FILM-2013).
-- **G3 Write tools missing from the writable set.** `split_clip`, `extract_range`, `set_clip_speed`, `set_clip_audio`, `update_caption_cues` and `generate_captions` accept `previewOnly` but `run_mcp_action_plan` refuses them. FILM-2013 adds the first five; caption generation stays a sequenced job.
+- **G3 Write tools missing from the writable set.** `split_clip`, `extract_range`, `set_clip_speed`, `set_clip_audio`, `update_caption_cues` and `generate_captions` accept `previewOnly` but `run_mcp_action_plan` refused them. Closed: FILM-2013 added the first five, and every `studio_*` write tool but `studio_deliver`; caption generation stays a sequenced job.
 - **G4 No ducking primitive.** Closed by FILM-2016: ducking is a bus setting (`set_audio_buses`), applied at preview by gain automation from the dialogue bus's analyser and at export by `sidechaincompress` keyed from the dialogue bus. Velorn's UI ducking (`src/utils/audioDucking.mjs`) still writes a volume envelope on one clip and is unchanged. `set_master_audio` had no route in `callTool` (it answered Unknown tool); FILM-2016 routes it.
 - **G5 No `detect_silence`.** The design's `tighten_pacing` example names it. `get_audio_analysis` is the compile-time equivalent (P5); QA-grade `silencedetect` is FILM-2014.
-- **G6 No MCP annotations.** No Velorn tool declares `readOnlyHint` or `destructiveHint`. Read and write are inferred from `previewOnly` and the writable set; capability tools declare annotations (FILM-2013).
+- **G6 No MCP annotations.** No Velorn tool declares `readOnlyHint` or `destructiveHint`. Read and write are inferred from `previewOnly` and the writable set; every capability tool declares annotations (FILM-2013).
+- **G7 Plan steps lost their reason in some handlers (closed by FILM-2013).** Handlers that rebuild their renderer payload (for example `set_timeline_marker_properties`) dropped `studioMeta`, so the op-log line had no reason. `run_mcp_action_plan` now re-attaches the running step's `studioMeta` to every renderer action the step makes.
+- **G8 A split dropped the clip's metadata (closed by FILM-2013).** `split_clip` and `extract_range` gave the right piece no `metadata`, so it left its scene. The right piece now keeps the clip's metadata.
