@@ -3744,18 +3744,51 @@ function normalizeDeliveryBatchTargetEntry(entry, index, sharedArgs = {}, filena
   return merged
 }
 
-function buildExportDeliveryBatchPlan(snapshot, args = {}) {
+// FILM-2017: the six StoryBook delivery presets (src/studio/delivery/presets.js, ESM).
+function loadDeliveryPresets() {
+  return import(require('url').pathToFileURL(path.join(__dirname, '..', 'src', 'studio', 'delivery', 'presets.js')).href)
+}
+
+// The project's current Studio version, for renders/<version>/ (FILM-2012).
+function currentStudioVersion(projectPath) {
+  try {
+    const file = JSON.parse(fsSync.readFileSync(path.join(projectPath, 'edits', 'versions.json'), 'utf8'))
+    return file.current || 'latest'
+  } catch {
+    return 'latest'
+  }
+}
+
+// A named delivery preset × each language → export_timeline settings and
+// the file renders/<version>/<preset>-<lang>.mp4.
+function expandDeliveryPresetTargets(rawTargets, args, snapshot, deliveryPresets) {
+  if (!deliveryPresets) return rawTargets
+  const languages = Array.isArray(args.languages) && args.languages.length > 0 ? args.languages.map(String) : [deliveryPresets.DEFAULT_LANGUAGE]
+  const projectPath = String(snapshot?.project?.path || '')
+  const version = args.version || (projectPath ? currentStudioVersion(projectPath) : 'latest')
+  return rawTargets.flatMap((entry) => {
+    if (typeof entry !== 'string' || !deliveryPresets.isDeliveryPreset(entry)) return [entry]
+    return languages.map((language) => ({
+      ...deliveryPresets.exportSettingsForPreset(entry, { timeline: snapshot?.currentTimeline, language }),
+      label: `${entry}-${language}`,
+      filename: `${entry}-${language}`,
+      ...(projectPath ? { outputPath: path.join(projectPath, deliveryPresets.deliveryRelPath(version, entry, language)) } : {}),
+    }))
+  })
+}
+
+function buildExportDeliveryBatchPlan(snapshot, args = {}, { deliveryPresets = null } = {}) {
   const project = snapshot?.project || null
   const timeline = snapshot?.currentTimeline || null
   if (!project || !timeline) {
     return { error: 'Open a saved StorybookStudio project and timeline before exporting.' }
   }
 
-  const rawTargets = Array.isArray(args.targets) && args.targets.length > 0
+  const rawTargets = expandDeliveryPresetTargets(Array.isArray(args.targets) && args.targets.length > 0
     ? args.targets
     : Array.isArray(args.presets) && args.presets.length > 0
       ? args.presets
-      : [args.target || 'h264_hd']
+      : [args.target || 'h264_hd'], args, snapshot, deliveryPresets)
   const limit = Math.min(12, Math.max(1, Math.floor(toFiniteNumber(args.limit, 6))))
   const sharedKeys = [
     'range',
@@ -10573,7 +10606,12 @@ function createToolDefinitions() {
           presets: {
             type: 'array',
             items: { type: 'string' },
-            description: 'Alias for targets when using string target names.',
+            description: 'Alias for targets when using string target names. Also takes the StoryBook delivery presets youtube_16x9, shorts_9x16, tiktok_9x16, reels_9x16, square_1x1 and master: each sets frame, fps, codec, bitrate, loudness target and caption policy, and writes renders/<version>/<preset>-<lang>.mp4.',
+          },
+          languages: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'With delivery presets: one file per preset and language (tracks of other languages are left out). Defaults to en.',
           },
           range: { type: 'string', enum: ['full', 'custom'], description: 'Shared export range. Defaults to full.' },
           startSeconds: { type: 'number', description: 'Shared custom range start.' },
@@ -10588,6 +10626,33 @@ function createToolDefinitions() {
           stopOnError: { type: 'boolean', description: 'When true, stop the batch if one export fails. Defaults to true.' },
           limit: { type: 'integer', description: 'Maximum number of exports. Defaults to 6, max 12.' },
         },
+      },
+    },
+    {
+      name: 'set_auto_reframe',
+      description: 'Preview or apply a subject-tracking reframe on picture clips of the active timeline: finds faces (else the primary subject) on each clip\'s keyframes with a local model, computes a smoothed crop path for the timeline\'s aspect (no jump over 15% of the width except at a cut) and writes it as set_clip_keyframes scale and position keyframes. A clip with no detectable subject is centred and returned as a QA warning. Defaults to previewOnly.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          clipIds: { type: 'array', items: { type: 'string' }, description: 'Picture clips on the active timeline; defaults to every video and image clip.' },
+          aspect: { type: 'string', enum: ['9:16', '1:1', '16:9'], description: 'The frame the crop follows; defaults to the active timeline\'s aspect.' },
+          previewOnly: { type: 'boolean', description: 'When true, returns the crop paths and set_clip_keyframes calls without changing the timeline. Defaults to true.' },
+        },
+      },
+    },
+    {
+      name: 'set_focal_point',
+      description: 'Preview or set a fixed focal point on a video or image clip: the clip fills the active timeline\'s frame with the window centred on (x, y), written as set_clip_keyframes scale and position keyframes. Defaults to previewOnly.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          clipId: { type: 'string', description: 'Video or image clip on the active timeline.' },
+          x: { type: 'number', description: 'Horizontal focal point, 0 (left) to 1 (right) of the source frame.' },
+          y: { type: 'number', description: 'Vertical focal point, 0 (top) to 1 (bottom) of the source frame.' },
+          aspect: { type: 'string', enum: ['9:16', '1:1', '16:9'], description: 'Defaults to the active timeline\'s aspect.' },
+          previewOnly: { type: 'boolean', description: 'When true, returns the keyframes without applying them. Defaults to true.' },
+        },
+        required: ['clipId', 'x', 'y'],
       },
     },
   ]
@@ -10609,6 +10674,7 @@ class ComfyStudioMcpServer {
     inspectComfyStudioWorkflow = null,
     authSecret = null,
     getStudioCloud = null,
+    getStudioDeliver = null,
     emitPlanProposed = null,
   } = {}) {
     this.port = port
@@ -10640,6 +10706,8 @@ class ComfyStudioMcpServer {
       emitPlanProposed: typeof emitPlanProposed === 'function' ? emitPlanProposed : () => {},
       writableTools: MCP_ACTION_PLAN_WRITABLE_TOOLS,
       getProjectPath: () => this.lastSnapshot?.project?.path || null,
+      getDeliver: () => (typeof getStudioDeliver === 'function' ? getStudioDeliver() : null),
+      getSnapshot: () => this.lastSnapshot,
     })
   }
 
@@ -11204,6 +11272,10 @@ class ComfyStudioMcpServer {
         return this.exportDeliveryBatch(snapshot, args)
       case 'export_fcpxml':
         return this.exportFcpXml(snapshot, args)
+      // FILM-2017: subject-tracking reframe (electron/studio/deliver.js expertTools).
+      case 'set_auto_reframe':
+      case 'set_focal_point':
+        return this.runStudioExpertTool(name, snapshot, args)
       default:
         return errorResult(`Unknown tool: ${name}`)
     }
@@ -14732,8 +14804,25 @@ class ComfyStudioMcpServer {
     })
   }
 
+  // FILM-2017: set by main.js (studioMain.deliver.expertTools).
+  async runStudioExpertTool(name, snapshot, args = {}) {
+    const tool = this.studioTools?.[name]
+    if (!tool) return errorResult(`${name} is not available in this build.`)
+    try {
+      return textResult({ action: name, ...(await tool(args, { snapshot })) })
+    } catch (error) {
+      return errorResult(`${error?.code ? `${error.code}: ` : ''}${error?.message || String(error)}`)
+    }
+  }
+
   async exportDeliveryBatch(snapshot, args = {}) {
-    const batchPlan = buildExportDeliveryBatchPlan(snapshot, args)
+    let deliveryPresets = null
+    try {
+      deliveryPresets = await loadDeliveryPresets()
+    } catch (error) {
+      return errorResult(`Delivery presets could not be loaded: ${error?.message || error}`)
+    }
+    const batchPlan = buildExportDeliveryBatchPlan(snapshot, args, { deliveryPresets })
     if (batchPlan.error) return errorResult(batchPlan.error)
 
     const previewOnly = args.previewOnly !== false

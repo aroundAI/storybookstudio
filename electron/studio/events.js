@@ -70,9 +70,12 @@ function createEditEventQueue({
 
   return {
     // Returns the flush promise for `delivered` (sent at once), else undefined.
-    push({ type, data = {}, ts = new Date().toISOString() }) {
+    // clientEventId: FILM-2017 passes a stable one for an event a retry may
+    // send again (delivered), so StoryBook stores it once.
+    push({ type, data = {}, ts = new Date().toISOString(), clientEventId = null }) {
       if (closed) throw new Error('The edit session is closed.')
-      events.push({ clientEventId: crypto.randomUUID(), ts, type, data })
+      if (clientEventId && events.some((event) => event.clientEventId === clientEventId)) return type === 'delivered' ? flush() : undefined
+      events.push({ clientEventId: clientEventId || crypto.randomUUID(), ts, type, data })
       persist()
       return type === 'delivered' ? flush() : undefined
     },
