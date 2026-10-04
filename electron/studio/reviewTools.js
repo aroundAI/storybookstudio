@@ -10,6 +10,11 @@ const path = require('path')
 const { createPreviewRenderer, resolveRange, loadPlan } = require('./previewRender')
 const { createQa } = require('./qa')
 const { createVisionClient } = require('./visionClient')
+const { writeTextAtomic } = require('./editsFiles')
+
+// FILM-2013's LAST_QA_PATH: studio_get_context, the explain-why report and
+// FILM-2017's Deliver summary read the latest review from here.
+const LAST_QA_PATH = 'edits/qa/latest.json'
 
 const loadCritic = () => Promise.all([
   import('../../src/studio/critic/pacing.js'),
@@ -123,8 +128,15 @@ function createReviewTools({ getReviewContext, ffmpegPath, ffprobePath, env = pr
     }
 
     const issues = [...qaRun.qa.issues, ...critic.issues].sort((a, b) => b.severity - a.severity)
+    const pass = qaRun.qa.pass && critic.pass
+    // A whole-timeline review of the live document is the "last QA" the rest of the Studio shows.
+    if (!args.versionId) {
+      // A QaResult (FILM-2013 reads it as one) with when and what it covered.
+      const record = { pass, issues: issues.slice(0, 500), at: new Date().toISOString(), range: [from, to], scope: args.scope || {}, skipped: visualResult.skipped ? ['visual'] : [] }
+      await writeTextAtomic(projectPath, LAST_QA_PATH, `${JSON.stringify(record, null, 2)}\n`).catch(() => {})
+    }
     return {
-      pass: qaRun.qa.pass && critic.pass,
+      pass,
       issues,
       qa: qaRun.qa,
       critic,

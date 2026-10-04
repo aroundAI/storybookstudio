@@ -53,6 +53,11 @@ test('studio_review finds the loud music; studio_repair previews and applies one
   assert.ok(types.includes('missing_media'), 'dialogue line 3 has no audio')
   assert.ok(review.issues.every((issue) => issue.severity >= 0 && issue.severity <= 1))
 
+  // The review is the Studio's last QA now: studio_get_context reports it.
+  const { body: context } = await call('studio_get_context', {})
+  assert.equal(context.lastQa.pass, false)
+  assert.equal(context.lastQa.issues.length, review.issues.length)
+
   const fixable = review.issues.filter((issue) => issue.repairIntent)
   const { result: previewed, body: preview } = await call('studio_repair', { issues: fixable })
   assert.equal(previewed.isError, undefined, JSON.stringify(preview))
