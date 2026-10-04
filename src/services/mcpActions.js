@@ -66,6 +66,7 @@ import {
 import { createCheckpointStore } from '../studio/checkpointStore'
 import { runMcpActionWithEditLog } from '../studio/editLogRuntime.js'
 import { handleSetAudioBuses } from '../studio/audio/busActions.js'
+import { studioAudioExportOptions } from '../studio/audio/exportOptions.js'
 import { handleStudioAction, isStudioRendererAction, publishSnapshotNow } from '../studio/capabilityRuntime.js'
 import { insertStudioTimeline, prepareStudioDelivery } from '../studio/delivery/rendererActions.js'
 
@@ -6744,6 +6745,11 @@ async function handleExportTimeline(payload = {}) {
     // FILM-2017: a delivery preset's caption policy and language (export_delivery_batch presets).
     captionPolicy: ['burn', 'sidecar', 'none'].includes(payload.captionPolicy) ? payload.captionPolicy : null,
     language: typeof payload.language === 'string' && payload.language ? payload.language : null,
+    // FILM-2016's bus mix for a Studio project, at the delivery preset's loudness (FILM-2017).
+    studioAudio: studioAudioExportOptions(project, {
+      preset: payload.deliveryPreset ? { name: payload.deliveryPreset, audioLufs: Number.isFinite(Number(payload.loudnessTarget)) ? Number(payload.loudnessTarget) : null } : null,
+      stems: payload.stems === true,
+    }),
   }
 
   const assets = Array.isArray(assetsState.assets) ? assetsState.assets : []

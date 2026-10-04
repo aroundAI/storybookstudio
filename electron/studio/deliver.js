@@ -540,7 +540,21 @@ function createStudioDeliver({
       // FILM-2016's caption styling places the cues in the 9:16 safe area, in the brand's style.
       const { styleCaptionCues } = await studioModule('captions/style.js')
       const built = variants.buildShortVariant(document, { source: args.source || {}, presetName: args.preset || 'shorts_9x16', shortsCandidates: context.shortsCandidates, language: args.language || null, styleCues: styleCaptionCues, brand: context.brand || {}, policy: context.policy || {}, now })
-      const response = { kind: 'short', previewOnly, timelineId: built.timeline.id, name: built.timeline.name, range: built.range, expectedDuration: built.expectedDuration, maxDuration: built.maxDuration, overMaxDuration: built.overMaxDuration, durationNote: built.durationNote, captionsPlaced: built.captionsPlaced, pictureClips: built.pictureClipIds.length, captionsPlacement: 'FILM-2016 styleCaptionCues: the brand caption style inside the 9:16 safe area (clear of the bottom 25% and right 15%)' }
+      const card = {
+        scene: null,
+        heading: `Short (9:16) from ${built.range.from.kind === 'candidate' ? `the shorts candidate "${built.range.from.title || built.range.from.candidateId}"` : built.range.from.kind === 'hook' ? 'the strongest line' : 'the chosen range'}`,
+        durationBefore: null,
+        durationAfter: built.expectedDuration,
+        targetDuration: built.maxDuration,
+        changes: [
+          { text: `New timeline ${built.timeline.name}, ${built.range.start}-${built.range.end} s of the master`, reason: built.durationNote, tool: 'studio_insert_timeline', step: 0 },
+          { text: `Reframe ${built.pictureClipIds.length} picture clips to 9:16, following faces or the primary subject`, reason: 'Keeps the subject in a vertical frame; a clip with no subject is centred and flagged', tool: 'set_clip_keyframes', step: 1 },
+          { text: `Re-place ${built.captionsPlaced} caption cues in the 9:16 safe area`, reason: 'Clear of the bottom 25% and right 15%, where the platforms draw their buttons', tool: 'update_caption_cues', step: 2 },
+        ],
+        touchesYourEdits: [],
+        notes: built.overMaxDuration ? [built.durationNote] : [],
+      }
+      const response = { kind: 'short', previewOnly, cards: [card], timelineId: built.timeline.id, name: built.timeline.name, range: built.range, expectedDuration: built.expectedDuration, maxDuration: built.maxDuration, overMaxDuration: built.overMaxDuration, durationNote: built.durationNote, captionsPlaced: built.captionsPlaced, pictureClips: built.pictureClipIds.length, captionsPlacement: 'FILM-2016 styleCaptionCues: the brand caption style inside the 9:16 safe area (clear of the bottom 25% and right 15%)' }
       if (previewOnly) return { ...response, reframe: 'Applying detects faces and subjects on each clip\'s keyframes and adds set_clip_keyframes crop paths.' }
       const reframed = await reframeTimelineClips({ timeline: built.timeline, document, projectDir, aspect: built.timeline.studio.aspect })
       built.timeline.studio.reframeWarnings = reframed.filter((entry) => entry.warning).map((entry) => entry.warning)
@@ -562,7 +576,17 @@ function createStudioDeliver({
     if (args.kind === 'hook') {
       const built = variants.buildHookVariants(document, { variants: args.variants ?? 3, language: args.language || null, now })
       const summary = built.variants.map(({ timeline, rank, bite, range }) => ({ timelineId: timeline.id, name: timeline.name, rank, range, bite }))
-      if (previewOnly) return { kind: 'hook', previewOnly, signal: built.signal, requested: built.requested, variants: summary }
+      const cards = summary.map((entry) => ({
+        scene: null,
+        heading: `Hook ${entry.rank}: opens on "${String(entry.bite.text || entry.bite.clipId).slice(0, 60)}"`,
+        durationBefore: null,
+        durationAfter: Math.round((entry.range[1] - entry.range[0]) * 1000) / 1000,
+        targetDuration: 5,
+        changes: [{ text: `New timeline ${entry.name}, ${entry.range[0]}-${entry.range[1]} s of the master`, reason: `${built.signal === 'energy' ? 'Loudest' : 'Strongest'} line, importance ${entry.bite.importance}`, tool: 'studio_insert_timeline', step: entry.rank - 1 }],
+        touchesYourEdits: [],
+        notes: [],
+      }))
+      if (previewOnly) return { kind: 'hook', previewOnly, signal: built.signal, requested: built.requested, variants: summary, cards }
       for (const { timeline } of built.variants) {
         if (server()?.performAction) await performAction('studio_insert_timeline', { timeline, activate: false, previewOnly: false, studioMeta: { reason: `Hook opening ${timeline.studio.hookIndex}` } })
         else document.timelines.push(timeline)
@@ -581,7 +605,7 @@ function createStudioDeliver({
           files.push({ timelineId: timeline.id, file, durationSeconds: rendered.durationSeconds })
         }
       }
-      return { kind: 'hook', previewOnly, signal: built.signal, requested: built.requested, variants: summary, files }
+      return { kind: 'hook', previewOnly, signal: built.signal, requested: built.requested, variants: summary, cards, files }
     }
     throw fail('VALIDATION_FAILED', 'kind is short or hook (language variants are FILM-2019).')
   }

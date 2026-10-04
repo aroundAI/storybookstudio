@@ -85,6 +85,9 @@ test('the agent profile reaches the tools: studio_create_variant previews, studi
   assert.equal(variant.isError, undefined, JSON.stringify(variant))
   assert.equal(parse(variant).previewOnly, true)
   assert.equal(parse(variant).expectedDuration, 8)
+  const [card] = parse(variant).cards
+  assert.deepEqual(Object.keys(card).sort(), ['changes', 'durationAfter', 'durationBefore', 'heading', 'notes', 'scene', 'targetDuration', 'touchesYourEdits'])
+  assert.deepEqual(card.changes.map((change) => change.tool), ['studio_insert_timeline', 'set_clip_keyframes', 'update_caption_cues'])
   const language = await capabilities.call('studio_create_variant', { kind: 'language', params: { language: 'hi' } })
   assert.equal(language.isError, true)
   assert.match(parse(language).error.message, /FILM-2019/)
