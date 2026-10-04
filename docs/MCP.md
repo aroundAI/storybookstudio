@@ -256,6 +256,18 @@ Bounds come from `storybook/policy.json` (StoryBook's edit policy, else its defa
 
 The in-app agent (the Agent tab, `src/services/agentTools.js`) lists the same 18 tools and calls them through `studio:callCapability`, the same handler an MCP client reaches, so both get the same cards.
 
+### Nightly AI eval
+
+`scripts/ai-eval.mjs` runs 10 fixture episodes (`tests/studio/fixtures/ai-eval/episodes.json`, derived from the FILM-2001 packages) against 5 instructions (`instructions.json`, including the north-star "tighten scene 3 to 12 s and fix the audio") over MCP in the headless harness, with no human touch: the agent previews and applies. It scores each run on duration hit rate (within 5% of the asked target), QA pass rate, script coverage (lines and scenes still on the timeline), revisions (versions per run) and cost, writes `results.json` and `summary.md`, and with `--baseline` fails when the QA pass rate falls or the cost rises more than 20%.
+
+```bash
+npm run ai-eval -- --agent oracle                      # the compilers alone: a scripted agent, no model, no cost
+npm i -D @anthropic-ai/sdk                             # once, for a model-driven run
+STUDIO_EVAL_MODEL=claude-opus-5-5 ANTHROPIC_API_KEY=... npm run ai-eval -- --agent model --out .ai-eval/today --baseline .ai-eval/last/results.json
+```
+
+Which model drives the agent is the owner's choice (phase 20 open question 2); any model id works, and the cost table in the script covers the current Claude models. QA counts once FILM-2014 provides it; until then the QA pass rate is reported as unmeasured and the gate compares cost only.
+
 ## Recommended Workflows
 
 ### StoryBook Rough Cut (agent profile)

@@ -83,9 +83,9 @@ export async function loadRendererModules() {
   }
 }
 
-export async function startStudioHarness(m, { shots = 20, runRead = silentLinesAnalysis() } = {}) {
+export async function startStudioHarness(m, { shots = 20, runRead = silentLinesAnalysis(), packageTransform = null } = {}) {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'studio-capabilities-'))
-  const pkg = loadFixture(shots)
+  const pkg = packageTransform ? packageTransform(loadFixture(shots)) : loadFixture(shots)
   const { project, files } = buildProject({ package: pkg, probedAssets: probesFor(pkg) })
   for (const [relative, text] of Object.entries(files)) {
     await mkdir(path.dirname(path.join(dir, relative)), { recursive: true })

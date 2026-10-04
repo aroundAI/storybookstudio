@@ -1,0 +1,10 @@
+{
+  "$comment": "FILM-2013 nightly AI eval: the 5 instructions every episode gets. {scene} is scene 3, or the episode's last scene when it has fewer; {sceneTarget} is 60% of that scene's length; {target} is 85% of the episode's length (rounded). expect names what the scorer checks; the oracle agent maps each to the tool calls a correct agent makes.",
+  "instructions": [
+    { "id": "north-star", "text": "Tighten scene {scene} to {sceneTarget} s and fix the audio.", "expect": { "sceneTarget": true, "audio": true } },
+    { "id": "hit-duration", "text": "Make it {target} seconds.", "expect": { "episodeTarget": true } },
+    { "id": "dead-air", "text": "Remove the dead air.", "expect": { "shorter": true } },
+    { "id": "hook", "text": "Open with the strongest line.", "expect": { "hook": true } },
+    { "id": "brand", "text": "Match our brand.", "expect": {} }
+  ]
+}
