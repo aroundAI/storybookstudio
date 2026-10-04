@@ -117,13 +117,13 @@ test('the plan imports new media under new names and replaces, adds and deletes 
   }
   const { steps, unresolved } = buildResyncPlan({ diff, next: after, project: project(before.shots, before.dialogue), assetPaths })
 
-  assert.deepEqual(unresolved, [])
+  assert.deepEqual(unresolved.filter((u) => u.kind !== 'shot_audio'), [])
   assert.deepEqual(
     steps.map((s) => [s.tool, s.arguments.clipId ?? s.arguments.clipIds ?? s.arguments.trackId ?? s.arguments.path]),
     [
       ['import_asset_from_path', assetPaths['episodes/p/e/shots/2-regenerated.mp4']],
       ['replace_clip_with_asset', 'clip-shot-2'],
-      ['delete_clips', ['clip-shot-3']],
+      ['delete_clips', ['clip-shot-3', 'clip-shotaudio-3']],
       ['import_asset_from_path', assetPaths['audio/p/dialogue/3.mp3']],
       ['add_asset_to_timeline', 'dialogue-en'],
     ],
@@ -154,4 +154,16 @@ test('a row the project has no clip for is reported, not guessed', () => {
   assert.ok(unresolved.some((u) => u.kind === 'shot' && u.id === uuid(102)))
   assert.ok(unresolved.some((u) => u.kind === 'shot' && u.id === uuid(103)))
   assert.equal(steps.filter((s) => s.tool === 'replace_clip_with_asset' || s.tool === 'delete_clips').length, 0)
+})
+
+test('a removed shot takes its shot-audio clip with it; a regenerated shot names its stale shot-audio clip', () => {
+  const diff = diffEditPackages(before, after)
+  const assetPaths = { 'episodes/p/e/shots/2-regenerated.mp4': '/p/assets/shots/shot-002-aaaaaaaa.mp4', 'audio/p/dialogue/3.mp3': '/p/assets/dialogue/en/line-003-bbbbbbbb.mp3' }
+  const { steps, unresolved } = buildResyncPlan({ diff, next: after, project: project(before.shots, before.dialogue), assetPaths })
+  const deleted = steps.find((s) => s.tool === 'delete_clips' && /shot 3/.test(s.reason))
+  assert.deepEqual(deleted.arguments.clipIds, ['clip-shot-3', 'clip-shotaudio-3'])
+  // Velorn replaces an audio clip only with an audio asset, so the old take's
+  // sound is reported, not silently left playing.
+  assert.ok(steps.every((s) => s.arguments.clipId !== 'clip-shotaudio-2'))
+  assert.deepEqual(unresolved.filter((u) => u.kind === 'shot_audio').map((u) => [u.id, u.clipIds]), [[uuid(102), ['clip-shotaudio-2']]])
 })

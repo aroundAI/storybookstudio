@@ -109,6 +109,7 @@ function clipIndex(project) {
   const timelines = Array.isArray(project?.timelines) ? project.timelines : []
   const timeline = timelines.find((t) => t.id === project?.currentTimelineId) || timelines.find((t) => t?.studio?.kind === 'master') || timelines[0] || null
   const shots = new Map()
+  const shotAudio = new Map()
   const lines = new Map()
   const dialogueTracks = new Map()
   const shotTracks = new Set()
@@ -125,9 +126,12 @@ function clipIndex(project) {
       if (!shots.has(semantic.shotId)) shots.set(semantic.shotId, [])
       shots.get(semantic.shotId).push(clip)
       shotTracks.add(clip.trackId)
+    } else if (semantic.shotId) {
+      if (!shotAudio.has(semantic.shotId)) shotAudio.set(semantic.shotId, [])
+      shotAudio.get(semantic.shotId).push(clip)
     }
   }
-  return { timelineId: timeline?.id ?? null, shots, lines, dialogueTracks, shotTrack: [...shotTracks][0] ?? null }
+  return { timelineId: timeline?.id ?? null, shots, shotAudio, lines, dialogueTracks, shotTrack: [...shotTracks][0] ?? null }
 }
 
 const shotLabel = (row) => `shot ${row.sequenceNumber ?? '?'}${row.sceneNumber != null ? ` (scene ${row.sceneNumber})` : ''}`
@@ -172,6 +176,12 @@ function buildResyncPlan({ diff, project, assetPaths = {}, session = null }) {
       continue
     }
     for (const clip of clips) step('replace_clip_with_asset', { clipId: clip.id, assetName }, reason, change.sceneNumber)
+    // Velorn replaces an audio clip only with an audio asset, so the shot's
+    // own sound (a separate clip of the old video) cannot be swapped here.
+    const stale = index.shotAudio.get(change.id) || []
+    if (stale.length) {
+      unresolved.push({ kind: 'shot_audio', id: change.id, clipIds: stale.map((clip) => clip.id), reason: 'the shot audio clip still plays the old take' })
+    }
   }
 
   for (const row of diff.shots.removed) {
@@ -181,7 +191,8 @@ function buildResyncPlan({ diff, project, assetPaths = {}, session = null }) {
       unresolved.push({ kind: 'shot', id: row.id, reason: 'no clip in the open project carries this shot' })
       continue
     }
-    step('delete_clips', { clipIds: clips.map((clip) => clip.id) }, reason, row.sceneNumber ?? null)
+    const linked = index.shotAudio.get(row.id) || []
+    step('delete_clips', { clipIds: [...clips, ...linked].map((clip) => clip.id) }, reason, row.sceneNumber ?? null)
   }
 
   for (const row of diff.shots.added) {
