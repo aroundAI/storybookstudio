@@ -11,6 +11,7 @@ import { finishPlan, shotLabel } from './intents/shared.js'
 
 export const AUDIO_MODULE = './intents/audio.js'
 export const CAPTIONS_MODULE = './intents/captions.js'
+export const REPAIR_MODULE = './intents/repair.js'
 
 // FILM-2016's context: audioBuses at the top, user edits as a Set, the brand
 // and the preset loudness; its scope: 'episode' or {scenes, clipIds, range:{start, end}}.
@@ -109,6 +110,12 @@ export function registerExternalIntents(modules = {}) {
       },
     })
     registered.push('captions:add_captions')
+  }
+  // FILM-2014's repair compiler returns the plan shape itself (params.issues).
+  const repair = modules[REPAIR_MODULE]
+  if (repair?.INTENT === 'repair' && typeof repair.compile === 'function') {
+    registerIntentCompiler('repair', { owner: 'FILM-2014', reads: repair.reads || (() => []), compile: repair.compile })
+    registered.push('repair')
   }
   return registered
 }

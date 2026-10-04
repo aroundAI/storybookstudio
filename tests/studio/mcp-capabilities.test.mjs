@@ -134,3 +134,22 @@ test('studio_apply_updates previews the re-sync plan; a replace that needs its i
   assert.match(result.stepPreviews[1].message, /when step 1 has run/)
   assert.deepEqual(result.applyWith, { tool: 'studio_apply_updates', arguments: { previewOnly: false, planId: result.planId } })
 })
+
+test('autoRepair needs only FILM-2014\'s review: the repair plan comes from the renderer\'s repair compiler', async () => {
+  const { calls, performAction: base, callPrimitive } = fakes()
+  const compiles = []
+  const performAction = async (action, payload) => {
+    if (action === 'studio_compile' && payload.intent === 'repair') {
+      compiles.push(payload.params.issues.length)
+      return { plan: { steps: [{ tool: 'set_master_audio', arguments: {} }], reasons: ['Loudness -18 LUFS, target -14'], scenes: [null] } }
+    }
+    return base(action, payload)
+  }
+  const results = [{ pass: false, issues: [{ type: 'loudness', repairIntent: 'normalize_loudness' }] }, { pass: true, issues: [] }]
+  const tools = createCapabilityTools({ performAction, callPrimitive, review: async () => results.shift() })
+  const result = await apply(tools, (await preview(tools)).planId, { autoRepair: true })
+  assert.deepEqual(compiles, [1])
+  assert.deepEqual(result.autoRepair.rounds.map((round) => round.kind), ['plan', 'repair'])
+  assert.equal(result.autoRepair.stoppedBecause, 'QA passed')
+  assert.equal(calls.plans[1].steps[0].arguments.studioMeta.reason, 'Loudness -18 LUFS, target -14')
+})

@@ -19,12 +19,13 @@ import { finishPlan, pictureEnd, shotLabel } from './intents/shared.js'
 import { registerExternalIntents } from './externalIntents.js'
 
 // FILM-2016's audio and caption compilers, when this build has them.
-export const EXTERNAL_INTENTS = registerExternalIntents(import.meta.glob('./intents/{audio,captions}.js', { eager: true }))
-const EXTERNAL_OWNERS = { audio: 'FILM-2016', captions: 'FILM-2016' }
+export const EXTERNAL_INTENTS = registerExternalIntents(import.meta.glob('./intents/{audio,captions,repair}.js', { eager: true }))
+const EXTERNAL_OWNERS = { audio: 'FILM-2016', captions: 'FILM-2016', repair: 'FILM-2014' }
 
 export const STUDIO_RENDERER_ACTIONS = Object.freeze([
   'studio_get_context', 'studio_compile', 'studio_search_assets', 'studio_readiness_local',
   'studio_create_version', 'studio_restore_version', 'studio_finish_apply', 'studio_deliver_summary', 'studio_resync_plan',
+  'studio_review_context', 'studio_append_oplog',
 ])
 export const RESYNC_PLAN_PATH = 'storybook/resync-plan.json'
 export const LAST_QA_PATH = 'edits/qa/latest.json'
@@ -174,6 +175,12 @@ async function resyncPlan({ writable } = {}) {
   const { context, document, projectPath } = await loadStudioContext()
   const proposal = await readJson(projectPath, RESYNC_PLAN_PATH)
   if (!proposal?.steps) throw studioError('NOT_FOUND', 'No StoryBook update to apply: studio_check_updates proposes one when the episode changed.')
+  // The plan is for the package parked in package.next.json; a newer poll
+  // replaced it, so the plan is stale (FILM-2011 rewrites it on its next poll).
+  const next = await readJson(projectPath, 'storybook/package.next.json')
+  if (proposal.etag?.to && next?.etag && next.etag !== proposal.etag.to) {
+    throw studioError('TARGET_CHANGED', `StoryBook changed again since this update was proposed (${proposal.etag.to} -> ${next.etag}); check for updates again.`, { proposed: proposal.etag.to, current: next.etag })
+  }
   const clips = new Map((context.timeline?.clips || []).map((clip) => [clip.id, clip]))
   const userEdited = new Set(context.userEditedClipIds)
   const imported = new Map()
@@ -189,8 +196,25 @@ async function resyncPlan({ writable } = {}) {
           : `${raw.tool}`
     return { step: { tool: raw.tool, arguments: args }, reason: raw.reason || studioMeta?.reason || 'StoryBook changed', scene: studioMeta?.scene ?? null, text, touches: targets.filter((id) => userEdited.has(id)) }
   })
+  // Velorn will not replace an audio clip with a video asset, so a regenerated
+  // shot's own sound comes back unresolved: the old take is removed rather than
+  // left playing under the new picture.
+  for (const item of proposal.unresolved || []) {
+    if (item.kind !== 'shot_audio' || !Array.isArray(item.clipIds) || item.clipIds.length === 0) continue
+    const present = item.clipIds.filter((id) => clips.has(id))
+    if (!present.length) continue
+    const scene = clips.get(present[0])?.metadata?.semantic?.scene ?? null
+    entries.push({
+      step: { tool: 'delete_clips', arguments: { clipIds: present } },
+      reason: 'The shot was regenerated in StoryBook; its old sound would play under the new picture',
+      scene,
+      text: `Removed the old take's sound (${present.map((id) => shotLabel(clips.get(id))).join(', ')})`,
+      touches: present.filter((id) => userEdited.has(id)),
+    })
+  }
   const notes = [
-    ...(proposal.unresolved || []).map((item) => ({ scene: null, text: `Not in the plan: ${item.kind} ${item.id}: ${item.reason}` })),
+    ...(proposal.unresolved || []).filter((item) => item.kind !== 'shot_audio').map((item) => ({ scene: null, text: `Not in the plan: ${item.kind} ${item.id}: ${item.reason}` })),
+    ...(proposal.unresolved || []).filter((item) => item.kind === 'shot_audio').map((item) => ({ scene: null, text: `The new take of ${item.id} has its own sound in the video; re-add it from the asset if you want it (no primitive places only a video's audio)` })),
     ...(proposal.failedDownloads || []).map((item) => ({ scene: null, text: `Not downloaded: ${item.key} (${item.reason})` })),
   ]
   const plan = { ...finishPlan(context, { intent: 'apply_updates', entries, notes }), previewAfter, scope: {}, params: {} }
@@ -304,6 +328,31 @@ export async function handleStudioAction(action, payload = {}) {
       return deliverSummary(payload)
     case 'studio_resync_plan':
       return resyncPlan(payload)
+    // FILM-2014's review reads the whole project and the log, and records the
+    // vision cost as an ai op-log line.
+    case 'studio_review_context': {
+      const active = getStudioEditLog()
+      const projectState = useProjectStore.getState()
+      const projectPath = projectPathOf()
+      const files = await loadStoryBookFiles(projectPath)
+      const document = active?.getDocument ? active.getDocument() : timelineDocument(projectState)
+      return {
+        project: { ...(projectState.currentProject || {}), ...document },
+        projectPath,
+        timelineId: projectState.currentTimelineId ?? null,
+        policy: (await loadStudioContext()).context.policy,
+        pkg: files.package,
+        opLog: active?.oplog?.entries() ?? [],
+      }
+    }
+    case 'studio_append_oplog': {
+      const active = getStudioEditLog()
+      if (!active) throw studioError('NOT_FOUND', 'No Studio project is open.')
+      const tool = String(payload.tool || '')
+      if (!/^studio_[a-z_]+$/.test(tool)) throw studioError('VALIDATION_FAILED', 'studio_append_oplog records studio_* tools only.')
+      const entry = await active.oplog.append({ by: 'ai', tool, args: payload.args ?? {}, inverse: null, reason: payload.reason ?? null, scene: Number.isInteger(payload.scene) ? payload.scene : null })
+      return { entry }
+    }
     default:
       throw studioError('VALIDATION_FAILED', `Unknown Studio action ${action}`)
   }

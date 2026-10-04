@@ -54,7 +54,7 @@ The same server and the same bearer serve two tool lists (FILM-2013):
 | Profile | URL | Lists | For |
 | --- | --- | --- | --- |
 | `agent` (default) | `http://127.0.0.1:19790/mcp` or `/mcp?profile=agent` | the 18 `studio_*` capability tools ([below](#the-agent-profile-capability-tools)) | editing a StoryBook episode by intent: plan, preview as cards, apply into a version, explain |
-| `expert` | `http://127.0.0.1:19790/mcp?profile=expert` | Velorn's 131 tools plus the 6 `studio_*` lifecycle tools | everything Velorn can do, one primitive at a time |
+| `expert` | `http://127.0.0.1:19790/mcp?profile=expert` | Velorn's tools (133 on fork main 438fdb9) plus the 6 `studio_*` lifecycle tools | everything Velorn can do, one primitive at a time |
 
 The profile can also be sent as an `X-MCP-Profile: agent|expert` header; any other value is a `400`. Each profile refuses the other's tools. The bearer is required on both: a missing or wrong one is a `401` before the profile is read.
 
@@ -221,10 +221,10 @@ The card with `scene: null` is the whole timeline (caption re-timing, beds, mark
 | `studio_add_graphic` | agent | Brand graphics | not available yet (FILM-2018) |
 | `studio_create_variant` | agent | `short` (a 9:16 cut of a shorts candidate, the strongest line or a range, reframed on the subject, captions in the 9:16 safe area) and `hook` (N five-second openings, each exported) variants | built (FILM-2017); `language` is FILM-2019 |
 | `studio_review` | agent | QA, then the critic | not available yet (FILM-2014) |
-| `studio_repair` | agent | One plan for QA issues | not available yet (FILM-2014) |
+| `studio_repair` | agent | One plan for QA issues, previewed and applied like `studio_edit` | compiled by FILM-2014's `intents/repair.js` when the build has it, else not available yet |
 | `studio_render_preview` | agent | Preview render and QA | not available yet (FILM-2014) |
 | `studio_check_updates` | agent | Has the episode changed in StoryBook? Proposes a replacement plan | built over FILM-2011's re-sync |
-| `studio_apply_updates` | agent | Previews and applies that plan into a "Sync from StoryBook" version | built |
+| `studio_apply_updates` | agent | Previews and applies that plan into a "Sync from StoryBook" version; a regenerated shot's old sound is removed; `TARGET_CHANGED` when StoryBook changed again since the proposal | built |
 | `studio_open_episode` | agent, expert | Starts the FILM-2011 pull; returns a `jobId`. `{episodeId}` | built over FILM-2011 |
 | `studio_get_job_status` | agent, expert | `{jobId}` → the job's phase and progress | built over FILM-2011 |
 | `studio_check_readiness` | agent, expert | Package, policy, target, media present and probed, codecs, captions, coverage, media health, export readiness → pass or issues | built |
@@ -252,7 +252,7 @@ A tool another spec builds answers `isError` with `{"error": {"code": "VALIDATIO
 
 Bounds come from `storybook/policy.json` (StoryBook's edit policy, else its defaults); no compiler hard-codes a policy bound. A cut is a ripple `extract_range` because Velorn's `trim_clips` does not ripple: a trim alone leaves a gap and slips dialogue off its picture. Cuts run latest first, so each step's times are those of the timeline it was planned on.
 
-`autoRepair: true` runs apply → QA → repair up to 3 rounds inside the one version and returns only the final cards; until FILM-2014 provides QA and repair it runs one round and says why.
+`autoRepair: true` runs apply → QA → repair up to 3 rounds inside the one version and returns only the final cards. Repair plans come from FILM-2014's repair compiler; until FILM-2014's review is passed to the server the loop runs one round and says why.
 
 The in-app agent (the Agent tab, `src/services/agentTools.js`) lists the same 18 tools and calls them through `studio:callCapability`, the same handler an MCP client reaches, so both get the same cards.
 
@@ -377,7 +377,7 @@ For interchange, preview `export_fcpxml` before writing a file. Use `format: "fc
 
 ## Tool Catalog
 
-Velorn exposes 131 MCP tools in the `expert` profile (130 upstream, plus FILM-2016's `set_audio_buses`) (`node scripts/capability-matrix.mjs` counts them); the `agent` profile serves the 18 capability tools above instead.
+Velorn exposes 133 MCP tools in the `expert` profile (130 upstream, plus `set_audio_buses` from FILM-2016 and two from FILM-2017; `node scripts/capability-matrix.mjs` counts them); the `agent` profile serves the 18 capability tools above instead.
 
 StorybookStudio's AI editor builds on these tools: [AI_EDITOR_CONTRACT.md](AI_EDITOR_CONTRACT.md) defines what an agent may do, and [CAPABILITY_MATRIX.md](CAPABILITY_MATRIX.md) maps every tool onto it.
 

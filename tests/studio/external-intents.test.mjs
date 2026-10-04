@@ -58,3 +58,15 @@ test('a build without FILM-2016 registers nothing; with its modules, audio:<inte
   assert.equal(styled.reasons[0], 'Style 40 cues for en')
   assert.throws(() => compileIntent({ intent: 'captions:add_captions', context, scope: {}, params: { language: 'hi' }, writable: ['update_caption_cues'] }), /no hi cues to style\. Transcribe first/)
 })
+
+test('FILM-2014\'s repair compiler registers as the repair intent when the build has it', async () => {
+  const { REPAIR_MODULE } = await import('../../src/studio/externalIntents.js')
+  const repair = {
+    INTENT: 'repair',
+    reads: () => [],
+    compile: (context, scope, params) => ({ intent: 'repair', steps: [{ tool: 'set_master_audio', arguments: { volume: 1.2 } }], reasons: [`Fix ${params.issues.length} issue`], scenes: [null], changes: ['Master +1.6 dB'], touchesUserEdits: [], notes: [], expected: { durationBefore: 99, durationAfter: 99, perScene: [] } }),
+  }
+  assert.deepEqual(registerExternalIntents({ [REPAIR_MODULE]: repair }), ['repair'])
+  const plan = compileIntent({ intent: 'repair', context: contextFor(), scope: {}, params: { issues: [{ type: 'loudness' }] }, writable: ['set_master_audio'] })
+  assert.deepEqual([plan.steps[0].tool, plan.reasons[0]], ['set_master_audio', 'Fix 1 issue'])
+})

@@ -237,3 +237,37 @@ test('studio_apply_updates: FILM-2011\'s re-sync plan for a shot StoryBook remov
   assert.ok(harness.timeline().clips.some((clip) => clip.metadata?.semantic?.shotId === removed.id && clip.metadata?.semantic?.role === 'dialogue'), 'its dialogue stays')
   assert.deepEqual(applied.opLog.map((entry) => [entry.tool, entry.reason, entry.scene]), [['delete_clips', steps[0].reason, 3]])
 })
+
+test('studio_apply_updates refuses a stale proposal and removes a regenerated shot\'s old sound', async () => {
+  const shot = harness.timeline().clips.find((clip) => clip.trackId === 'video-1' && clip.name.startsWith('S2.1'))
+  const sound = harness.timeline().clips.find((clip) => clip.linkGroupId && clip.linkGroupId === shot.linkGroupId && clip.id !== shot.id)
+  const proposal = { source: 'resync', planId: 'resync-v9', etag: { from: 'v7', to: 'v9' }, steps: [], unresolved: [{ kind: 'shot_audio', id: 'shot-s21', clipIds: [sound.id], reason: 'the shot audio clip still plays the old take' }], failedDownloads: [] }
+  await writeFile(path.join(harness.dir, 'storybook/resync-plan.json'), JSON.stringify(proposal))
+  await writeFile(path.join(harness.dir, 'storybook/package.next.json'), JSON.stringify({ etag: 'v10' }))
+  const stale = await call('studio_apply_updates', {})
+  assert.equal(stale.body.error.code, 'TARGET_CHANGED')
+
+  await writeFile(path.join(harness.dir, 'storybook/package.next.json'), JSON.stringify({ etag: 'v9' }))
+  const { body: preview } = await call('studio_apply_updates', {})
+  assert.deepEqual(preview.plan.steps, [{ tool: 'delete_clips', arguments: { clipIds: [sound.id] } }])
+  assert.match(preview.plan.reasons[0], /old sound would play under the new picture/)
+  assert.ok(preview.notes.some((note) => /re-add it from the asset/.test(note.text)))
+  const { body: applied } = await call('studio_apply_updates', { previewOnly: false, planId: preview.planId })
+  assert.equal(applied.applied, true, JSON.stringify(applied.error))
+  assert.ok(!harness.timeline().clips.some((clip) => clip.id === sound.id))
+})
+
+test('FILM-2014\'s seams: repair without its compiler says whose it is; review context and the vision-cost op-log line', async () => {
+  const { result, body } = await call('studio_repair', { issues: [{ type: 'loudness' }] })
+  assert.equal(result.isError, true)
+  assert.match(body.error.message, /not available yet: FILM-2014/)
+  const review = await m.mcp.runMcpAction('studio_review_context', {})
+  assert.equal(review.projectPath, harness.dir)
+  assert.equal(review.pkg.etag, harness.pkg.etag)
+  assert.ok(review.project.timelines.length === 1 && review.project.assets.length > 0)
+  assert.equal(review.policy.minShotLength, 1.2)
+  const { entry } = await m.mcp.runMcpAction('studio_append_oplog', { tool: 'studio_review', args: { vision: { framesSent: 12, costUsd: 0.04 } }, reason: 'Visual critic on 12 keyframes' })
+  assert.deepEqual([entry.by, entry.tool, entry.reason], ['ai', 'studio_review', 'Visual critic on 12 keyframes'])
+  const refused = await m.mcp.runMcpAction('studio_append_oplog', { tool: 'trim_clips' })
+  assert.equal(refused.studioError.code, 'VALIDATION_FAILED')
+})
