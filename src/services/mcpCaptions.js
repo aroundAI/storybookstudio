@@ -661,7 +661,7 @@ async function runGenerateCaptionJob(job, ctx) {
         durationSeconds: ctx.duration,
         cueCount: ctx.cues.length,
         presetId: preset.id,
-        note: 'Placed a live captions clip — cues render every frame; edit them with update_caption_cues or double-click the clip in Velorn.',
+        note: 'Placed a live captions clip — cues render every frame; edit them with update_caption_cues or double-click the clip in StorybookStudio.',
       })
       return
     }

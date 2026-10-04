@@ -74,7 +74,7 @@ function resolveHardwareExportFfmpeg(options = {}) {
       source: 'bundled',
       settingPath,
       environmentPath,
-      warning: `${sourceLabel} is invalid: ${validation.error} Velorn will use its bundled FFmpeg.`,
+      warning: `${sourceLabel} is invalid: ${validation.error} StorybookStudio will use its bundled FFmpeg.`,
     }
   }
 

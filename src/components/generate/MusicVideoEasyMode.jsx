@@ -119,7 +119,7 @@ const DEFAULT_VIDEO_WORKFLOW_OPTIONS = Object.freeze([
     id: CUSTOM_MUSIC_VIDEO_WORKFLOW_ID,
     label: 'Custom Workflow',
     runtimeLabel: 'Advanced',
-    description: 'Use your own ComfyUI video workflow as long as it keeps the Velorn input/output endpoints.',
+    description: 'Use your own ComfyUI video workflow as long as it keeps the StorybookStudio input/output endpoints.',
   },
 ])
 const DEFAULT_KEYFRAME_WORKFLOW_OPTIONS = Object.freeze([
@@ -139,7 +139,7 @@ const DEFAULT_KEYFRAME_WORKFLOW_OPTIONS = Object.freeze([
     id: CUSTOM_MUSIC_KEYFRAME_WORKFLOW_ID,
     label: 'Custom Workflow',
     runtimeLabel: 'Advanced',
-    description: 'Use your own ComfyUI keyframe workflow as long as it keeps the Velorn input/output endpoints.',
+    description: 'Use your own ComfyUI keyframe workflow as long as it keeps the StorybookStudio input/output endpoints.',
   },
 ])
 const JOB_BUSY_STATUSES = new Set(['queued', 'paused', 'uploading', 'configuring', 'queuing', 'running', 'saving'])
@@ -377,7 +377,7 @@ function getAudioModeHelper(kindId) {
   if (kindId === 'instrumental') {
     return 'No vocals expected. The director script should use b-roll or non-lip-sync performance coverage.'
   }
-  return 'Velorn assumes a normal finished song by default. Lip-sync and b-roll routing still come from the director script.'
+  return 'StorybookStudio assumes a normal finished song by default. Lip-sync and b-roll routing still come from the director script.'
 }
 
 function buildCoveragePlan({ performancePassCount, includeStoryBroll, includeEnvironmentalBroll, includeDetailBroll }) {
@@ -2082,8 +2082,8 @@ export default function MusicVideoEasyMode({
               <div className="text-xs leading-5 text-sf-text-secondary">
                 <div className="font-semibold text-sf-text-primary">Lyrics source</div>
                 {yoloMusicAlignProvidedLyrics
-                  ? 'Paste plain lyrics below. Velorn listens to the selected audio for timing, then writes your lyrics as SRT.'
-                  : 'Velorn listens to the selected audio and writes timed SRT output.'}
+                  ? 'Paste plain lyrics below. StorybookStudio listens to the selected audio for timing, then writes your lyrics as SRT.'
+                  : 'StorybookStudio listens to the selected audio and writes timed SRT output.'}
               </div>
               <div className="inline-flex rounded-lg border border-sf-dark-600 bg-sf-dark-900 p-1">
                 <button
@@ -3000,7 +3000,7 @@ export default function MusicVideoEasyMode({
               onPickLibrary={(id) => handleUseYoloMusicLibraryWorkflow?.(id, 'keyframe')}
               bridgeStatus={customKeyframeBridgeStatus}
               bridgeBusy={customKeyframeBridgeBusy}
-              bridgeIntro="Adds a Send to Velorn button inside ComfyUI. Import JSON stays available as the fallback."
+              bridgeIntro="Adds a Send to StorybookStudio button inside ComfyUI. Import JSON stays available as the fallback."
               onInstallBridge={handleInstallYoloMusicCustomKeyframeBridge}
               onCheckBridge={handleCheckYoloMusicCustomKeyframeBridge}
             />
@@ -3268,18 +3268,18 @@ export default function MusicVideoEasyMode({
       <div className="mt-3 rounded-lg border border-sf-dark-700 bg-sf-dark-950/60 p-3 text-xs leading-5 text-sf-text-secondary">
         <span className="font-semibold text-sf-text-primary">{selectedVideoWorkflowLabel}</span>
         {customVideoWorkflowSelected
-          ? ': Velorn sends the generated keyframe image, motion prompt, seed, and available video settings into your ComfyUI graph.'
+          ? ': StorybookStudio sends the generated keyframe image, motion prompt, seed, and available video settings into your ComfyUI graph.'
           : selectedVideoWorkflow?.description
           ? `: ${selectedVideoWorkflow.description} New video jobs and rerenders use ${outputResolutionLabel} / ${videoFps} fps.`
           : ` is used for new or regenerated videos at ${outputResolutionLabel} / ${videoFps} fps.`}
         {customVideoWorkflowSelected && (
           <span className="mt-1 block">
-            Resolution and FPS are controlled by Velorn only when your graph uses <span className="font-mono text-sf-text-primary">VELORN_WIDTH</span>, <span className="font-mono text-sf-text-primary">VELORN_HEIGHT</span>, and <span className="font-mono text-sf-text-primary">VELORN_FPS</span>; otherwise your graph controls the final output.
+            Resolution and FPS are controlled by StorybookStudio only when your graph uses <span className="font-mono text-sf-text-primary">VELORN_WIDTH</span>, <span className="font-mono text-sf-text-primary">VELORN_HEIGHT</span>, and <span className="font-mono text-sf-text-primary">VELORN_FPS</span>; otherwise your graph controls the final output.
           </span>
         )}
         {customVideoWorkflowSelected ? (
           <span className="mt-1 block text-amber-200">
-            Lip-sync is not automatic. Velorn can pass song audio through <span className="font-mono text-amber-100">VELORN_AUDIO</span>, but your graph must use that audio in a lip-sync or audio-conditioned video workflow.
+            Lip-sync is not automatic. StorybookStudio can pass song audio through <span className="font-mono text-amber-100">VELORN_AUDIO</span>, but your graph must use that audio in a lip-sync or audio-conditioned video workflow.
           </span>
         ) : selectedVideoWorkflowSupports1080 ? (
           <span className="mt-1 block text-sf-text-muted">
@@ -3303,7 +3303,7 @@ export default function MusicVideoEasyMode({
             onPickLibrary={(id) => handleUseYoloMusicLibraryWorkflow?.(id, 'video')}
             bridgeStatus={customKeyframeBridgeStatus}
             bridgeBusy={customKeyframeBridgeBusy}
-            bridgeIntro="Open the starter from this video panel before using Send to Velorn so the graph returns to Step 5."
+            bridgeIntro="Open the starter from this video panel before using Send to StorybookStudio so the graph returns to Step 5."
             onInstallBridge={handleInstallYoloMusicCustomKeyframeBridge}
             onCheckBridge={handleCheckYoloMusicCustomKeyframeBridge}
           />

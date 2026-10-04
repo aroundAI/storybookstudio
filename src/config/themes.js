@@ -3,7 +3,7 @@ export const THEME_STORAGE_KEY = 'comfystudio-theme'
 export const THEMES = [
   {
     id: 'velorn',
-    label: 'Velorn',
+    label: 'StorybookStudio',
     description: 'Default brand theme with deep blues, violet, and readable old-gold accents',
     preview: { bg: '#030610', surface: '#11172a', accent: '#987000', text: '#f4eef8' },
   },

@@ -318,7 +318,7 @@ function ComfyLauncherChip() {
                 <ExternalLink className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <div>
-                    ComfyUI is already running but Velorn can't identify its process, so Stop and Restart are disabled. This usually means netstat/lsof isn't available. Try "Take control" to retry, or stop it from the window you started it from.
+                    ComfyUI is already running but StorybookStudio can't identify its process, so Stop and Restart are disabled. This usually means netstat/lsof isn't available. Try "Take control" to retry, or stop it from the window you started it from.
                   </div>
                   <div className="mt-1.5">
                     <button
@@ -349,8 +349,8 @@ function ComfyLauncherChip() {
                     </div>
                     <div className="mt-0.5 text-amber-100/90 leading-snug">
                       {portOwner?.pid
-                        ? <>Held by <span className="font-mono">{portOwner.name || 'pid'} (pid {portOwner.pid})</span>. {portOwner.name && /python|comfy/i.test(portOwner.name) ? 'That looks like ComfyUI already running.' : 'Velorn will not be able to start ComfyUI until that process releases the port.'}</>
-                        : 'Another process is bound to this port. Velorn will not be able to start ComfyUI until that process releases the port.'}
+                        ? <>Held by <span className="font-mono">{portOwner.name || 'pid'} (pid {portOwner.pid})</span>. {portOwner.name && /python|comfy/i.test(portOwner.name) ? 'That looks like ComfyUI already running.' : 'StorybookStudio will not be able to start ComfyUI until that process releases the port.'}</>
+                        : 'Another process is bound to this port. StorybookStudio will not be able to start ComfyUI until that process releases the port.'}
                     </div>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       <button
@@ -437,10 +437,10 @@ function ComfyLauncherChip() {
               </div>
               <div className="text-[11px] text-sf-text-primary truncate" title={config.macAppPath}>
                 {config.macAppPath || (
-                  <span className="italic text-sf-text-muted">No app configured. Pick ComfyUI.app to open it from Velorn.</span>
+                  <span className="italic text-sf-text-muted">No app configured. Pick ComfyUI.app to open it from StorybookStudio.</span>
                 )}
               </div>
-              <div className="text-[10px] text-sf-text-muted">Velorn opens the Mac app and waits for the configured endpoint.</div>
+              <div className="text-[10px] text-sf-text-muted">StorybookStudio opens the Mac app and waits for the configured endpoint.</div>
             </div>
           )}
 
@@ -462,7 +462,7 @@ function ComfyLauncherChip() {
             </div>
             <div className="text-[11px] text-sf-text-primary truncate" title={config.launcherScript}>
               {config.launcherScript || (
-                <span className="italic text-sf-text-muted">No launcher configured. Pick your run_nvidia_gpu.bat to let Velorn start ComfyUI for you.</span>
+                <span className="italic text-sf-text-muted">No launcher configured. Pick your run_nvidia_gpu.bat to let StorybookStudio start ComfyUI for you.</span>
               )}
             </div>
 

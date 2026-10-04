@@ -132,10 +132,10 @@ export async function searchPexelsMedia({
   fetchImpl = globalThis.fetch,
 } = {}) {
   const key = String(apiKey || '').trim()
-  if (!key) throw new Error('Add your Pexels API key in Velorn Settings before searching stock media.')
+  if (!key) throw new Error('Add your Pexels API key in StorybookStudio Settings before searching stock media.')
   const normalizedQuery = normalizePexelsQuery(query)
   if (!normalizedQuery) throw new Error('Provide a Pexels search query.')
-  if (typeof fetchImpl !== 'function') throw new Error('Network requests are not available in this Velorn session.')
+  if (typeof fetchImpl !== 'function') throw new Error('Network requests are not available in this StorybookStudio session.')
 
   const normalizedType = normalizePexelsMediaType(mediaType)
   const normalizedPage = clampInteger(page, 1, 1, 10_000)
@@ -175,8 +175,8 @@ export async function loadDefaultPexelsMedia({
   fetchImpl = globalThis.fetch,
 } = {}) {
   const key = String(apiKey || '').trim()
-  if (!key) throw new Error('Add your Pexels API key in Velorn Settings before browsing stock media.')
-  if (typeof fetchImpl !== 'function') throw new Error('Network requests are not available in this Velorn session.')
+  if (!key) throw new Error('Add your Pexels API key in StorybookStudio Settings before browsing stock media.')
+  if (typeof fetchImpl !== 'function') throw new Error('Network requests are not available in this StorybookStudio session.')
 
   const normalizedType = normalizePexelsMediaType(mediaType)
   const normalizedPage = clampInteger(page, 1, 1, 10_000)
@@ -207,7 +207,7 @@ export async function downloadPexelsMediaItem({
   mediaType,
   fetchImpl = globalThis.fetch,
 } = {}) {
-  if (typeof fetchImpl !== 'function') throw new Error('Network requests are not available in this Velorn session.')
+  if (typeof fetchImpl !== 'function') throw new Error('Network requests are not available in this StorybookStudio session.')
   const spec = getPexelsMediaDownloadSpec(item, mediaType)
   const response = await fetchImpl(spec.url)
   if (!response.ok) throw new Error(`Failed to download Pexels ${spec.assetType} ${spec.id} (${response.status}).`)

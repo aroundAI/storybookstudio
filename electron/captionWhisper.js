@@ -171,7 +171,7 @@ function buildEngineStatus(app) {
 // interrupted download never masquerades as an installed file.
 function downloadFile(url, destPath, { onProgress, redirectsLeft = 6 } = {}) {
   return new Promise((resolve, reject) => {
-    const request = https.get(url, { headers: { 'User-Agent': 'Velorn' } }, (response) => {
+    const request = https.get(url, { headers: { 'User-Agent': 'StorybookStudio' } }, (response) => {
       const status = response.statusCode || 0
       if (status >= 300 && status < 400 && response.headers.location) {
         response.resume()

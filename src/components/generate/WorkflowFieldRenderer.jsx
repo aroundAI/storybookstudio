@@ -212,7 +212,7 @@ export default function WorkflowFieldRenderer({ field, workflow, values, actions
               </p>
               <p className="mt-1 text-[10px] leading-4 text-sf-text-muted">
                 {customKind === 'video'
-                  ? 'Velorn shows controls for supported endpoint nodes found in the loaded graph. Leave an endpoint out when you want ComfyUI to control that setting.'
+                  ? 'StorybookStudio shows controls for supported endpoint nodes found in the loaded graph. Leave an endpoint out when you want ComfyUI to control that setting.'
                   : 'Use ComfyUI to control prompts, references, seed, size, and model settings for this image graph.'}
               </p>
               <div className={`mt-2 text-[10px] ${isReady ? 'text-emerald-300' : 'text-amber-200'}`}>

@@ -349,7 +349,7 @@ export default function GettingStartedModal({
               {setupSummary}
             </div>
             <div className="rounded-full border border-sf-dark-700 bg-sf-dark-900 px-3 py-1 text-xs text-sf-text-secondary">
-              {t('gettingStarted.reopen')} <span className="text-sf-text-primary">Velorn &gt; {t('gettingStarted.badge')}</span>
+              {t('gettingStarted.reopen')} <span className="text-sf-text-primary">StorybookStudio &gt; {t('gettingStarted.badge')}</span>
             </div>
           </div>
         </div>

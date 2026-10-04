@@ -256,7 +256,7 @@ test('Windows dependency audit ignores inspector headers and build paths', () =>
 })
 
 test('macOS plan resolves the pinned static MoltenVK archive layout', (t) => {
-  const temporary = fs.mkdtempSync(path.join(os.tmpdir(), 'velorn-moltenvk-layout-test-'))
+  const temporary = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'velorn-moltenvk-layout-test-')))
   t.after(() => fs.rmSync(temporary, { recursive: true, force: true }))
   const sdk = path.join(temporary, 'MoltenVK', 'MoltenVK')
   const include = path.join(sdk, 'include', 'vulkan')

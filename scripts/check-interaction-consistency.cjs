@@ -199,7 +199,7 @@ async function main() {
       const opened = native ? browser.waitForEvent('window') : page.waitForEvent('popup')
       await page.getByTestId('open-popout').click()
       const popup = await opened
-      await popup.waitForFunction(() => document.title === 'Velorn Preview' && Boolean(document.querySelector('canvas')))
+      await popup.waitForFunction(() => document.title === 'StorybookStudio Preview' && Boolean(document.querySelector('canvas')))
       await popup.evaluate(() => { window.fullscreenCalls = 0; document.documentElement.requestFullscreen = () => { window.fullscreenCalls++; return Promise.resolve() } })
       await popup.keyboard.down('Space'); await popup.keyboard.down('Space'); assert.equal(await playing(source), false)
       await popup.keyboard.up('Space'); assert.equal(await playing(source), true)

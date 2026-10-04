@@ -324,7 +324,7 @@ function injectMarkerStubNodes(graph, kind, missingKeys) {
   if (added.length > 0) {
     if (!Array.isArray(graph.groups)) graph.groups = []
     graph.groups.push({
-      title: 'Velorn: wire these in, then save to My Workflows',
+      title: 'StorybookStudio: wire these in, then save to My Workflows',
       bounding: [startX - 20, minY - 60, 440, y - minY + 20],
       color: '#3f789e',
       font_size: 24,

@@ -53,7 +53,7 @@ export async function analyzeAudioDucking({ state, assets, projectHandle, musicI
     check()
     let waveform
     if (absolute(source) || nativeUrl(source)) {
-      if (typeof api?.getAudioWaveform !== 'function') throw new Error('Local-file analysis needs the Velorn desktop app.')
+      if (typeof api?.getAudioWaveform !== 'function') throw new Error('Local-file analysis needs the StorybookStudio desktop app.')
       // A canceled analysis may still be finishing in Electron. Never stack
       // repeated clicks into multiple concurrent full-source decodes.
       while (pendingNative) { await pendingNative.catch(() => {}); check() }

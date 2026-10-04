@@ -1213,7 +1213,7 @@ function Timeline({ onActiveToolChange, onStatusChange }) {
 
   // Hotkey target: a selected clip passing the predicate (preferring one
   // under the playhead), else the active track's clip at the playhead — the
-  // Premiere "targeted track" idiom adapted to Velorn's active track.
+  // Premiere "targeted track" idiom adapted to StorybookStudio's active track.
   const resolveTargetedClip = useCallback((predicate) => {
     const state = useTimelineStore.getState()
     const playhead = getLivePlayhead()

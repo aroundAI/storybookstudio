@@ -331,7 +331,7 @@ function verifyPlatformSignature(options = {}) {
     if (hostExecutablePath) {
       const host = readMacSigningIdentity(hostExecutablePath)
       if (target.teamIdentifier !== host.teamIdentifier) {
-        throw new Error('RIFE Apple team identifier does not match the signed Velorn application')
+        throw new Error('RIFE Apple team identifier does not match the signed StorybookStudio application')
       }
     }
     return target
@@ -342,9 +342,9 @@ function verifyPlatformSignature(options = {}) {
       throw new Error('RIFE Authenticode signature is not valid')
     }
     if (hostExecutablePath) {
-      if (identities.host?.status !== 'Valid') throw new Error('Velorn host Authenticode signature is not valid')
+      if (identities.host?.status !== 'Valid') throw new Error('StorybookStudio host Authenticode signature is not valid')
       if (identities.target.subject !== identities.host.subject || identities.target.issuer !== identities.host.issuer) {
-        throw new Error('RIFE Authenticode signer does not match the signed Velorn application')
+        throw new Error('RIFE Authenticode signer does not match the signed StorybookStudio application')
       }
     }
     return identities.target
@@ -649,8 +649,8 @@ function resolveRifeRuntime(options = {}) {
     error: available
       ? null
       : packaged || validationErrors.length > 0
-        ? 'Velorn\'s smooth-motion engine failed its integrity check. Reinstall Velorn to restore it.'
-        : 'Velorn\'s smooth-motion engine is missing. Reinstall Velorn to restore it.',
+        ? 'StorybookStudio\'s smooth-motion engine failed its integrity check. Reinstall StorybookStudio to restore it.'
+        : 'StorybookStudio\'s smooth-motion engine is missing. Reinstall StorybookStudio to restore it.',
   }
 }
 

@@ -48,14 +48,14 @@ export const CUSTOM_VIDEO_ENDPOINTS = Object.freeze({
   inputAudio: 'VELORN_AUDIO',
   outputVideo: 'VELORN_OUTPUT_VIDEO',
 })
-const VELORN_OUTPUT_RESIZE_TITLE = 'Velorn Output Resize'
+const VELORN_OUTPUT_RESIZE_TITLE = 'StorybookStudio Output Resize'
 const LEGACY_COMFYSTUDIO_OUTPUT_RESIZE_TITLE = 'ComfyStudio Output Resize'
 const OUTPUT_RESIZE_TITLES = [VELORN_OUTPUT_RESIZE_TITLE, LEGACY_COMFYSTUDIO_OUTPUT_RESIZE_TITLE]
 
 // Users commonly organize ComfyUI model folders into subfolders (e.g.
 // models/diffusion_models/WAN/wan2.2_i2v.safetensors); ComfyUI then lists the
 // file to loader nodes as the relative path "WAN/wan2.2_i2v.safetensors".
-// Velorn's built-in workflows reference bare filenames, so an unmatched
+// StorybookStudio's built-in workflows reference bare filenames, so an unmatched
 // model input is resolved against the node's actual choice list by basename
 // before queueing (see resolveSubfolderModelPaths).
 const MODEL_FILE_INPUT_RE = /\.(safetensors|sft|ckpt|pt|pth|bin|gguf|onnx)$/i
@@ -1922,11 +1922,11 @@ export function modifyMultipleAnglesWorkflow(workflow, options = {}) {
     }
   }
 
-  // Update save prefixes to Velorn
+  // Update save prefixes to StorybookStudio
   const saveNodes = { '31': 'close_up', '34': 'wide_shot', '36': '45_right', '38': '90_right', '47': '90_left', '41': 'aerial_view', '43': 'low_angle', '45': '45_left' }
   for (const [nodeId, suffix] of Object.entries(saveNodes)) {
     if (modified[nodeId]) {
-      modified[nodeId].inputs.filename_prefix = `Velorn-${suffix}`
+      modified[nodeId].inputs.filename_prefix = `StorybookStudio-${suffix}`
     }
   }
 

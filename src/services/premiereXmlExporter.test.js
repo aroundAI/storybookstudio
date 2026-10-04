@@ -105,7 +105,7 @@ test('builds a Premiere-compatible XMEML v5 sequence with tracks, trims, and aud
   assert.match(xml, /<!DOCTYPE xmeml>/)
   assert.match(xml, /<xmeml version="5">/)
   assert.match(xml, /<name>Main &lt;Edit&gt;<\/name>/)
-  assert.match(xml, /<description>Exported from Velorn project: Project &amp; One<\/description>/)
+  assert.match(xml, /<description>Exported from StorybookStudio project: Project &amp; One<\/description>/)
   assert.match(xml, /<duration>84<\/duration>/)
   assert.match(xml, /<timebase>24<\/timebase>\s+<ntsc>FALSE<\/ntsc>/)
   assert.match(xml, /<width>1920<\/width>\s+<height>1080<\/height>/)

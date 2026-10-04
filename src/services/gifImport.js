@@ -105,7 +105,7 @@ async function stageGifFile(projectDir, file, originalName) {
  * normal `video` whose source is the project-owned normalized intermediate.
  */
 export async function importGifAsset(projectDir, file) {
-  if (!canImportGifMedia()) throw new Error('GIF import requires the Velorn desktop app.')
+  if (!canImportGifMedia()) throw new Error('GIF import requires the StorybookStudio desktop app.')
   if (typeof projectDir !== 'string' || !projectDir) {
     throw new Error('Open a saved project before importing a GIF.')
   }

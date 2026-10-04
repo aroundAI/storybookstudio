@@ -30,7 +30,7 @@ export function workflowHasQwen3TtsEngine(workflow) {
 /**
  * TTS-Audio-Suite renamed the Qwen3 engine's required model input from
  * `model_size` to `model_variant`. Select the key declared by the connected
- * ComfyUI schema so Velorn's bundled caption workflow works with either
+ * ComfyUI schema so StorybookStudio's bundled caption workflow works with either
  * version.
  *
  * If object info is unavailable or does not describe either key, include both
