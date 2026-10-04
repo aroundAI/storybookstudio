@@ -173,15 +173,17 @@ function createStudioDeliver({
     return dir
   }
 
-  // The document as saved: save first when the editor is open, so the file
-  // is what the user sees.
-  async function loadDocument(projectDir, { save = true } = {}) {
-    if (save && server()?.performAction) {
-      try {
-        await performAction('save_project', { previewOnly: false })
-      } catch (error) {
-        log(`[studio] deliver: save before reading failed: ${error?.message || error}`)
-      }
+  // The document the user sees. With the editor open it comes from the
+  // renderer as a read (studio_delivery_document, previewOnly), so a summary
+  // neither writes the project nor adds an op-log line; without a window, the
+  // saved project file.
+  async function loadDocument(projectDir) {
+    if (server()?.performAction) {
+      const live = await performAction('studio_delivery_document', { previewOnly: true }).catch((error) => {
+        log(`[studio] deliver: the editor did not return the document: ${error?.message || error}`)
+        return null
+      })
+      if (live?.document?.timelines) return live.document
     }
     const document = await readJson(path.join(projectDir, PROJECT_FILE))
     if (!document?.timelines) throw fail('NOT_FOUND', `No ${PROJECT_FILE} in ${projectDir}.`)
@@ -226,7 +228,7 @@ function createStudioDeliver({
 
   const programEnd = (timeline) => round3(Math.max(0, ...(timeline.clips || []).filter((clip) => clip.enabled !== false && !['captions', 'caption'].includes(clip.type)).map((clip) => (Number(clip.startTime) || 0) + (Number(clip.duration) || 0))))
 
-  async function buildSummary(args, { snapshot = null, save = true } = {}) {
+  async function buildSummary(args, { snapshot = null } = {}) {
     const presetsModule = await studioModule('delivery/presets.js')
     const contracts = await studioModule('contracts/render-presets.mjs')
     const names = [...new Set(Array.isArray(args.presets) ? args.presets : [])]
@@ -235,7 +237,7 @@ function createStudioDeliver({
     const destination = args.destination === 'folder' ? 'folder' : 'storybook'
     if (destination === 'folder' && !(typeof args.folder === 'string' && path.isAbsolute(args.folder))) throw fail('VALIDATION_FAILED', 'Export to file needs an absolute folder.')
     const projectDir = projectDirOf(snapshot)
-    const document = await loadDocument(projectDir, { save })
+    const document = await loadDocument(projectDir)
     const context = await episodeContext(projectDir)
     const open = getOpenProject()
     if (destination === 'storybook') {
@@ -547,7 +549,7 @@ function createStudioDeliver({
   async function createVariant(args = {}, { snapshot = null } = {}) {
     const previewOnly = args.previewOnly !== false
     const projectDir = projectDirOf(snapshot)
-    const document = await loadDocument(projectDir, { save: !previewOnly })
+    const document = await loadDocument(projectDir)
     const context = await episodeContext(projectDir)
     const variants = await studioModule('intents/variants.js')
     if (args.kind === 'short') {

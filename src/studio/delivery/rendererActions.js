@@ -5,9 +5,15 @@
 //   (src/studio/intents/variants.js) to the open project; undoable as one
 //   timeline-structure change, and optionally switches to it so the reframe's
 //   set_clip_keyframes calls land on it;
-// - studio_prepare_delivery: saves the project, creates the "Delivered"
-//   version and returns the explain-why report and the version_created data.
+// - studio_delivery_document: the project as it would be saved (the live
+//   timeline merged in), read without writing, so a delivery summary is
+//   neither a save nor an op-log line (it is sent with previewOnly: true);
+// - studio_prepare_delivery: creates the "Delivered" version and returns the
+//   explain-why report and the version_created data. It does not save or
+//   switch timelines: the delivery renders the document the user confirmed.
 import { useProjectStore } from '../../stores/projectStore'
+import { useTimelineStore } from '../../stores/timelineStore'
+import { useAssetsStore } from '../../stores/assetsStore'
 import { createStudioVersion, getStudioEditLog, timelineDocument } from '../editLogRuntime.js'
 import { buildDeliveryReport, versionCreatedData } from './deliveryReport.js'
 
@@ -31,20 +37,26 @@ export async function insertStudioTimeline(payload = {}) {
   return { inserted: true, switched: Boolean(switched), timelineId: timeline.id }
 }
 
+export function studioDeliveryDocument() {
+  const state = useProjectStore.getState()
+  if (!state.currentProject) throw invalid('Open a project first.')
+  const live = useTimelineStore.getState().getProjectData?.() || {}
+  const timelines = (state.currentProject.timelines || []).map((timeline) => (timeline.id === state.currentTimelineId ? { ...timeline, ...live } : timeline))
+  const assets = useAssetsStore.getState().getProjectData?.() || useAssetsStore.getState().assets || []
+  return { previewOnly: true, document: { ...state.currentProject, timelines, currentTimelineId: state.currentTimelineId, assets } }
+}
+
 export async function prepareStudioDelivery(payload = {}) {
   const log = getStudioEditLog()
   if (!log) throw invalid('This project has no Studio edit log; open the pulled episode first.')
-  const state = useProjectStore.getState()
-  // The timeline being delivered is the master; render variants keep their own.
-  const masterId = (state.currentProject?.timelines || []).find((timeline) => timeline.studio?.kind === 'master')?.id
-  if (masterId && state.currentTimelineId !== masterId) await state.switchTimeline(masterId)
-  const saved = await useProjectStore.getState().saveProject()
-  if (!saved) throw new Error('The project could not be saved before delivery.')
   const name = String(payload.versionName || 'Delivered').slice(0, 200)
   const version = await createStudioVersion(name, { by: 'user', prompt: payload.prompt ?? null })
   const versions = log.versions.list()
   const entries = log.oplog.entries()
-  const after = timelineDocument(useProjectStore.getState())
+  // The report is about the master (a variant open in the editor does not change that).
+  const live = timelineDocument(useProjectStore.getState())
+  const masterId = (live.timelines || []).find((timeline) => timeline.studio?.kind === 'master')?.id
+  const after = masterId ? { ...live, currentTimelineId: masterId } : live
   const before = versions.length ? await log.versions.readSnapshot(versions[0].id) : after
   const report = buildDeliveryReport({
     log: entries,

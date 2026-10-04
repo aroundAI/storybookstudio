@@ -68,7 +68,7 @@ import { runMcpActionWithEditLog } from '../studio/editLogRuntime.js'
 import { handleSetAudioBuses } from '../studio/audio/busActions.js'
 import { studioAudioExportOptions } from '../studio/audio/exportOptions.js'
 import { handleStudioAction, isStudioRendererAction, publishSnapshotNow } from '../studio/capabilityRuntime.js'
-import { insertStudioTimeline, prepareStudioDelivery } from '../studio/delivery/rendererActions.js'
+import { insertStudioTimeline, prepareStudioDelivery, studioDeliveryDocument } from '../studio/delivery/rendererActions.js'
 
 export const MCP_ACTION_BRIDGE_VERSION = 7
 
@@ -8953,6 +8953,8 @@ async function handleMcpAction(request = {}) {
       return insertStudioTimeline(request.payload || {})
     case 'studio_prepare_delivery':
       return prepareStudioDelivery(request.payload || {})
+    case 'studio_delivery_document':
+      return studioDeliveryDocument()
     default:
       throw new Error(`Unknown MCP action: ${request.action || 'unknown'}`)
   }
