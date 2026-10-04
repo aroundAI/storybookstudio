@@ -234,7 +234,12 @@ export function buildExplainWhyReport({ log, versions, versionId, before, after,
   const unassigned = sceneNumbers.has(null) && (sceneChanges.get(null) || []).length > 0 ? sceneEntry(null) : null
   const scenesBefore = new Set(pictureBefore.map(sceneOf).filter((scene) => scene !== null))
   const scenesAfter = new Set(pictureAfter.map(sceneOf))
-  const totalEnd = (clips) => round(clips.reduce((max, clip) => Math.max(max, endOf(clip)), 0))
+  // The episode's length is where its picture ends: video and image clips. A
+  // captions clip or a title can outlast the cut and would overstate it.
+  const totalEnd = (clips) => {
+    const picture = clips.filter((clip) => PICTURE_TYPES.has(clip.type))
+    return round((picture.length ? picture : clips).reduce((max, clip) => Math.max(max, endOf(clip)), 0))
+  }
   const durationAfter = totalEnd(pictureAfter)
   // The cut's style for FILM-2006: picture clips on the timeline. No picture
   // means unmeasured, so the field is left out rather than zero.

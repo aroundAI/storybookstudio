@@ -26,7 +26,7 @@ const EXTERNAL_OWNERS = { audio: 'FILM-2016', captions: 'FILM-2016', repair: 'FI
 export const STUDIO_RENDERER_ACTIONS = Object.freeze([
   'studio_get_context', 'studio_compile', 'studio_search_assets', 'studio_readiness_local',
   'studio_create_version', 'studio_restore_version', 'studio_finish_apply', 'studio_deliver_summary', 'studio_resync_plan',
-  'studio_review_context', 'studio_append_oplog',
+  'studio_review_context', 'studio_append_oplog', 'studio_compile_reads',
 ])
 export const RESYNC_PLAN_PATH = 'storybook/resync-plan.json'
 export const LAST_QA_PATH = 'edits/qa/latest.json'
@@ -140,6 +140,57 @@ async function runCompileReads(intent, context, scope, params) {
   return { audioAnalysis, requested: requested.length, failures }
 }
 
+const isAbsolutePath = (value) => /^([a-zA-Z]:[\\/]|\/|\\\\)/.test(String(value || ''))
+const joinPath = (base, relative) => `${String(base).replace(/[\\/]+$/, '')}/${String(relative).replace(/^[\\/]+/, '')}`
+
+// The compile-time audio reads an intent needs, as files and timings, for the
+// main process to run with ffmpeg (electron/studio/audioReads.js). The same
+// clip timing get_audio_analysis uses, so its timeline mapping is identical.
+async function compileReadsAction(payload = {}) {
+  const { intent, scope = {}, params = {} } = payload
+  if (!listIntents().includes(intent)) return { items: [] }
+  const { context, projectPath } = await loadStudioContext()
+  const clips = new Map((context.timeline?.clips || []).map((clip) => [clip.id, clip]))
+  const assets = new Map((context.assets || []).map((asset) => [asset.id, asset]))
+  const items = []
+  for (const read of readsFor(intent, context, scope, params)) {
+    if (read.tool !== 'get_audio_analysis' || !read.arguments?.clipId) continue
+    const clip = clips.get(read.arguments.clipId)
+    const asset = clip ? assets.get(clip.assetId) : null
+    const stored = asset?.absolutePath || asset?.path || null
+    const file = stored && !isAbsolutePath(stored) && projectPath ? joinPath(projectPath, stored) : stored
+    const baseScale = clip?.sourceTimeScale || (clip?.timelineFps && clip?.sourceFps ? clip.timelineFps / clip.sourceFps : 1)
+    const speed = Number(clip?.speed) > 0 ? Number(clip.speed) : 1
+    const timeScale = baseScale * speed
+    const trimStart = Number(clip?.trimStart) || 0
+    items.push({
+      clipId: read.arguments.clipId,
+      file: asset?.offline ? null : file,
+      trimStart,
+      trimEnd: Number.isFinite(Number(clip?.trimEnd)) ? Number(clip.trimEnd) : trimStart + (Number(clip?.duration) || 0) * timeScale,
+      startTime: Number(clip?.startTime) || 0,
+      timeScale,
+      reverse: Boolean(clip?.reverse),
+      hasSpeedRamp: (clip?.keyframes?.speed?.length || 0) > 0,
+      silenceThresholdDb: read.arguments.silenceThresholdDb,
+      minSilenceSeconds: read.arguments.minSilenceSeconds,
+      loudness: read.arguments.loudness === true || /^audio:(balance|normalize)$/.test(intent),
+    })
+  }
+  return { items }
+}
+
+// Reads the main process ran: { requested, results: {clipId: result}, failures }.
+const suppliedReads = (reads) => {
+  const audioAnalysis = new Map()
+  const failures = [...(reads.failures || [])]
+  for (const [clipId, result] of Object.entries(reads.results || {})) {
+    if (result?.success === false) failures.push({ clipId, warning: result.warning || 'analysis failed' })
+    else audioAnalysis.set(clipId, result)
+  }
+  return { audioAnalysis, requested: Number(reads.requested) || audioAnalysis.size + failures.length, failures }
+}
+
 async function compileAction(payload = {}) {
   const { intent, scope = {}, params = {}, writable } = payload
   const family = String(intent || '').split(':')[0]
@@ -150,7 +201,9 @@ async function compileAction(payload = {}) {
     throw studioError('VALIDATION_FAILED', `Unknown intent "${intent}". Intents: ${listIntents().join(', ')}.`)
   }
   const base = await loadStudioContext()
-  const reads = await runCompileReads(intent, base.context, scope, params)
+  // The main process runs the audio reads with ffmpeg and passes them in; the
+  // renderer's own get_audio_analysis (Web Audio) is the fallback without it.
+  const reads = payload.reads ? suppliedReads(payload.reads) : await runCompileReads(intent, base.context, scope, params)
   const { context, document } = await loadStudioContext({ reads: { audioAnalysis: reads.audioAnalysis } })
   const fingerprint = documentFingerprint(document)
   if (fingerprint !== documentFingerprint(base.document)) {
@@ -306,6 +359,8 @@ export async function handleStudioAction(action, payload = {}) {
     }
     case 'studio_compile':
       return compileAction(payload)
+    case 'studio_compile_reads':
+      return compileReadsAction(payload)
     case 'studio_search_assets': {
       const { context } = await loadStudioContext()
       return { results: searchAssets(context, payload) }

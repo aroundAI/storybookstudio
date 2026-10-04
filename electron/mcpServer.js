@@ -10675,6 +10675,7 @@ class ComfyStudioMcpServer {
     authSecret = null,
     getStudioCloud = null,
     getStudioDeliver = null,
+    analyzeAudio = null,
     emitPlanProposed = null,
     reviewTools = null,
   } = {}) {
@@ -10708,6 +10709,7 @@ class ComfyStudioMcpServer {
       writableTools: MCP_ACTION_PLAN_WRITABLE_TOOLS,
       getProjectPath: () => this.lastSnapshot?.project?.path || null,
       getDeliver: () => (typeof getStudioDeliver === 'function' ? getStudioDeliver() : null),
+      analyzeAudio: typeof analyzeAudio === 'function' ? analyzeAudio : null,
       getSnapshot: () => this.lastSnapshot,
       // FILM-2014: studio_review, studio_render_preview and the autoRepair loop.
       reviewTools,
