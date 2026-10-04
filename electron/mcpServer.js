@@ -4,9 +4,13 @@ const http = require('http')
 const path = require('path')
 const { spawnSync } = require('child_process')
 const { authorizeMcpRequest, isLoopbackOrigin } = require('./studio/mcpAuth')
+const { createCapabilityTools } = require('./studio/mcpCapabilities')
 
 const DEFAULT_MCP_PORT = 19790
 const MCP_PROTOCOL_VERSION = '2024-11-05'
+// FILM-2013: /mcp?profile=agent (default) serves the capability tools; expert serves Velorn's.
+const MCP_PROFILES = new Set(['agent', 'expert'])
+const DEFAULT_MCP_PROFILE = 'agent'
 const MCP_TIMELINE_BATCH_MAX_VARIATIONS_PER_WORKFLOW = 8
 const MCP_TIMELINE_BATCH_MAX_TOTAL_JOBS = 24
 const MCP_TIMELINE_BATCH_AUTO_TARGET_AREA = 1280 * 720
@@ -101,6 +105,22 @@ const MCP_ACTION_PLAN_WRITABLE_TOOLS = new Set([
   'export_timeline',
   'export_delivery_batch',
   'export_fcpxml',
+  // FILM-2013: write tools that accept previewOnly and that intent plans use.
+  'split_clip',
+  'extract_range',
+  'set_clip_speed',
+  'set_clip_audio',
+  'update_caption_cues',
+  // FILM-2013: every studio_* write tool but studio_deliver (contract S3).
+  'studio_edit',
+  'studio_edit_audio',
+  'studio_add_captions',
+  'studio_add_graphic',
+  'studio_create_variant',
+  'studio_repair',
+  'studio_apply_updates',
+  'studio_create_version',
+  'studio_restore_version',
 ])
 const MCP_TIMELINE_BATCH_WORKFLOW_ALIASES = new Map([
   ['ltx23i2v', 'ltx23-i2v'],
@@ -2822,6 +2842,33 @@ function buildAiReviewPasses(snapshot) {
           previewOnlyFirst: true,
           destination: 'project renders folder',
           requiresProjectPath: true,
+        },
+      },
+      {
+        id: 'storybook-rough-cut',
+        title: 'StoryBook Rough Cut Pass',
+        goal: 'Turn a StoryBook episode rough cut into an approved edit: read the script and scene map, plan by intent, show per-scene cards, apply into a version, explain every change.',
+        prompt: 'Call studio_get_context first. For an instruction such as "tighten scene 3 to 12 s", call studio_edit with the matching intent, scope and params (previewOnly true), show me the plan cards and anything under "touches your edits", and apply with the returned planId only after I approve. Then show the explain-why report. Undo a plan with studio_restore_version.',
+        tools: ['studio_get_context', 'studio_check_readiness', 'studio_edit', 'studio_create_version', 'studio_restore_version', 'studio_search_assets'],
+        profile: 'agent',
+        safeDefaults: {
+          previewOnlyFirst: true,
+          applyWithPlanId: true,
+          createVersionBeforeApply: true,
+          maxSteps: MCP_ACTION_PLAN_MAX_STEPS,
+        },
+      },
+      {
+        id: 'script-fidelity',
+        title: 'Script Fidelity Pass',
+        goal: 'Check the cut against the screenplay: every scene has a shot, every dialogue line is on the timeline or knowingly cut, and scenes run near their planned length.',
+        prompt: 'Call studio_get_context. Compare the screenplay with the scene map: list scenes with no clip (actualDuration 0), dialogue lines with no clipIds, and scenes more than 20% off their plannedDuration or targetDuration. Mark each finding with an orange timeline marker after showing me previewOnly first.',
+        tools: ['studio_get_context', 'find_timeline_items', 'add_timeline_markers'],
+        profile: 'agent',
+        safeDefaults: {
+          markerColor: '#ffa500',
+          offPlannedTolerance: 0.2,
+          previewOnlyFirst: true,
         },
       },
     ],
@@ -10546,6 +10593,8 @@ function createToolDefinitions() {
   ]
 }
 
+const AGENT_PROFILE_INSTRUCTIONS = 'You are connected to StorybookStudio, the desktop editor for StoryBook episodes, through the agent profile. Call studio_get_context first: it returns the screenplay, the scene map, the edit policy, the brand, the timeline, versions and the clips the user edited by hand. Edit by intent with studio_edit (intents: hit_duration, tighten_pacing, remove_dead_air, open_with_strongest_line, keep_music_under_dialogue, add_broll, emphasize, add_cta, match_brand, reorder_scenes, recut_around_drops) and a scope such as {"scene": 3}. Every capability tool previews by default: show the user the plan cards, including anything under "touches your edits", and apply only after they approve, by calling studio_edit again with previewOnly false and the planId. An applied plan is a new version with every step logged and explained; studio_restore_version undoes it. Never deliver without the user\'s confirmation in the app. Tools that answer "not available yet" belong to a later release. Velorn\'s 130 primitive tools are on /mcp?profile=expert.'
+
 class ComfyStudioMcpServer {
   constructor({
     port = DEFAULT_MCP_PORT,
@@ -10559,11 +10608,18 @@ class ComfyStudioMcpServer {
     listComfyStudioWorkflows = null,
     inspectComfyStudioWorkflow = null,
     authSecret = null,
+    getStudioCloud = null,
+    emitPlanProposed = null,
   } = {}) {
     this.port = port
     this.authSecret = typeof authSecret === 'string' && authSecret ? authSecret : null
     this.version = version
-    this.performAction = typeof performAction === 'function' ? performAction : null
+    this.activePlanStepMeta = null
+    this.performAction = typeof performAction === 'function'
+      ? (request) => performAction(this.activePlanStepMeta && !request?.payload?.studioMeta && request?.payload?.previewOnly !== true
+        ? { ...request, payload: { ...(request.payload || {}), studioMeta: this.activePlanStepMeta } }
+        : request)
+      : null
     this.diagnoseComfyUIConnection = typeof diagnoseComfyUIConnection === 'function' ? diagnoseComfyUIConnection : null
     this.setComfyUIConnection = typeof setComfyUIConnection === 'function' ? setComfyUIConnection : null
     this.controlComfyLauncher = typeof controlComfyLauncher === 'function' ? controlComfyLauncher : null
@@ -10577,6 +10633,28 @@ class ComfyStudioMcpServer {
     this.lastSnapshot = null
     this.lastSnapshotAt = null
     this.tools = createToolDefinitions()
+    this.capabilities = createCapabilityTools({
+      performAction: (action, payload) => (this.performAction ? this.performAction({ action, payload }) : Promise.reject(new Error('The StorybookStudio window is not connected.'))),
+      callPrimitive: (name, args) => this.callTool(name, args),
+      getCloud: () => (typeof getStudioCloud === 'function' ? getStudioCloud() : null),
+      emitPlanProposed: typeof emitPlanProposed === 'function' ? emitPlanProposed : () => {},
+      writableTools: MCP_ACTION_PLAN_WRITABLE_TOOLS,
+    })
+  }
+
+  // The in-app agent (src/services/agentTools.js, over studio:callCapability)
+  // calls the same handler an MCP client reaches over HTTP.
+  async callCapabilityTool(name, args = {}, options = {}) {
+    if (!this.capabilities.inProfile(name, 'agent')) {
+      return errorResult(`${name} is not a capability tool.`)
+    }
+    return this.capabilities.call(name, args || {}, { source: options.source || 'in-app' })
+  }
+
+  toolsForProfile(profile) {
+    return profile === 'expert'
+      ? [...this.tools, ...this.capabilities.definitions('expert')]
+      : this.capabilities.definitions('agent')
   }
 
   async start() {
@@ -10632,6 +10710,8 @@ class ComfyStudioMcpServer {
       url: `http://127.0.0.1:${this.port}/mcp`,
       error: this.error,
       toolCount: this.tools.length,
+      agentToolCount: this.capabilities.definitions('agent').length,
+      profiles: [...MCP_PROFILES],
       lastSnapshotAt: this.lastSnapshotAt,
       hasProject: hasSnapshot(this.lastSnapshot),
     }
@@ -10658,6 +10738,12 @@ class ComfyStudioMcpServer {
     const url = new URL(req.url || '/', `http://127.0.0.1:${this.port}`)
     if (url.pathname !== '/mcp' && url.pathname !== '/') {
       this.writeJson(res, 404, { error: 'Not found.' })
+      return
+    }
+    const profileHeader = req.headers['x-mcp-profile']
+    const profile = String(url.searchParams.get('profile') || (Array.isArray(profileHeader) ? profileHeader[0] : profileHeader) || DEFAULT_MCP_PROFILE).trim().toLowerCase()
+    if (!MCP_PROFILES.has(profile)) {
+      this.writeJson(res, 400, { error: `Unknown MCP profile "${profile}". Use profile=agent (the default) or profile=expert.` })
       return
     }
 
@@ -10690,7 +10776,7 @@ class ComfyStudioMcpServer {
     }
 
     if (Array.isArray(payload)) {
-      const responses = (await Promise.all(payload.map((entry) => this.handleJsonRpc(entry)))).filter(Boolean)
+      const responses = (await Promise.all(payload.map((entry) => this.handleJsonRpc(entry, { profile })))).filter(Boolean)
       if (responses.length === 0) {
         res.writeHead(202)
         res.end()
@@ -10700,7 +10786,7 @@ class ComfyStudioMcpServer {
       return
     }
 
-    const response = await this.handleJsonRpc(payload)
+    const response = await this.handleJsonRpc(payload, { profile })
     if (!response) {
       res.writeHead(202)
       res.end()
@@ -10709,7 +10795,7 @@ class ComfyStudioMcpServer {
     this.writeJson(res, 200, response)
   }
 
-  async handleJsonRpc(message) {
+  async handleJsonRpc(message, { profile = DEFAULT_MCP_PROFILE } = {}) {
     if (!message || typeof message !== 'object') {
       return {
         jsonrpc: '2.0',
@@ -10739,17 +10825,17 @@ class ComfyStudioMcpServer {
               name: 'StorybookStudio',
               version: this.version,
             },
-            instructions: 'You are connected to StorybookStudio. Use guide_comfyui_setup first for beginner local ComfyUI setup questions like "How do I connect StorybookStudio to ComfyUI?"; it diagnoses, probes likely ports, gives Portable/Desktop/Docker/manual steps, and previews safe port fixes. Use diagnose_comfyui_connection, repair_comfyui_connection, set_comfyui_connection, control_comfyui_launcher, get_comfyui_launcher_logs, validate_comfyui_nodes, list_velorn_workflows, and inspect_velorn_workflow for deeper local ComfyUI setup/support questions. Use get_mcp_recipes or get_ai_review_passes to choose safe review workflows. For agent-guided Music Video creation, begin with get_music_video_session, preserve the multi-turn checkpoint with update_music_video_session, and use the dedicated configure/cast/pass/script/shot/generation/assembly tools so the result stays editable in the visible Director and timeline UI; preview any generation or assembly action and get explicit approval before applying it. Use find_timeline_items before targeting timeline clips, tracks, markers, transitions, or project assets from a natural-language request. Use check_media_health before delivery/relinking work, relink_asset with previewOnly before changing asset paths, and inspect_export_file after rendering when the user asks whether a file exists or has the expected codec, duration, FPS, or dimensions. Use run_mcp_action_plan with previewOnly before applying an approved multi-step edit in one checkpointed pass. Use the tools to inspect the open project, timeline, assets, generation status, music-video workflow state, the composed timeline frame at the playhead, sampled visual timeline ranges, and top-visible shot pages for fast-cut edit review. Use create_project with previewOnly first when the user wants a fresh StorybookStudio project, and use duplicate_project with previewOnly first before risky AI experiments on an existing project. Use create_timeline with previewOnly first when the user wants a new sequence/timeline for an alternate edit, review selects, generated variations, or a fresh AI-built layout; use switch_timeline, rename_timeline, duplicate_timeline, and delete_timeline with previewOnly first for sequence management. Use update_track and remove_track with previewOnly first for track cleanup, locking/muting/showing tracks, renaming, and layer order. Use add_transition, update_transition, and remove_transitions with previewOnly first for native dissolves, fades, wipes, slides, zooms, blur transitions, and dip-to-black style edits. Use move_clips, trim_clips, and delete_clips with previewOnly first for timeline edit operations such as cleanup passes, staggered layouts, trims, and ripple deletes. Use create_asset_folder with previewOnly first when a generation batch or AI-built layout should keep its source assets organized in a named/nested project folder. Use move_assets_to_folder with previewOnly first when assets should be cleaned up or moved into a folder, for example rootOnly + constantsOnly into a Constants folder. Use queue_prompt_generation_batch with previewOnly first when the user wants new images or videos generated from a written brief; show prompts, workflows, counts, seeds, resolution, duration, FPS, and output folder, then apply only after approval. Use prepare_generation_from_timeline_context with previewOnly first when the user wants to turn a timeline frame into a Generate-tab image-to-video or keyframe request; applying it only captures the frame and prefills Generate. Use queue_prepared_generation with previewOnly first and explicit user approval before queueing a staged Generate request. Use queue_timeline_generation_batch with previewOnly first when the user asks for multiple variations or multiple workflows from the same timeline frame; show workflow counts and seeds, then apply only after approval. Use list_comfyui_templates and queue_timeline_template_generation with previewOnly first when the user asks to run an official ComfyUI template such as LTX 2.3 LoRA video outpainting on a selected timeline clip; applying may import the template and queue local GPU work. Use import_comfyui_workflow with previewOnly first when the user brings a community ComfyUI workflow (comfy.org share URL, local .json, or pasted JSON); then install_workflow_setup with previewOnly and explicit approval for missing node packs/models (poll get_workflow_install_status, restart ComfyUI via control_comfyui_launcher when recommended), and run it with queue_timeline_template_generation using importedWorkflowId. Use add_asset_to_timeline with previewOnly first when the user wants one generated/imported asset placed back into the edit, or add_assets_to_timeline with previewOnly first when placing multiple results as review lanes or a sequential strip. Use add_solid_color with previewOnly first when the user needs black/color constants or background plates; it can create a bottom video track so solids sit behind the edit. Use add_adjustment_clip with previewOnly first when the user wants a color look, blur, GLSL effect, camera shake, vignette, grain, or keyframed treatment applied to multiple clips below a single adjustment layer. Use add_text_clip, add_shape_clip, update_text_clip, and update_shape_clip with previewOnly first for titles, lower thirds, lines, boxes, circles, frames, graphic accents, and simple motion graphics; use motionBlurEnabled/motionBlurSamples/motionBlurShutter on fast animated layers when requested. Use list_glsl_effects, add_glsl_effect, update_glsl_effect, and remove_glsl_effect with previewOnly first for GPU effects such as camera shake, directional blur, lens blur, fisheye, chroma warp, digital glitch, film grain, film look, flicker, VHS, and vignette; effect parameters can also be keyframed, including when the target clip is an adjustment clip. Use set_clip_keyframes with previewOnly first for visual clip fades, dips to black, moves, blur, crop reveals, and color/transform/shape style automation. Use export_fcpxml with previewOnly first when the user wants an interchange XML for Resolve, Final Cut, or Premiere. Queue tools use the same path as the StorybookStudio Queue button and may spend credits or start local GPU work depending on the selected workflow. The write actions currently exposed are ComfyUI setup guidance/settings, ComfyUI launcher start/stop/restart, project creation/duplication/save, agent-guided Music Video setup/cast/pass/script/shot/generation/assembly, asset folder creation, asset folder cleanup/move/relink operations, sequence/timeline creation and management, track management, native transitions, clip move/trim/delete operations, clip label coloring, clip enable/disable, timeline marker creation/removal/property updates, text/title/shape/adjustment clip creation and updates, GLSL effect add/update/remove operations, visual clip keyframes, solid color asset/clip creation, media asset placement, prompt-based generation queueing, preparing/queueing Generate from a timeline frame, official ComfyUI template generation from timeline media, checkpointed multi-step action plans, starting timeline delivery exports through StorybookStudio export worker, export-file QC, and FCPXML interchange export. Project creation/duplication writes project folders on disk; timeline/sequence, clip/marker/text/shape/adjustment/effect/media/keyframe actions are undoable in StorybookStudio; exports write new files to disk.',
+            instructions: profile === 'agent' ? AGENT_PROFILE_INSTRUCTIONS : 'You are connected to StorybookStudio. Use guide_comfyui_setup first for beginner local ComfyUI setup questions like "How do I connect StorybookStudio to ComfyUI?"; it diagnoses, probes likely ports, gives Portable/Desktop/Docker/manual steps, and previews safe port fixes. Use diagnose_comfyui_connection, repair_comfyui_connection, set_comfyui_connection, control_comfyui_launcher, get_comfyui_launcher_logs, validate_comfyui_nodes, list_velorn_workflows, and inspect_velorn_workflow for deeper local ComfyUI setup/support questions. Use get_mcp_recipes or get_ai_review_passes to choose safe review workflows. For agent-guided Music Video creation, begin with get_music_video_session, preserve the multi-turn checkpoint with update_music_video_session, and use the dedicated configure/cast/pass/script/shot/generation/assembly tools so the result stays editable in the visible Director and timeline UI; preview any generation or assembly action and get explicit approval before applying it. Use find_timeline_items before targeting timeline clips, tracks, markers, transitions, or project assets from a natural-language request. Use check_media_health before delivery/relinking work, relink_asset with previewOnly before changing asset paths, and inspect_export_file after rendering when the user asks whether a file exists or has the expected codec, duration, FPS, or dimensions. Use run_mcp_action_plan with previewOnly before applying an approved multi-step edit in one checkpointed pass. Use the tools to inspect the open project, timeline, assets, generation status, music-video workflow state, the composed timeline frame at the playhead, sampled visual timeline ranges, and top-visible shot pages for fast-cut edit review. Use create_project with previewOnly first when the user wants a fresh StorybookStudio project, and use duplicate_project with previewOnly first before risky AI experiments on an existing project. Use create_timeline with previewOnly first when the user wants a new sequence/timeline for an alternate edit, review selects, generated variations, or a fresh AI-built layout; use switch_timeline, rename_timeline, duplicate_timeline, and delete_timeline with previewOnly first for sequence management. Use update_track and remove_track with previewOnly first for track cleanup, locking/muting/showing tracks, renaming, and layer order. Use add_transition, update_transition, and remove_transitions with previewOnly first for native dissolves, fades, wipes, slides, zooms, blur transitions, and dip-to-black style edits. Use move_clips, trim_clips, and delete_clips with previewOnly first for timeline edit operations such as cleanup passes, staggered layouts, trims, and ripple deletes. Use create_asset_folder with previewOnly first when a generation batch or AI-built layout should keep its source assets organized in a named/nested project folder. Use move_assets_to_folder with previewOnly first when assets should be cleaned up or moved into a folder, for example rootOnly + constantsOnly into a Constants folder. Use queue_prompt_generation_batch with previewOnly first when the user wants new images or videos generated from a written brief; show prompts, workflows, counts, seeds, resolution, duration, FPS, and output folder, then apply only after approval. Use prepare_generation_from_timeline_context with previewOnly first when the user wants to turn a timeline frame into a Generate-tab image-to-video or keyframe request; applying it only captures the frame and prefills Generate. Use queue_prepared_generation with previewOnly first and explicit user approval before queueing a staged Generate request. Use queue_timeline_generation_batch with previewOnly first when the user asks for multiple variations or multiple workflows from the same timeline frame; show workflow counts and seeds, then apply only after approval. Use list_comfyui_templates and queue_timeline_template_generation with previewOnly first when the user asks to run an official ComfyUI template such as LTX 2.3 LoRA video outpainting on a selected timeline clip; applying may import the template and queue local GPU work. Use import_comfyui_workflow with previewOnly first when the user brings a community ComfyUI workflow (comfy.org share URL, local .json, or pasted JSON); then install_workflow_setup with previewOnly and explicit approval for missing node packs/models (poll get_workflow_install_status, restart ComfyUI via control_comfyui_launcher when recommended), and run it with queue_timeline_template_generation using importedWorkflowId. Use add_asset_to_timeline with previewOnly first when the user wants one generated/imported asset placed back into the edit, or add_assets_to_timeline with previewOnly first when placing multiple results as review lanes or a sequential strip. Use add_solid_color with previewOnly first when the user needs black/color constants or background plates; it can create a bottom video track so solids sit behind the edit. Use add_adjustment_clip with previewOnly first when the user wants a color look, blur, GLSL effect, camera shake, vignette, grain, or keyframed treatment applied to multiple clips below a single adjustment layer. Use add_text_clip, add_shape_clip, update_text_clip, and update_shape_clip with previewOnly first for titles, lower thirds, lines, boxes, circles, frames, graphic accents, and simple motion graphics; use motionBlurEnabled/motionBlurSamples/motionBlurShutter on fast animated layers when requested. Use list_glsl_effects, add_glsl_effect, update_glsl_effect, and remove_glsl_effect with previewOnly first for GPU effects such as camera shake, directional blur, lens blur, fisheye, chroma warp, digital glitch, film grain, film look, flicker, VHS, and vignette; effect parameters can also be keyframed, including when the target clip is an adjustment clip. Use set_clip_keyframes with previewOnly first for visual clip fades, dips to black, moves, blur, crop reveals, and color/transform/shape style automation. Use export_fcpxml with previewOnly first when the user wants an interchange XML for Resolve, Final Cut, or Premiere. Queue tools use the same path as the StorybookStudio Queue button and may spend credits or start local GPU work depending on the selected workflow. The write actions currently exposed are ComfyUI setup guidance/settings, ComfyUI launcher start/stop/restart, project creation/duplication/save, agent-guided Music Video setup/cast/pass/script/shot/generation/assembly, asset folder creation, asset folder cleanup/move/relink operations, sequence/timeline creation and management, track management, native transitions, clip move/trim/delete operations, clip label coloring, clip enable/disable, timeline marker creation/removal/property updates, text/title/shape/adjustment clip creation and updates, GLSL effect add/update/remove operations, visual clip keyframes, solid color asset/clip creation, media asset placement, prompt-based generation queueing, preparing/queueing Generate from a timeline frame, official ComfyUI template generation from timeline media, checkpointed multi-step action plans, starting timeline delivery exports through StorybookStudio export worker, export-file QC, and FCPXML interchange export. Project creation/duplication writes project folders on disk; timeline/sequence, clip/marker/text/shape/adjustment/effect/media/keyframe actions are undoable in StorybookStudio; exports write new files to disk.',
           }
           break
         case 'ping':
           result = {}
           break
         case 'tools/list':
-          result = { tools: this.tools }
+          result = { tools: this.toolsForProfile(profile) }
           break
         case 'tools/call':
-          result = await this.callTool(params?.name, params?.arguments || {})
+          result = await this.callToolInProfile(profile, params?.name, params?.arguments || {})
           break
         case 'resources/list':
           result = { resources: [] }
@@ -10774,7 +10860,18 @@ class ComfyStudioMcpServer {
     }
   }
 
+  async callToolInProfile(profile, name, args = {}) {
+    if (this.capabilities.inProfile(name, profile)) return this.capabilities.call(name, args, { source: 'mcp' })
+    if (profile === 'agent') {
+      return errorResult(`${name} is not in the agent profile. Use the studio_* capability tools, or connect with ?profile=expert for Velorn's tools.`)
+    }
+    if (this.capabilities.has(name)) return errorResult(`${name} is in the agent profile only (/mcp?profile=agent).`)
+    return this.callTool(name, args)
+  }
+
   async callTool(name, args = {}) {
+    // A studio_* step inside run_mcp_action_plan.
+    if (this.capabilities?.has(name)) return this.capabilities.call(name, args, { source: 'plan' })
     const snapshot = getSnapshotOrEmpty(this.lastSnapshot)
     const toolsAllowedWithoutProject = new Set([
       'get_project',
@@ -11866,7 +11963,15 @@ class ComfyStudioMcpServer {
         ...(step.arguments || {}),
         previewOnly: step.arguments?.previewOnly === true ? true : false,
       }
-      const response = await this.callTool(step.tool, stepArgs)
+      // FILM-2013: a step's studioMeta reaches the renderer's op log even when
+      // the tool's handler rebuilds its payload (performAction adds it back).
+      this.activePlanStepMeta = stepArgs.studioMeta && stepArgs.previewOnly !== true ? stepArgs.studioMeta : null
+      let response
+      try {
+        response = await this.callTool(step.tool, stepArgs)
+      } finally {
+        this.activePlanStepMeta = null
+      }
       let parsed = null
       try {
         parsed = JSON.parse(response?.content?.[0]?.text || 'null')

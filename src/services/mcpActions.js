@@ -66,8 +66,9 @@ import {
 import { createCheckpointStore } from '../studio/checkpointStore'
 import { runMcpActionWithEditLog } from '../studio/editLogRuntime.js'
 import { handleSetAudioBuses } from '../studio/audio/busActions.js'
+import { handleStudioAction, isStudioRendererAction, publishSnapshotNow } from '../studio/capabilityRuntime.js'
 
-export const MCP_ACTION_BRIDGE_VERSION = 6
+export const MCP_ACTION_BRIDGE_VERSION = 7
 
 const MCP_PROJECT_CHECKPOINTS = new Map()
 const MCP_PROJECT_CHECKPOINT_LIMIT = 20
@@ -3248,6 +3249,9 @@ function splitTimelineClipAtTime(clip, splitPosition) {
       // media clips keep their layout and label.
       ...(clip.transform ? { transform: safeClone(clip.transform) } : {}),
       ...(clip.labelColor ? { labelColor: clip.labelColor } : {}),
+      // FILM-2013: the right piece stays in its scene (metadata.semantic), so
+      // the scene map and the report still see it after a ripple cut.
+      ...(clip.metadata ? { metadata: safeClone(clip.metadata) } : {}),
       ...(audioSplitState?.rightClipOptions || {}),
       saveHistory: false,
     }
@@ -8937,8 +8941,17 @@ async function handleMcpAction(request = {}) {
 }
 
 export async function runMcpAction(action, payload = {}) {
+  // The capability tools' renderer side (FILM-2013); versions log themselves.
+  if (isStudioRendererAction(action)) {
+    // Refusals cross the bridge as values: an IPC error keeps only its message, not its code.
+    return handleStudioAction(action, payload || {}).catch((error) => ({
+      studioError: { code: error?.code || 'VALIDATION_FAILED', message: error?.message || String(error), details: error?.details },
+    }))
+  }
   // Applied actions append to <project>/edits/oplog.jsonl (FILM-2012).
-  return runMcpActionWithEditLog(action, payload, (nextAction, nextPayload) => handleMcpAction({ action: nextAction, payload: nextPayload }))
+  const result = await runMcpActionWithEditLog(action, payload, (nextAction, nextPayload) => handleMcpAction({ action: nextAction, payload: nextPayload }))
+  if (payload?.studioMeta && payload.previewOnly !== true) await publishSnapshotNow()
+  return result
 }
 
 export function startMcpActionBridge() {

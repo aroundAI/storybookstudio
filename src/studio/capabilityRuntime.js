@@ -1,0 +1,276 @@
+// The renderer side of the capability tools (FILM-2013). The main process
+// (electron/studio/mcpCapabilities.js) owns the tools, the per-step previews
+// and run_mcp_action_plan; it asks this module, over the mcp:action bridge,
+// for what only the renderer has: the live document, the storybook/ files,
+// the op log and versions. runMcpAction routes every `studio_*` action here,
+// outside the op-log wrapper, because versions log themselves.
+//
+// Actions: studio_get_context, studio_compile, studio_search_assets,
+// studio_readiness_local, studio_create_version, studio_restore_version,
+// studio_finish_apply, studio_deliver_summary.
+import { useProjectStore } from '../stores/projectStore'
+import { buildStudioContext, documentFingerprint, searchAssets, summarizeContext } from './context.js'
+import { COMPILER_TOOLS, STUDIO_EDIT_INTENTS, listIntents, previewIntent, readsFor } from './compile.js'
+import { buildExplainWhyReport, formatExplainWhyText, reportPathFor } from './report.js'
+import { createStudioVersion, getStudioEditLog, restoreStudioVersion, timelineDocument } from './editLogRuntime.js'
+import { STORYBOOK_FILES } from './projectBuilder.js'
+import { RENDER_PRESETS, RENDER_PRESET_NAMES } from './contracts/render-presets.mjs'
+import { pictureEnd } from './intents/shared.js'
+
+export const STUDIO_RENDERER_ACTIONS = Object.freeze([
+  'studio_get_context', 'studio_compile', 'studio_search_assets', 'studio_readiness_local',
+  'studio_create_version', 'studio_restore_version', 'studio_finish_apply', 'studio_deliver_summary',
+])
+export const LAST_QA_PATH = 'edits/qa/latest.json'
+
+export const isStudioRendererAction = (action) => STUDIO_RENDERER_ACTIONS.includes(action)
+
+const studioError = (code, message, details) => Object.assign(new Error(message), { code, details })
+
+// Seams the headless harness and tests replace: how a project file is read,
+// how a compile-time read runs, how the snapshot reaches the main process.
+const defaults = {
+  readProjectFile: async (projectPath, relativePath) => {
+    const api = globalThis.window?.electronAPI
+    if (!api?.readFile || !api?.pathJoin) return null
+    const result = await api.readFile(await api.pathJoin(projectPath, ...relativePath.split('/')), { encoding: 'utf8' })
+    return result?.success ? result.data : null
+  },
+  runRead: null,
+  publishSnapshot: null,
+}
+let seams = { ...defaults }
+
+export function configureStudioRuntime(overrides = {}) {
+  seams = { ...seams, ...overrides }
+  return () => { seams = { ...defaults } }
+}
+
+const projectPathOf = () => {
+  const active = getStudioEditLog()
+  if (active?.projectPath) return active.projectPath
+  const handle = useProjectStore.getState().currentProjectHandle
+  return typeof handle === 'string' ? handle : handle?.name || null
+}
+
+const readJson = async (projectPath, relativePath) => {
+  if (!projectPath) return null
+  try {
+    const text = await seams.readProjectFile(projectPath, relativePath)
+    return text ? JSON.parse(text) : null
+  } catch {
+    return null
+  }
+}
+
+async function loadStoryBookFiles(projectPath) {
+  const [pkg, policy, brand, link] = await Promise.all([
+    readJson(projectPath, STORYBOOK_FILES.package),
+    readJson(projectPath, STORYBOOK_FILES.policy),
+    readJson(projectPath, STORYBOOK_FILES.brand),
+    readJson(projectPath, STORYBOOK_FILES.link),
+  ])
+  return { package: pkg, policy, brand, link }
+}
+
+async function lastQaResult() {
+  try {
+    const text = await readEdits(LAST_QA_PATH)
+    return text ? JSON.parse(text) : null
+  } catch {
+    return null
+  }
+}
+
+const readEdits = async (path) => {
+  const api = globalThis.window?.electronAPI?.studioEdits
+  const projectPath = projectPathOf()
+  if (!api || !projectPath) return null
+  const result = await api.read(projectPath, path)
+  return result?.success ? result.data ?? null : null
+}
+
+// The live document plus everything beside it, assembled on every call.
+export async function loadStudioContext({ reads = {} } = {}) {
+  const projectState = useProjectStore.getState()
+  const project = projectState.currentProject
+  if (!project) throw studioError('NOT_FOUND', 'No project is open.')
+  const active = getStudioEditLog()
+  const document = active?.getDocument ? active.getDocument() : { ...timelineDocument(projectState), assets: [] }
+  const projectPath = projectPathOf()
+  return {
+    projectPath,
+    document,
+    context: buildStudioContext({
+      project,
+      document,
+      storybook: await loadStoryBookFiles(projectPath),
+      versions: active?.versions?.list() ?? [],
+      currentVersionId: active?.versions?.current()?.id ?? project.studio?.currentVersion ?? null,
+      log: active?.oplog?.entries() ?? [],
+      lastQa: await lastQaResult(),
+      reads,
+    }),
+  }
+}
+
+async function runCompileReads(intent, context, scope, params) {
+  const requested = readsFor(intent, context, scope, params)
+  const audioAnalysis = new Map()
+  const failures = []
+  for (const read of requested) {
+    if (read.tool !== 'get_audio_analysis') continue
+    try {
+      const run = seams.runRead || (async (tool, args) => (await import('../services/mcpActions.js')).runMcpAction(tool, args))
+      const result = await run(read.tool, read.arguments)
+      if (result?.success === false) failures.push({ clipId: read.arguments.clipId, warning: result.warning || 'analysis failed' })
+      else audioAnalysis.set(read.arguments.clipId, result)
+    } catch (error) {
+      failures.push({ clipId: read.arguments.clipId, warning: error?.message || String(error) })
+    }
+  }
+  return { audioAnalysis, requested: requested.length, failures }
+}
+
+async function compileAction(payload = {}) {
+  const { intent, scope = {}, params = {}, writable } = payload
+  if (!STUDIO_EDIT_INTENTS.includes(intent) && !listIntents().includes(intent)) {
+    throw studioError('VALIDATION_FAILED', `Unknown intent "${intent}". Intents: ${listIntents().join(', ')}.`)
+  }
+  const base = await loadStudioContext()
+  const reads = await runCompileReads(intent, base.context, scope, params)
+  const { context, document } = await loadStudioContext({ reads: { audioAnalysis: reads.audioAnalysis } })
+  const fingerprint = documentFingerprint(document)
+  if (fingerprint !== documentFingerprint(base.document)) {
+    throw studioError('TARGET_CHANGED', 'The timeline changed while the plan was being compiled; try again.')
+  }
+  try {
+    const preview = previewIntent({ intent, context, scope, params, writable: writable || COMPILER_TOOLS })
+    return {
+      ...preview,
+      fingerprint,
+      currentVersionId: context.currentVersionId,
+      reads: { requested: reads.requested, failed: reads.failures },
+    }
+  } catch (error) {
+    if (error.code) throw studioError(error.code, error.message, error.details)
+    throw error
+  }
+}
+
+async function finishApply({ versionId, hookType = null } = {}) {
+  const active = getStudioEditLog()
+  if (!active) throw studioError('NOT_FOUND', 'No Studio project is open.')
+  await active.oplog.flushPending()
+  await active.oplog.idle()
+  const versions = active.versions.list()
+  const record = versions.find((version) => version.id === versionId)
+  if (!record) throw studioError('NOT_FOUND', `Unknown version ${versionId}`)
+  const before = await active.versions.readSnapshot(versionId)
+  const after = timelineDocument(useProjectStore.getState())
+  const { context } = await loadStudioContext()
+  const report = buildExplainWhyReport({ log: active.oplog.entries(), versions, versionId, before, after, qa: context.lastQa, target: context.target.seconds })
+  if (hookType && report.style) report.style.hookType = hookType
+  const text = formatExplainWhyText(report)
+  const api = globalThis.window?.electronAPI?.studioEdits
+  const reportPath = reportPathFor(versionId)
+  if (api && active.projectPath) await api.write(active.projectPath, reportPath, `${JSON.stringify(report, null, 2)}\n`)
+  const ops = active.oplog.entries().filter((entry) => entry.versionId === versionId)
+  return { version: record, report, reportText: text, reportPath, ops }
+}
+
+async function readinessLocal() {
+  const { context, projectPath } = await loadStudioContext()
+  const issues = []
+  const files = await loadStoryBookFiles(projectPath)
+  const offline = context.assets.filter((asset) => asset.offline)
+  if (!files.package) issues.push({ check: 'package', severity: 'warning', detail: 'No storybook/package.json beside the project: this is not a StoryBook episode, so the script, scene map and policy come from defaults.' })
+  if (!files.policy) issues.push({ check: 'policy', severity: 'warning', detail: 'No storybook/policy.json: compilers use the default edit policy.' })
+  if (context.target.seconds == null) issues.push({ check: 'target_duration', severity: 'warning', detail: 'No target duration in the policy or the episode; hit_duration needs targetSeconds.' })
+  if (offline.length) issues.push({ check: 'media', severity: 'error', detail: `${offline.length} asset${offline.length === 1 ? ' is' : 's are'} offline (not downloaded or not generated): ${offline.slice(0, 5).map((asset) => asset.name).join(', ')}${offline.length > 5 ? ', ...' : ''}` })
+  const unprobed = context.assets.filter((asset) => !asset.offline && ['video', 'audio'].includes(asset.type) && !(Number(asset.duration) > 0))
+  if (unprobed.length) issues.push({ check: 'probe', severity: 'error', detail: `${unprobed.length} media asset${unprobed.length === 1 ? ' has' : 's have'} no probed duration` })
+  const noCodec = context.assets.filter((asset) => asset.type === 'video' && !asset.offline && !asset.settings?.codecs)
+  if (noCodec.length) issues.push({ check: 'codecs', severity: 'warning', detail: `${noCodec.length} video asset${noCodec.length === 1 ? ' has' : 's have'} no recorded codec` })
+  const captionTracks = (context.timeline?.tracks || []).filter((track) => track.role === 'captions')
+  if (context.policy.captions.enabled && captionTracks.length === 0) issues.push({ check: 'captions', severity: 'warning', detail: 'The policy wants captions and the timeline has no captions track.' })
+  const empty = context.sceneMap.filter((entry) => entry.actualDuration === 0)
+  if (empty.length) issues.push({ check: 'coverage', severity: 'warning', detail: `Scene${empty.length === 1 ? '' : 's'} ${empty.map((entry) => entry.scene).join(', ')} ${empty.length === 1 ? 'has' : 'have'} no shot on the timeline.` })
+  return {
+    checks: {
+      packagePresent: Boolean(files.package),
+      policyLoaded: Boolean(files.policy),
+      targetKnown: context.target.seconds != null,
+      captionsAvailable: captionTracks.length > 0,
+      mediaOffline: offline.length,
+      mediaUnprobed: unprobed.length,
+    },
+    issues,
+  }
+}
+
+async function deliverSummary({ presets = [], languages = [] } = {}) {
+  const { context } = await loadStudioContext()
+  const unknown = presets.filter((preset) => !RENDER_PRESET_NAMES.includes(preset))
+  if (unknown.length) throw studioError('VALIDATION_FAILED', `Unknown preset ${unknown.join(', ')}. Presets: ${RENDER_PRESET_NAMES.join(', ')}.`)
+  const duration = pictureEnd(context.timeline)
+  const wanted = languages.length ? languages : [context.project.language].filter(Boolean)
+  return {
+    episode: { id: context.project.episodeId, title: context.project.episodeTitle },
+    destination: context.project.episodeId ? 'StoryBook episode renders (request_render_upload → finalize_render → deliver_edit)' : 'local files only (not a StoryBook episode)',
+    renders: presets.flatMap((preset) => wanted.map((language) => ({
+      preset,
+      aspect: RENDER_PRESETS[preset].aspect ?? context.project.aspect,
+      language,
+      durationSeconds: duration,
+      estimatedBytes: null,
+      estimatedBytesReason: 'FILM-2017 sets the encoder bitrates; no estimate until then',
+    }))),
+    lastQa: context.lastQa ? { pass: context.lastQa.pass, issues: context.lastQa.issues?.length ?? 0 } : { pass: null, reason: 'QA has not run (FILM-2014)' },
+  }
+}
+
+export async function handleStudioAction(action, payload = {}) {
+  switch (action) {
+    case 'studio_get_context': {
+      const { context } = await loadStudioContext()
+      return { ...summarizeContext(context, payload.scope || null), intents: listIntents() }
+    }
+    case 'studio_compile':
+      return compileAction(payload)
+    case 'studio_search_assets': {
+      const { context } = await loadStudioContext()
+      return { results: searchAssets(context, payload) }
+    }
+    case 'studio_readiness_local':
+      return readinessLocal()
+    case 'studio_create_version': {
+      const name = String(payload.name || '').trim()
+      if (!name) throw studioError('VALIDATION_FAILED', 'Provide a version name.')
+      const version = await createStudioVersion(name.slice(0, 120), { prompt: payload.prompt ?? null, by: payload.by === 'ai' ? 'ai' : 'user' })
+      return { version }
+    }
+    case 'studio_restore_version': {
+      const result = await restoreStudioVersion(String(payload.versionId || ''), { by: payload.by === 'ai' ? 'ai' : 'user', reason: payload.reason ?? null })
+      await publishSnapshotNow()
+      return { version: result.version, op: result.op }
+    }
+    case 'studio_finish_apply':
+      return finishApply(payload)
+    case 'studio_deliver_summary':
+      return deliverSummary(payload)
+    default:
+      throw studioError('VALIDATION_FAILED', `Unknown Studio action ${action}`)
+  }
+}
+
+// A plan step (one carrying studioMeta) pushes the snapshot before it
+// returns, so the main process previews and runs the next step against the
+// document this one produced rather than the 350 ms debounced copy.
+export async function publishSnapshotNow() {
+  if (seams.publishSnapshot) return seams.publishSnapshot()
+  const api = globalThis.window?.electronAPI?.mcp
+  if (!api?.updateSnapshot) return null
+  const { buildMcpSnapshot } = await import('../services/mcpSnapshot.js')
+  return api.updateSnapshot(buildMcpSnapshot())
+}

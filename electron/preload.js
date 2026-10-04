@@ -535,6 +535,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getConnectCommand: () => ipcRenderer.invoke('studio:getMcpConnectCommand'),
   },
 
+  // FILM-2013: the agent profile for the in-app agent, and plan cards from any client.
+  studio: {
+    callCapability: (name, args) => ipcRenderer.invoke('studio:callCapability', name, args),
+    onPlanProposed: (callback) => {
+      const handler = (_event, proposal) => callback(proposal)
+      ipcRenderer.on('studio:plan-proposed', handler)
+      return () => ipcRenderer.removeListener('studio:plan-proposed', handler)
+    },
+  },
+
   // ============================================
   // Workflow Setup Manager
   // ============================================

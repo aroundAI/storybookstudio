@@ -58,7 +58,31 @@ function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, get
     ].filter(Boolean)
   }
 
+  // FILM-2013: the in-app agent calls the capability tools through the same
+  // handler an MCP client reaches over HTTP, so both produce the same cards.
+  ipcMain.handle('studio:callCapability', async (event, name, args = {}) => {
+    if (!isMainWindowSender(event)) return { isError: true, content: [{ type: 'text', text: JSON.stringify({ error: { code: 'FORBIDDEN', message: 'Not available to this window.' } }) }] }
+    const server = getMcpServer()
+    if (!server?.callCapabilityTool) return { isError: true, content: [{ type: 'text', text: JSON.stringify({ error: { code: 'VALIDATION_FAILED', message: 'The MCP server has not started.' } }) }] }
+    return server.callCapabilityTool(String(name || ''), args, { source: 'in-app' })
+  })
+
+  // FILM-2011 sets this when its cloud client starts; until then the cloud
+  // capability tools answer "not available yet".
+  let cloud = null
+
   return {
+    getCloud: () => cloud,
+    setCloud(next) {
+      cloud = next || null
+    },
+    // Plan cards to the AI panel (FILM-2015), from any client.
+    emitPlanProposed(proposal) {
+      const mainWindow = getMainWindow()
+      if (!mainWindow || mainWindow.isDestroyed()) return false
+      mainWindow.webContents.send('studio:plan-proposed', proposal)
+      return true
+    },
     getMcpSecret,
     cloud,
     isPrimaryInstance: cloud.protocol.primary,
