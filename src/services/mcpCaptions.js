@@ -357,10 +357,16 @@ function updateLiveCaptionsClipCues(clip, payload) {
 
   const overridesById = new Map(renderCues.map((cue) => [cue.id, cue.globalOverrides]))
   const fallbackOverrides = renderCues[0]?.globalOverrides || {}
+  // A cue that arrives with its own globalOverrides (FILM-2016 brand
+  // captions) keeps them; others keep the style they had.
   const nextRenderCues = nextCues.map((cue) => ({
     ...cue,
-    globalOverrides: overridesById.get(cue.id) || fallbackOverrides,
+    globalOverrides: (cue.globalOverrides && typeof cue.globalOverrides === 'object' ? cue.globalOverrides : null)
+      || overridesById.get(cue.id) || fallbackOverrides,
   }))
+  const nextPreset = payload.preset && typeof payload.preset === 'object'
+    ? { ...(typeof clip.captions.preset === 'object' ? clip.captions.preset : { id: clip.captions.preset }), ...payload.preset }
+    : null
 
   const maxCueEnd = Math.max(...nextCues.map((cue) => Number(cue.end) || 0), 0.4)
   const prevSourceDuration = Number(clip.sourceDuration) || 0
@@ -379,6 +385,7 @@ function updateLiveCaptionsClipCues(clip, payload) {
       message: 'Cue update plan only. The captions clip was not changed.',
       cueCount: nextCues.length,
       cues: nextCues,
+      ...(nextPreset ? { preset: nextPreset } : {}),
       durationSeconds: untrimmed ? nextSourceDuration : Number(clip.duration) || 0,
     }
   }
@@ -391,7 +398,7 @@ function updateLiveCaptionsClipCues(clip, payload) {
           ...c,
           sourceDuration: nextSourceDuration,
           ...(untrimmed ? { duration: nextSourceDuration, trimEnd: nextSourceDuration } : {}),
-          captions: { ...c.captions, cues: nextRenderCues },
+          captions: { ...c.captions, cues: nextRenderCues, ...(nextPreset ? { preset: nextPreset } : {}) },
         }
       : c)),
     ...(untrimmed
