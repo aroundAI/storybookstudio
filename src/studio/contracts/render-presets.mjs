@@ -21,6 +21,15 @@ export const RENDER_PRESETS = {
 };
 export const RENDER_PRESET_NAMES = Object.keys(RENDER_PRESETS);
 export const RenderPresetSchema = z.enum(RENDER_PRESET_NAMES);
+/** What each preset is called on a page: the publish page and the edit record. */
+export const RENDER_PRESET_LABELS = {
+    youtube_16x9: 'YouTube 16:9',
+    shorts_9x16: 'YouTube Shorts 9:16',
+    tiktok_9x16: 'TikTok 9:16',
+    reels_9x16: 'Reels 9:16',
+    square_1x1: 'Square 1:1',
+    master: 'Master',
+};
 /** Whether a render of `preset` may have `aspect`: the preset's own, or any for master. */
 export function presetAllowsAspect(preset, aspect) {
     const expected = RENDER_PRESETS[preset].aspect;
