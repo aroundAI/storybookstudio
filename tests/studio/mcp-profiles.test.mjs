@@ -109,14 +109,11 @@ test('tools another spec builds answer VALIDATION_FAILED "not available yet", na
     studio_render_preview: ['FILM-2014', {}],
     studio_review: ['FILM-2014', {}],
     studio_repair: ['FILM-2014', { issues: [] }],
-    studio_edit_audio: ['FILM-2016', { intent: 'duck' }],
-    studio_add_captions: ['FILM-2016', { language: 'en' }],
     studio_create_variant: ['FILM-2017', { kind: 'short' }],
     studio_add_graphic: ['FILM-2018', { kind: 'lower_third', text: 'x', at: 1, duration: 2 }],
     studio_open_episode: ['FILM-2011', { episodeId: 'e' }],
     studio_get_job_status: ['FILM-2011', { jobId: 'j' }],
     studio_check_updates: ['FILM-2011', {}],
-    studio_apply_updates: ['FILM-2011', {}],
   }
   for (const [name, [owner, args]] of Object.entries(stubs)) {
     const { body } = await rpc('tools/call', { name, arguments: args })
@@ -124,6 +121,10 @@ test('tools another spec builds answer VALIDATION_FAILED "not available yet", na
     const { error } = callText(body)
     assert.equal(error.code, 'VALIDATION_FAILED', name)
     assert.match(error.message, new RegExp(`not available yet: ${owner}`), name)
+  }
+  // These compile in the window (the re-sync plan, FILM-2016's compilers), so a bare server says so.
+  for (const [name, args] of [['studio_apply_updates', {}], ['studio_edit_audio', { intent: 'duck' }], ['studio_add_captions', { language: 'en' }]]) {
+    assert.match(callText((await rpc('tools/call', { name, arguments: args })).body).error.message, /window is not connected/, name)
   }
   const deliver = callText((await rpc('tools/call', { name: 'studio_deliver', arguments: { presets: ['youtube_16x9'], confirm: true } })).body)
   assert.match(deliver.error.message, /not available yet: FILM-2017.*cannot upload on its own/)

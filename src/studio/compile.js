@@ -167,7 +167,7 @@ export function buildDraftReport(plan, context, { prompt = null, createdAt = '19
 export function describeInstruction(intent, scope = {}, params = {}) {
   const where = scope?.scene != null ? `scene ${scope.scene}` : Array.isArray(scope?.scenes) && scope.scenes.length ? `scenes ${scope.scenes.join(', ')}` : 'the episode'
   const target = params?.targetSeconds != null ? ` to ${params.targetSeconds} s` : ''
-  return params?.instruction ? String(params.instruction) : `${intent.replace(/_/g, ' ')} in ${where}${target}`
+  return params?.instruction ? String(params.instruction) : `${intent.replace(/[_:]/g, ' ')} in ${where}${target}`
 }
 
 // compile + cards + draft report: what studio_edit returns on preview.
