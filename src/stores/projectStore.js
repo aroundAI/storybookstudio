@@ -19,6 +19,7 @@ import { useTimelineStore } from './timelineStore'
 import { useAssetsStore } from './assetsStore'
 import { captureAndSaveProjectThumbnail } from '../utils/projectThumbnail'
 import { markProjectClean } from '../services/projectDirtyTracker'
+import { ACCEPTED_PROJECT_VERSIONS, PROJECT_VERSION_BASE, resolveOpenedProjectVersion } from '../studio/projectVersion.js'
 import {
   createDefaultFlowAiProjectData,
   normalizeFlowAiProjectData,
@@ -163,6 +164,12 @@ const normalizeOpenedProjectData = (projectData) => {
   const currentTimeline = normalizedProject.timelines.find((timeline) => timeline.id === currentTimelineId) || normalizedProject.timelines[0]
 
   normalizedProject.flowAi = normalizeFlowAiProjectData(normalizedProject.flowAi)
+
+  const { version, accepted } = resolveOpenedProjectVersion(normalizedProject)
+  if (!accepted) {
+    console.warn(`Project format ${version} is newer than this app reads (${ACCEPTED_PROJECT_VERSIONS.join(', ')}); opening it anyway.`)
+  }
+  normalizedProject.version = version
 
   return {
     projectData: normalizedProject,
@@ -425,7 +432,7 @@ export const useProjectStore = create(
           // Create project data with timelines array
           const projectData = {
             name,
-            version: '1.1', // Updated version for multi-timeline support
+            version: PROJECT_VERSION_BASE, // Multi-timeline format; saveProject stamps 1.2 once Studio fields exist
             created: new Date().toISOString(),
             modified: new Date().toISOString(),
             settings: {
