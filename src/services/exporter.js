@@ -26,6 +26,7 @@ import { normalizeAudioEq } from '../utils/audioEq.mjs'
 import { createAudioEqChain } from './audioEqChain'
 import { clampTrackVolume, hasAudioSolo, isAudioTrackAudible, trackPanToStereoPosition, trackVolumeToLinearGain } from '../utils/audioTrackAudibility'
 import { collectAudioMixClips, countExpectedAudioMixClips } from '../../electron/audioMixEligibility.mjs'
+import { studioMixRequest } from '../studio/audio/exportOptions.js'
 import { getEnabledAudioInserts, hasEnabledAudioInserts } from '../utils/audioInserts'
 import { buildInsertChain } from './audioInsertChain'
 import {
@@ -1082,7 +1083,20 @@ const serializeAudioTracksForMix = (tracks) => (tracks || [])
     channels: track.channels || 'stereo',
     volume: track.volume ?? 100,
     pan: track.pan ?? 0,
+    ...(track.bus ? { bus: track.bus } : {}),
+    ...(track.language ? { language: track.language } : {}),
   }))
+
+// FILM-2016: a Studio project's bus mix request, plus the clips of muted
+// dialogue languages that are written as stems only.
+const studioMixPayload = (studioAudio, timelineState, outputPath) => {
+  const request = studioMixRequest(studioAudio, { tracks: timelineState.tracks, outputPath })
+  const stemOnly = new Set(request.studio?.stemOnlyTrackIds || [])
+  const stemOnlyClips = stemOnly.size
+    ? collectAudioMixClips(timelineState.clips, timelineState.tracks).filter((clip) => stemOnly.has(clip.trackId))
+    : []
+  return { request, stemOnlyClips }
+}
 
 const collectEligibleAudioMix = (timelineState) => {
   const audioClips = collectAudioMixClips(timelineState.clips, timelineState.tracks)
@@ -1158,6 +1172,8 @@ const runExportTimeline = async (options, onProgress, scheduler) => {
     audioChannels = 2,
     normalizeAudio = false,
     loudnessTarget = -14,
+    // FILM-2016: studioAudioExportOptions(project) for a StorybookStudio project.
+    studioAudio = null,
     useCachedRenders = true,
     useProxyMedia = false,
     fastSeek = true,
@@ -1356,6 +1372,7 @@ const runExportTimeline = async (options, onProgress, scheduler) => {
       const wavIsFinal = outputExtension === 'wav' && !normalizeAudio
       const mixTarget = wavIsFinal ? outputPath : audioPath
       updateAudioStatus('Preparing FFmpeg audio mix…', 10)
+      const studioMix = studioMixPayload(studioAudio, timelineState, outputPath)
       const mixResult = await window.electronAPI.mixAudio({
         projectPath: projectState.currentProjectHandle,
         outputPath: mixTarget,
@@ -1365,9 +1382,10 @@ const runExportTimeline = async (options, onProgress, scheduler) => {
         channels: audioChannels || 2,
         masterVolume: masterAudioGain * 100,
         timeoutMs: AUDIO_MIX_TIMEOUT_MS,
-        clips: eligibleAudioClips.map(serializeAudioClipForMix),
+        clips: [...eligibleAudioClips, ...studioMix.stemOnlyClips].map(serializeAudioClipForMix),
         tracks: serializeAudioTracksForMix(timelineState.tracks),
         assets: serializeAudioAssetsForMix(assetsState.assets),
+        ...studioMix.request,
       })
       console.log('[audio-mix] FFmpeg result', JSON.stringify(mixResult))
       if (!mixResult?.success) {
@@ -3804,6 +3822,7 @@ const runExportTimeline = async (options, onProgress, scheduler) => {
           ffmpegMixHeartbeat = setInterval(() => {
             updateAudioStatus('Mixing audio…', 86)
           }, 5000)
+          const studioMix = studioMixPayload(studioAudio, timelineState, outputPath)
           const mixResult = await window.electronAPI.mixAudio({
             projectPath: projectHandle,
             outputPath: audioPath,
@@ -3813,9 +3832,10 @@ const runExportTimeline = async (options, onProgress, scheduler) => {
             channels: channelCount,
             masterVolume: masterAudioGain * 100,
             timeoutMs: AUDIO_MIX_TIMEOUT_MS,
-            clips: eligibleAudioClips.map(serializeClipForMix),
+            clips: [...eligibleAudioClips, ...studioMix.stemOnlyClips].map(serializeClipForMix),
             tracks: serializeAudioTracksForMix(timelineState.tracks),
             assets: serializeAssetsForMix(),
+            ...studioMix.request,
           })
           console.log('[audio-mix] FFmpeg result', JSON.stringify(mixResult))
           if (ffmpegMixHeartbeat) clearInterval(ffmpegMixHeartbeat)

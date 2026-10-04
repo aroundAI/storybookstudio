@@ -11,6 +11,7 @@ import { timeToFrameIndex } from '../utils/timelineFrames'
 import { formatExportOverviewTimecode } from '../utils/exportTimelineOverview.mjs'
 import './ExportWorkspace.css'
 import useProjectStore, { RESOLUTION_PRESETS, FPS_PRESETS } from '../stores/projectStore'
+import { studioAudioExportOptions } from '../studio/audio/exportOptions.js'
 import useTimelineStore from '../stores/timelineStore'
 import useAssetsStore from '../stores/assetsStore'
 import exportTimeline from '../services/exporter'
@@ -1255,6 +1256,7 @@ function ExportPanel({ active = true }) {
         ? false
         : (jobSettings.includeAudio || jobSettings.format === 'audio') && !!jobSettings.normalizeAudio,
       loudnessTarget: Number(jobSettings.loudnessTarget) || -14,
+      studioAudio: studioAudioExportOptions(useProjectStore.getState().currentProject, { stems: !!jobSettings.studioStems }),
       useCachedRenders: false,
       useProxyMedia: jobSettings.useProxyMedia,
       fastSeek: false,
