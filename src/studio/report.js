@@ -1,13 +1,17 @@
 // The explain-why report (FILM-2012 AC7, PRD R-24): what a version removed,
 // trimmed, moved, added or changed, per scene, with the reason each op-log
 // line carries; scene and total durations before and after; audio changes;
-// and a slot for the QA result (FILM-2014). JSON in the shape of
-// ExplainWhyReportSchema (FILM-2003) and the text block the PRD shows.
+// and a slot for the QA result (FILM-2014). JSON that parses as StoryBook's
+// ExplainWhyReportSchema (FILM-2003; the generated copy in contracts/), and
+// the text block the PRD shows. Fields the schema does not name (op ids,
+// clip ids, start times, scene counts, QA, changes outside any scene) ride
+// along for the Studio's own screens; StoryBook's parse drops them.
 // `before` is the version's snapshot, `after` the document at the version's
 // end (the next version's snapshot, or the current document).
 // Pure module: no Electron, no stores.
 import { touchedClipIds } from './documentDiff.js'
 import { CREATE_VERSION_TOOL } from './oplog.js'
+import { ROUGH_CUT_VERSION_NAME } from './openFromPackage.js'
 
 export const reportPathFor = (versionId) => `edits/reports/${versionId}.json`
 
@@ -22,9 +26,12 @@ const timelineOf = (document, timelineId) => {
   return document || { tracks: [], clips: [] }
 }
 
-const sceneOf = (clip) => (Number.isInteger(clip?.metadata?.semantic?.scene) ? clip.metadata.semantic.scene : null)
+// StoryBook numbers scenes from 1; anything else is outside a scene.
+const sceneOf = (clip) => (Number.isInteger(clip?.metadata?.semantic?.scene) && clip.metadata.semantic.scene >= 1 ? clip.metadata.semantic.scene : null)
 const endOf = (clip) => (Number(clip.startTime) || 0) + (Number(clip.duration) || 0)
-const placement = (clip) => (clip ? { trackId: clip.trackId ?? null, startTime: round(Number(clip.startTime) || 0), duration: round(Number(clip.duration) || 0) } : null)
+const durationOf = (clip) => (clip ? round(Number(clip.duration) || 0) : null)
+const startOf = (clip) => (clip ? round(Number(clip.startTime) || 0) : null)
+const PICTURE_TYPES = new Set(['video', 'image'])
 
 const pictureSpan = (clips) => {
   if (clips.length === 0) return 0
@@ -53,6 +60,24 @@ const changedFields = (before, after) => {
   return [...keys].filter((key) => !PLACEMENT_KEYS.has(key) && key !== 'gainDb' && JSON.stringify(before[key]) !== JSON.stringify(after[key])).sort()
 }
 
+const timecode = (value) => {
+  const minutes = Math.floor(value / 60)
+  const rest = value - minutes * 60
+  const whole = Math.abs(rest - Math.round(rest)) < 0.05
+  return `${minutes}:${whole ? String(Math.round(rest)).padStart(2, '0') : rest.toFixed(1).padStart(4, '0')}`
+}
+const signed = (value) => `${value > 0 ? '+' : ''}${Number(value).toFixed(1)}`
+const seconds = (value) => `${Number(value).toFixed(1)} s`
+
+// ReportAudioChangeSchema is {target, change, reason}; `change` is the words.
+const audioChange = ({ kind, label, before, after, reason, by, opId, clipId = null, trackId = null }) => {
+  const words = kind === 'gain' ? `${signed(after - before)} dB`
+    : kind === 'track_volume' ? `volume ${before} -> ${after}`
+      : kind === 'trimmed' ? `trimmed ${seconds(before)} -> ${seconds(after)}`
+        : kind
+  return { target: label, change: words, reason, kind, before, after, by, opId, clipId, trackId }
+}
+
 export function buildExplainWhyReport({ log, versions, versionId, before, after, qa = null, target = null }) {
   const index = versions.findIndex((version) => version.id === versionId)
   if (index < 0) throw new Error(`Unknown version ${versionId}`)
@@ -70,7 +95,10 @@ export function buildExplainWhyReport({ log, versions, versionId, before, after,
     const touching = rangeOps.filter((entry) => touchedByOp.get(entry.op).has(id) || JSON.stringify(entry.args ?? {}).includes(`"${id}"`))
     const naming = touching.filter((entry) => JSON.stringify(entry.args ?? {}).includes(`"${id}"`))
     const chosen = (naming.length > 0 ? naming : touching).at(-1)
-    return chosen ? { reason: chosen.reason ?? null, by: chosen.by, opId: chosen.op } : { reason: null, by: null, opId: null }
+    // A change no logged op explains was made by hand outside the logged
+    // mutators (FILM-2012: AI changes always go through the log).
+    const by = chosen?.by ?? 'user'
+    return { reason: chosen?.reason || (by === 'user' ? 'Hand edit' : 'No reason recorded'), by, opId: chosen?.op ?? null }
   }
 
   const timelineId = after?.currentTimelineId ?? before?.currentTimelineId ?? null
@@ -105,24 +133,33 @@ export function buildExplainWhyReport({ log, versions, versionId, before, after,
     const label = clip.name || id
     const attribution = kinds.length > 0 || (was && now && (was.gainDb ?? 0) !== (now.gainDb ?? 0)) ? attribute(id) : null
     if (was && now && isAudio(clip) && (was.gainDb ?? 0) !== (now.gainDb ?? 0)) {
-      audio.push({ kind: 'gain', target: id, label, before: was.gainDb ?? 0, after: now.gainDb ?? 0, ...attribution })
+      audio.push(audioChange({ kind: 'gain', clipId: id, label, before: was.gainDb ?? 0, after: now.gainDb ?? 0, ...attribution }))
     }
     const scene = sceneOf(was) ?? sceneOf(now)
     for (const kind of kinds) {
       if (isAudio(clip) && scene === null) {
-        audio.push({ kind, target: id, label, before: was ? round(was.duration) : null, after: now ? round(now.duration) : null, ...attribution })
+        audio.push(audioChange({ kind, clipId: id, label, before: durationOf(was), after: durationOf(now), ...attribution }))
         continue
       }
       if (!sceneChanges.has(scene)) sceneChanges.set(scene, [])
-      sceneChanges.get(scene).push({
-        kind,
+      const change = {
+        action: kind,
+        target: label,
+        reason: attribution.reason,
+        before: durationOf(was),
+        after: durationOf(now),
+        by: attribution.by,
         clipId: id,
-        label,
-        before: placement(was),
-        after: placement(now),
-        ...(kind === 'changed' ? { fields } : {}),
-        ...attribution,
-      })
+        opId: attribution.opId,
+        startBefore: startOf(was),
+        startAfter: startOf(now),
+      }
+      if (kind === 'moved') change.detail = `to ${timecode(change.startAfter)}`
+      if (kind === 'changed') {
+        change.fields = fields
+        change.detail = fields.join(', ') || 'changed'
+      }
+      sceneChanges.get(scene).push(change)
     }
   }
 
@@ -130,77 +167,75 @@ export function buildExplainWhyReport({ log, versions, versionId, before, after,
     const was = (timelineBefore.tracks || []).find((candidate) => candidate.id === trackId)
     const now = (timelineAfter.tracks || []).find((candidate) => candidate.id === trackId)
     if (track.type !== 'audio' || !was || !now || (was.volume ?? 1) === (now.volume ?? 1)) continue
-    audio.push({ kind: 'track_volume', target: trackId, label: now.name || trackId, before: was.volume ?? 1, after: now.volume ?? 1, ...attribute(trackId) })
+    audio.push(audioChange({ kind: 'track_volume', trackId, label: now.name || trackId, before: was.volume ?? 1, after: now.volume ?? 1, ...attribute(trackId) }))
   }
 
   const pictureBefore = (timelineBefore.clips || []).filter((clip) => !isAudio(clip))
   const pictureAfter = (timelineAfter.clips || []).filter((clip) => !isAudio(clip))
   const sceneNumbers = new Set([...pictureBefore, ...pictureAfter].map(sceneOf))
   for (const scene of sceneChanges.keys()) sceneNumbers.add(scene)
-  const orderedScenes = [...sceneNumbers].sort((a, b) => (a === null) - (b === null) || a - b)
-  const scenes = orderedScenes.map((scene) => ({
+  const sceneEntry = (scene) => ({
     scene,
     durationBefore: pictureSpan(pictureBefore.filter((clip) => sceneOf(clip) === scene)),
     durationAfter: pictureSpan(pictureAfter.filter((clip) => sceneOf(clip) === scene)),
     changes: sceneChanges.get(scene) || [],
-  }))
+  })
+  const scenes = [...sceneNumbers].filter((scene) => scene !== null).sort((a, b) => a - b).map(sceneEntry)
+  const unassigned = sceneNumbers.has(null) && (sceneChanges.get(null) || []).length > 0 ? sceneEntry(null) : null
   const scenesBefore = new Set(pictureBefore.map(sceneOf).filter((scene) => scene !== null))
   const scenesAfter = new Set(pictureAfter.map(sceneOf))
   const totalEnd = (clips) => round(clips.reduce((max, clip) => Math.max(max, endOf(clip)), 0))
   const durationAfter = totalEnd(pictureAfter)
+  // The cut's style for FILM-2006: picture clips on the timeline. No picture
+  // means unmeasured, so the field is left out rather than zero.
+  const shotCount = pictureAfter.filter((clip) => PICTURE_TYPES.has(clip.type)).length
 
   return {
     versions: versions.slice(0, index + 1).map(({ id, name, parent: parentId, opRange, createdBy, createdAt, prompt }) => ({
-      id, name, parent: parentId, opRange: [...opRange], createdBy, createdAt, prompt,
+      id,
+      label: name,
+      parentId,
+      createdAt,
+      origin: !parentId && name === ROUGH_CUT_VERSION_NAME ? 'rough_cut' : createdBy,
+      opRange: [...opRange],
+      createdBy,
+      prompt,
     })),
     finalDuration: durationAfter,
     aiOps: counted.filter((entry) => entry.by === 'ai').length,
     userOps: counted.filter((entry) => entry.by === 'user').length,
     explain: {
+      plan: record.prompt ?? null,
+      targetDuration: target ?? null,
+      durationBefore: totalEnd(pictureBefore),
+      scenes,
+      audio,
       versionId: record.id,
       versionName: record.name,
       baseVersionName: parent?.name ?? null,
-      plan: record.prompt ?? null,
-      durationBefore: totalEnd(pictureBefore),
       durationAfter,
-      target: target ?? null,
       scenesKept: [...scenesBefore].filter((scene) => scenesAfter.has(scene)).length,
       scenesTotal: scenesBefore.size,
-      scenes,
-      audio,
+      unassigned,
       qa: qa ?? null,
     },
+    ...(shotCount > 0 ? { style: { shotCount, hookType: null } } : {}),
   }
 }
 
 const COLUMN = 38
-const seconds = (value) => `${Number(value).toFixed(1)} s`
 const plainNumber = (value) => (Number.isInteger(value) ? String(value) : Number(value).toFixed(1))
-const signed = (value) => `${value > 0 ? '+' : ''}${Number(value).toFixed(1)}`
 const columns = (left, right) => (left.length < COLUMN - 1 ? `${left.padEnd(COLUMN)}${right}` : `${left}  ${right}`)
-const timecode = (value) => {
-  const minutes = Math.floor(value / 60)
-  const rest = value - minutes * 60
-  const whole = Math.abs(rest - Math.round(rest)) < 0.05
-  return `${minutes}:${whole ? String(Math.round(rest)).padStart(2, '0') : rest.toFixed(1).padStart(4, '0')}`
-}
-const why = (change) => change.reason ?? (change.by === 'user' ? 'Hand edit' : 'No reason recorded')
 
 const changeLine = (change) => {
-  const kind = `${change.kind[0].toUpperCase()}${change.kind.slice(1)}`.padEnd(9)
-  switch (change.kind) {
-    case 'trimmed': return `  ${kind}${change.label}  ${seconds(change.before.duration)} -> ${seconds(change.after.duration)}`
-    case 'removed': return `  ${kind}${change.label}  ${seconds(change.before.duration)}`
-    case 'added': return `  ${kind}${change.label}  ${seconds(change.after.duration)}`
-    case 'moved': return `  ${kind}${change.label} -> ${timecode(change.after.startTime)}`
-    default: return `  ${kind}${change.label}  ${(change.fields || []).join(', ')}`
+  const action = `${change.action[0].toUpperCase()}${change.action.slice(1)}`.padEnd(9)
+  switch (change.action) {
+    case 'trimmed': return `  ${action}${change.target}  ${seconds(change.before)} -> ${seconds(change.after)}`
+    case 'removed': return `  ${action}${change.target}  ${seconds(change.before)}`
+    case 'added': return `  ${action}${change.target}  ${seconds(change.after)}`
+    case 'moved': return `  ${action}${change.target} -> ${timecode(change.startAfter)}`
+    default: return `  ${action}${change.target}  ${change.detail ?? ''}`
   }
-}
-
-const audioDetail = (change) => {
-  if (change.kind === 'gain') return `${signed(change.after - change.before)} dB`
-  if (change.kind === 'track_volume') return `volume ${change.before} -> ${change.after}`
-  return change.kind
 }
 
 export function formatExplainWhyText(report) {
@@ -212,16 +247,16 @@ export function formatExplainWhyText(report) {
     ),
     columns(
       `Duration: ${seconds(explain.durationBefore)} -> ${seconds(explain.durationAfter)}`,
-      `Target: ${explain.target == null ? 'none' : `${plainNumber(explain.target)} s`}   Scenes kept: ${explain.scenesKept} of ${explain.scenesTotal}`,
+      `Target: ${explain.targetDuration == null ? 'none' : `${plainNumber(explain.targetDuration)} s`}   Scenes kept: ${explain.scenesKept} of ${explain.scenesTotal}`,
     ),
     '',
   ]
-  for (const scene of explain.scenes) {
+  for (const scene of [...explain.scenes, ...(explain.unassigned ? [explain.unassigned] : [])]) {
     if (scene.changes.length === 0) continue
     lines.push(`${scene.scene === null ? 'Unassigned' : `Scene ${scene.scene}`}  ${seconds(scene.durationBefore)} -> ${seconds(scene.durationAfter)}`)
-    for (const change of scene.changes) lines.push(columns(changeLine(change), why(change)))
+    for (const change of scene.changes) lines.push(columns(changeLine(change), change.reason))
   }
-  for (const change of explain.audio) lines.push(columns(`${'Audio'.padEnd(10)}${change.label} ${audioDetail(change)}`, why(change)))
+  for (const change of explain.audio) lines.push(columns(`${'Audio'.padEnd(10)}${change.target} ${change.change}`, change.reason))
   if (!explain.qa) lines.push(`${'QA'.padEnd(10)}not run`)
   else {
     const count = explain.qa.issues.length

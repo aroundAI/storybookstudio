@@ -2,26 +2,28 @@
   "versions": [
     {
       "id": "v1",
-      "name": "Rough cut",
-      "parent": null,
+      "label": "Rough cut",
+      "parentId": null,
+      "createdAt": "2026-10-03T10:40:02.000Z",
+      "origin": "rough_cut",
       "opRange": [
         1,
         1
       ],
       "createdBy": "ai",
-      "createdAt": "2026-10-03T10:40:02.000Z",
       "prompt": null
     },
     {
       "id": "v2",
-      "name": "AI cut v2",
-      "parent": "v1",
+      "label": "AI cut v2",
+      "parentId": "v1",
+      "createdAt": "2026-10-03T10:40:04.000Z",
+      "origin": "ai",
       "opRange": [
         2,
         null
       ],
       "createdBy": "ai",
-      "createdAt": "2026-10-03T10:40:04.000Z",
       "prompt": "Tighten scene 1"
     }
   ],
@@ -29,15 +31,9 @@
   "aiOps": 4,
   "userOps": 1,
   "explain": {
-    "versionId": "v2",
-    "versionName": "AI cut v2",
-    "baseVersionName": "Rough cut",
     "plan": "Tighten scene 1",
+    "targetDuration": 30,
     "durationBefore": 32.9,
-    "durationAfter": 28.2,
-    "target": 30,
-    "scenesKept": 3,
-    "scenesTotal": 3,
     "scenes": [
       {
         "scene": 1,
@@ -45,36 +41,28 @@
         "durationAfter": 11.2,
         "changes": [
           {
-            "kind": "trimmed",
-            "clipId": "c12",
-            "label": "Shot 1.2",
-            "before": {
-              "trackId": "video-1",
-              "startTime": 5,
-              "duration": 4.8
-            },
-            "after": {
-              "trackId": "video-1",
-              "startTime": 5,
-              "duration": 3.2
-            },
+            "action": "trimmed",
+            "target": "Shot 1.2",
             "reason": "Information already given by dialogue",
+            "before": 4.8,
+            "after": 3.2,
             "by": "ai",
-            "opId": 3
+            "clipId": "c12",
+            "opId": 3,
+            "startBefore": 5,
+            "startAfter": 5
           },
           {
-            "kind": "removed",
-            "clipId": "c14",
-            "label": "Shot 1.4",
-            "before": {
-              "trackId": "video-1",
-              "startTime": 12.8,
-              "duration": 2.1
-            },
-            "after": null,
+            "action": "removed",
+            "target": "Shot 1.4",
             "reason": "Duplicate establishing shot",
+            "before": 2.1,
+            "after": null,
             "by": "ai",
-            "opId": 4
+            "clipId": "c14",
+            "opId": 4,
+            "startBefore": 12.8,
+            "startAfter": null
           }
         ]
       },
@@ -84,22 +72,16 @@
         "durationAfter": 10,
         "changes": [
           {
-            "kind": "trimmed",
-            "clipId": "c21",
-            "label": "Shot 2.1",
-            "before": {
-              "trackId": "video-1",
-              "startTime": 14.9,
-              "duration": 6
-            },
-            "after": {
-              "trackId": "video-1",
-              "startTime": 11.2,
-              "duration": 5
-            },
-            "reason": null,
+            "action": "trimmed",
+            "target": "Shot 2.1",
+            "reason": "Hand edit",
+            "before": 6,
+            "after": 5,
             "by": "user",
-            "opId": 7
+            "clipId": "c21",
+            "opId": 7,
+            "startBefore": 14.9,
+            "startAfter": 11.2
           }
         ]
       },
@@ -109,59 +91,62 @@
         "durationAfter": 7,
         "changes": [
           {
-            "kind": "moved",
-            "clipId": "c35",
-            "label": "Shot 3.5",
-            "before": {
-              "trackId": "video-1",
-              "startTime": 29.9,
-              "duration": 3
-            },
-            "after": {
-              "trackId": "video-1",
-              "startTime": 21.2,
-              "duration": 3
-            },
+            "action": "moved",
+            "target": "Shot 3.5",
             "reason": "Strongest sound bite, used as the hook",
+            "before": 3,
+            "after": 3,
             "by": "ai",
-            "opId": 5
+            "clipId": "c35",
+            "opId": 5,
+            "startBefore": 29.9,
+            "startAfter": 21.2,
+            "detail": "to 0:21.2"
           },
           {
-            "kind": "moved",
-            "clipId": "c31",
-            "label": "Shot 3.1",
-            "before": {
-              "trackId": "video-1",
-              "startTime": 25.9,
-              "duration": 4
-            },
-            "after": {
-              "trackId": "video-1",
-              "startTime": 24.2,
-              "duration": 4
-            },
+            "action": "moved",
+            "target": "Shot 3.1",
             "reason": "Strongest sound bite, used as the hook",
+            "before": 4,
+            "after": 4,
             "by": "ai",
-            "opId": 5
+            "clipId": "c31",
+            "opId": 5,
+            "startBefore": 25.9,
+            "startAfter": 24.2,
+            "detail": "to 0:24.2"
           }
         ]
       }
     ],
     "audio": [
       {
+        "target": "Music",
+        "change": "-8.0 dB",
+        "reason": "Dialogue was masked at 0:42-0:47",
         "kind": "gain",
-        "target": "m1",
-        "label": "Music",
         "before": 0,
         "after": -8,
-        "reason": "Dialogue was masked at 0:42-0:47",
         "by": "ai",
-        "opId": 6
+        "opId": 6,
+        "clipId": "m1",
+        "trackId": null
       }
     ],
+    "versionId": "v2",
+    "versionName": "AI cut v2",
+    "baseVersionName": "Rough cut",
+    "durationAfter": 28.2,
+    "scenesKept": 3,
+    "scenesTotal": 3,
+    "unassigned": null,
     "qa": {
       "pass": true,
       "issues": []
     }
+  },
+  "style": {
+    "shotCount": 7,
+    "hookType": null
   }
 }
