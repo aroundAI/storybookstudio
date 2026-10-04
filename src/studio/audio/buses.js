@@ -184,3 +184,13 @@ export function stemKeyFor(track) {
   if (!bus) return null
   return bus === DIALOGUE_BUS ? `dialogue-${track.language || 'und'}` : bus
 }
+
+// Caption transcription hears speech: on a bussed project, the dialogue bus
+// and shot audio (Veo shots can carry their own lines); music, sfx and
+// ambience are muted for the ASR mix. Unbussed tracks are heard as before.
+export const TRANSCRIBED_BUSES = Object.freeze([DIALOGUE_BUS, 'shotaudio'])
+export function isTranscribedTrack(track) {
+  const bus = busForTrack(track)
+  return bus === null || TRANSCRIBED_BUSES.includes(bus)
+}
+export const transcriptionTracks = (tracks) => (tracks || []).map((track) => (isTranscribedTrack(track) ? track : { ...track, muted: true }))
