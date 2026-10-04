@@ -10,11 +10,12 @@ const { createStudioDeliver } = require('./deliver')
 const { createDeliveryPath } = require('./deliveryPath')
 const { createAudioReads } = require('./audioReads')
 const { createStudioUiMain } = require('./studioUi')
+const { applyAppBranding } = require('./appBranding')
 
 // Velorn's own temp working directories; Electron has no "cache" path name.
 const CACHE_DIR_NAMES = ['comfystudio-shot-audio', 'comfystudio-caption-audio']
 
-function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, getMcpServer, getFfprobePath = () => null, getFfmpegPath = () => null, getMediaPreparation = () => null, dialog = null }) {
+function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, getMcpServer, getFfprobePath = () => null, getFfmpegPath = () => null, getMediaPreparation = () => null, dialog = null, iconPath = null }) {
   // A separate profile (and so a separate single-instance lock) for a
   // development run beside an installed StorybookStudio.
   if (process.env.STUDIO_USER_DATA_DIR) app.setPath('userData', process.env.STUDIO_USER_DATA_DIR)
@@ -129,6 +130,7 @@ function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, get
     deliver,
     isPrimaryInstance: cloud.protocol.primary,
     onReady() {
+      applyAppBranding({ app, iconPath })
       secrets.configureSecrets({ userDataDir: app.getPath('userData'), safeStorage })
       cloud.onReady()
     },

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="StoryBook">
+<title>StoryBook</title>
+<defs><mask id="sb-m-perf" maskUnits="userSpaceOnUse" x="0" y="0" width="256" height="256"><rect width="256" height="256" fill="#fff"/><g fill="#000"><rect x="172.5" y="139" width="13" height="14" rx="3.5"/><rect x="172.5" y="161" width="13" height="14" rx="3.5"/><rect x="172.5" y="183" width="13" height="14" rx="3.5"/></g></mask></defs>
+<g transform="translate(128 128) skewX(-12) translate(-128 -128)"><path d="M162 26H118A62 62 0 0 0 118 150H138A18 18 0 0 1 138 186H70V230H138A62 62 0 0 0 138 106H118A18 18 0 0 1 118 70H186V50Z" fill="#000000" mask="url(#sb-m-perf)"/><path d="M162 26L186 50H162Z" fill="#000000" fill-opacity="0.55"/></g>
+</svg>
