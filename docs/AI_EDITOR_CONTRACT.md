@@ -37,7 +37,7 @@ Both profiles are served on `http://127.0.0.1:19790/mcp`, chosen by `?profile=ag
 
 ### IN4 Probed assets
 - **In:** Downloaded media under `assets/`.
-- **Out:** Per file: sha256 verified against the package, ffprobe `{duration, fps, width, height, codecs, hasAudio}`. A file that fails verification twice is marked offline.
+- **Out:** Per file: verified against the package (sha256 when StoryBook recorded one, else `bytes`: FILM-2001 records sha256 only for `assets` rows), ffprobe `{duration, fps, width, height, codecs, hasAudio}`. A file that fails verification twice is marked offline. Records in `storybook/probed-assets.json`, keyed by the media `key`.
 - **Guarantees:** No asset points at an unverified file. A slot with no verified file (a `url: null` slot, or one not downloaded) becomes an offline asset: `path: null`, `offline: {reason}`, listed in the builder's `warnings`; its clip keeps its planned place until `relink_asset` points it at a file. An offline asset surfaces in `check_media_health` and in readiness (L2).
 - **Built by:** FILM-2011 (`electron/studio/pull.js`).
 
@@ -246,8 +246,8 @@ The order is L1 to L8. L9 can happen at any point after L3.
 
 ### L9 Re-sync
 - **In:** `studio_check_updates()`, `studio_apply_updates()`. Polling runs every 5 minutes while a project is open.
-- **Out:** Changed shots and dialogue, and a replacement plan of `replace_clip_with_asset` calls.
-- **Guarantees:** Changed media lands under new file names. Nothing is applied without approval (A3, A4).
+- **Out:** Changed shots (by media `key`) and dialogue (by id), and a plan of previewOnly `import_asset_from_path`, `replace_clip_with_asset`, `delete_clips` and `add_asset_to_timeline` steps with a reason each, sent to the AI panel as `studio:plan-proposed`. A regenerated shot's separate shot-audio clip is listed as unresolved: Velorn replaces an audio clip only with an audio asset.
+- **Guarantees:** Changed media lands under new file names. Nothing is applied without approval (A3, A4). The newer package waits in `storybook/package.next.json`.
 - **Built by:** FILM-2011 (`sync.js`), FILM-2013 (tools).
 
 ## 8. Errors and safety

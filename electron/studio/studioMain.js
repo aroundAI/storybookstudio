@@ -4,12 +4,16 @@
 const path = require('path')
 const { loadOrCreateMcpSecret, buildMcpConnectCommand } = require('./mcpSecret')
 const { comfystudioUrlToPath, resolveAllowedPath, createGrantedFileSet } = require('./protocolAllowlist')
-const { configureSecrets } = require('./secrets')
+const secrets = require('./secrets')
+const { createStudioCloud } = require('./cloud')
 
 // Velorn's own temp working directories; Electron has no "cache" path name.
 const CACHE_DIR_NAMES = ['comfystudio-shot-audio', 'comfystudio-caption-audio']
 
-function createStudioMain({ app, ipcMain, safeStorage, getMainWindow, getMcpServer }) {
+function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, getMcpServer, getFfprobePath = () => null }) {
+  // A separate profile (and so a separate single-instance lock) for a
+  // development run beside an installed StorybookStudio.
+  if (process.env.STUDIO_USER_DATA_DIR) app.setPath('userData', process.env.STUDIO_USER_DATA_DIR)
   let mcpSecret = null
   const grantedFiles = createGrantedFileSet()
 
@@ -31,6 +35,19 @@ function createStudioMain({ app, ipcMain, safeStorage, getMainWindow, getMcpServ
     return { success: true, ...buildMcpConnectCommand({ url, secret: getMcpSecret() }) }
   })
 
+  // FILM-2011: sign-in, pull, re-sync, edit events and velorn:// links.
+  // Created here, at load, so the scheme and the single-instance lock are
+  // claimed before `ready` (macOS delivers open-url that early).
+  const cloud = createStudioCloud({
+    app,
+    ipcMain,
+    shell,
+    secrets,
+    getMainWindow,
+    isMainWindowSender,
+    getFfprobePath,
+  })
+
   const protocolRoots = () => {
     const temp = app.getPath('temp')
     const openProjectPath = getMcpServer()?.lastSnapshot?.project?.path
@@ -43,8 +60,11 @@ function createStudioMain({ app, ipcMain, safeStorage, getMainWindow, getMcpServ
 
   return {
     getMcpSecret,
+    cloud,
+    isPrimaryInstance: cloud.protocol.primary,
     onReady() {
-      configureSecrets({ userDataDir: app.getPath('userData'), safeStorage })
+      secrets.configureSecrets({ userDataDir: app.getPath('userData'), safeStorage })
+      cloud.onReady()
     },
     // media:getFileUrl is reachable only from windows that load the preload,
     // which already read any file through fs IPC; this grants nothing new to
