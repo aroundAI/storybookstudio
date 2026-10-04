@@ -180,6 +180,22 @@ function runFfmpeg(ffmpegPath, args, { timeoutMs = 180000 } = {}) {
   })
 }
 
+// FFmpeg's reason for failing, first: the lines that say what went wrong
+// ("Cannot select channel layout …", "No such file …"), not the progress
+// noise or a tail cut mid-line. Falls back to the last lines it printed.
+const NOISE = /^(Press \[q\]|\s*Stream #|\s*Metadata:|\s*Duration:|Input #|Output #|\s*encoder\s*:|size=)/
+const REASON = /(error|cannot|invalid|fail|no such|not found|unable|could not|unknown|denied|mismatch)/i
+export function ffmpegFailureReason(stderr, { timedOut = false } = {}) {
+  if (timedOut) return 'FFmpeg timed out.'
+  const lines = String(stderr || '').split(/\r?\n/).map((line) => line.replace(/^\[[^\]]+ @ 0x[0-9a-f]+\]\s*/, '').trim()).filter((line) => line && !NOISE.test(line) && !/^[:.\s]*$/.test(line))
+  const reasons = [...new Set(lines.filter((line) => REASON.test(line)))]
+  // The specific line before FFmpeg's generic epilogue.
+  const generic = /^(Error reinitializing filters!|Conversion failed!|Error while processing|Failed to inject frame)/
+  const ordered = [...reasons.filter((line) => !generic.test(line)), ...reasons.filter((line) => generic.test(line))]
+  const chosen = ordered.length ? ordered : lines.slice(-3)
+  return (chosen.join('\n') || 'FFmpeg failed without saying why.').slice(0, 1500)
+}
+
 const lastJson = (text) => {
   const start = text.lastIndexOf('{')
   const end = text.lastIndexOf('}')
@@ -198,7 +214,7 @@ export async function measureLoudness(ffmpegPath, file, { start = null, duration
   if (duration !== null) args.push('-t', num(duration))
   args.push('-i', file, '-af', 'ebur128=peak=true', '-f', 'null', '-')
   const { code, stderr } = await runFfmpeg(ffmpegPath, args, { timeoutMs })
-  if (code !== 0) throw new Error(`ebur128 failed on ${path.basename(file)}: ${stderr.slice(-400)}`)
+  if (code !== 0) throw new Error(`ebur128 failed on ${path.basename(file)}: ${ffmpegFailureReason(stderr)}`)
   const summary = stderr.slice(stderr.lastIndexOf('Summary:'))
   const pick = (pattern) => {
     const match = summary.match(pattern)
@@ -229,6 +245,7 @@ export async function runStudioBusMix({
   timeoutMs = 180000,
 }) {
   if (!inputs?.length) return { success: false, error: 'No eligible audio clips for mix.' }
+  const layout = channels === 1 ? 'mono' : 'stereo'
   const work = await fs.mkdtemp(path.join(os.tmpdir(), 'studio-busmix-'))
   try {
     const withStems = Boolean(stems?.directory)
@@ -240,23 +257,27 @@ export async function runStudioBusMix({
     const rawStems = graph.stems.map((stem) => ({ ...stem, raw: path.join(work, `${safeLabel(stem.key)}.wav`) }))
     for (const stem of rawStems) args.push('-map', `[${stem.label}]`, '-ar', String(sampleRate), '-ac', String(channels), '-c:a', 'pcm_f32le', stem.raw)
     const mixed = await runFfmpeg(ffmpegPath, args, { timeoutMs })
-    if (mixed.code !== 0) return { success: false, error: mixed.timedOut ? 'Audio bus mix timed out.' : mixed.stderr.slice(-2000) }
+    if (mixed.code !== 0) return { success: false, error: ffmpegFailureReason(mixed.stderr, { timedOut: mixed.timedOut }) }
 
     let gainDb = 0
     let loudness = null
     if (Number.isFinite(loudnessTargetLufs)) {
       const measure = await runFfmpeg(ffmpegPath, ['-hide_banner', '-nostats', '-i', premix, '-af', `loudnorm=I=${num(loudnessTargetLufs)}:TP=${LOUDNORM_TRUE_PEAK_DB}:LRA=50:print_format=json`, '-f', 'null', '-'], { timeoutMs })
       const first = lastJson(measure.stderr)
-      if (measure.code !== 0 || !first) return { success: false, error: `Loudness measure failed: ${measure.stderr.slice(-600)}` }
+      if (measure.code !== 0 || !first) return { success: false, error: `Loudness measure failed: ${ffmpegFailureReason(measure.stderr, { timedOut: measure.timedOut })}` }
       const silent = first.input_i === '-inf' || !Number.isFinite(Number(first.input_i))
       if (silent) {
         loudness = { target: loudnessTargetLufs, input: null, output: null, normalizationType: 'none', reason: 'silent' }
         await fs.copyFile(premix, path.join(work, 'normalized.wav'))
       } else {
-        const filter = `loudnorm=I=${num(loudnessTargetLufs)}:TP=${LOUDNORM_TRUE_PEAK_DB}:LRA=50:measured_I=${first.input_i}:measured_TP=${first.input_tp}:measured_LRA=${first.input_lra}:measured_thresh=${first.input_thresh}:offset=${first.target_offset}:linear=true:print_format=json,aresample=${sampleRate}`
-        const second = await runFfmpeg(ffmpegPath, ['-y', '-hide_banner', '-nostats', '-i', premix, '-af', filter, '-ar', String(sampleRate), '-c:a', 'pcm_f32le', path.join(work, 'normalized.wav')], { timeoutMs })
+        const filter = `loudnorm=I=${num(loudnessTargetLufs)}:TP=${LOUDNORM_TRUE_PEAK_DB}:LRA=50:measured_I=${first.input_i}:measured_TP=${first.input_tp}:measured_LRA=${first.input_lra}:measured_thresh=${first.input_thresh}:offset=${first.target_offset}:linear=true:print_format=json,aresample=${sampleRate},aformat=sample_rates=${sampleRate}:channel_layouts=${layout}`
+        // The layout is pinned on the chain and the output: when one gain
+        // would push the true peak past TP, loudnorm turns dynamic, FFmpeg
+        // re-initialises the graph mid-stream, and an unpinned output layout
+        // fails to negotiate ("Cannot select channel layout").
+        const second = await runFfmpeg(ffmpegPath, ['-y', '-hide_banner', '-nostats', '-i', premix, '-af', filter, '-ar', String(sampleRate), '-ac', String(channels), '-c:a', 'pcm_f32le', path.join(work, 'normalized.wav')], { timeoutMs })
         const result = lastJson(second.stderr)
-        if (second.code !== 0 || !result) return { success: false, error: `Loudness normalize failed: ${second.stderr.slice(-600)}` }
+        if (second.code !== 0 || !result) return { success: false, error: `Loudness normalize failed: ${ffmpegFailureReason(second.stderr, { timedOut: second.timedOut })}` }
         gainDb = Number(result.output_i) - Number(result.input_i)
         loudness = {
           target: loudnessTargetLufs,
@@ -272,7 +293,7 @@ export async function runStudioBusMix({
 
     await fs.mkdir(path.dirname(outputPath), { recursive: true })
     const out = await runFfmpeg(ffmpegPath, ['-y', '-hide_banner', '-i', path.join(work, 'normalized.wav'), '-ar', String(sampleRate), '-ac', String(channels), '-c:a', 'pcm_s16le', outputPath], { timeoutMs })
-    if (out.code !== 0) return { success: false, error: out.stderr.slice(-600) }
+    if (out.code !== 0) return { success: false, error: `Mix encode failed: ${ffmpegFailureReason(out.stderr, { timedOut: out.timedOut })}` }
 
     const written = []
     if (withStems) {
@@ -281,7 +302,7 @@ export async function runStudioBusMix({
         const file = path.join(stems.directory, stemFileName(stems.baseName || 'render', stem))
         const gain = gainDb ? ['-af', `volume=${num(gainDb, 4)}dB`] : []
         const done = await runFfmpeg(ffmpegPath, ['-y', '-hide_banner', '-i', stem.raw, ...gain, '-c:a', 'pcm_s24le', file], { timeoutMs })
-        if (done.code !== 0) return { success: false, error: `Stem ${stem.key} failed: ${done.stderr.slice(-400)}` }
+        if (done.code !== 0) return { success: false, error: `Stem ${stem.key} failed: ${ffmpegFailureReason(done.stderr, { timedOut: done.timedOut })}` }
         written.push({ key: stem.key, bus: stem.bus, language: stem.language, path: file })
       }
     }

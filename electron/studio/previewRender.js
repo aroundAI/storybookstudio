@@ -176,7 +176,7 @@ function createPreviewRenderer(options = {}) {
       if (!mixed) {
         await runFfmpegOrThrow(ffmpegPath, ['-loglevel', 'error', '-f', 'lavfi', '-i', `anullsrc=r=${graph.SAMPLE_RATE}:cl=stereo`, '-t', String(to - from), '-c:a', 'pcm_s16le', '-y', file], { signal })
       } else if (!mixed.success) {
-        throw Object.assign(new Error(`Audio bus mix failed: ${String(mixed.error).slice(-400)}`), { code: 'FFMPEG_FAILED' })
+        throw Object.assign(new Error(`Audio bus mix failed: ${String(mixed.error || 'FFmpeg gave no reason').slice(0, 1500)}`), { code: 'FFMPEG_FAILED' })
       } else {
         loudness = mixed.loudness
         const language = timeline?.studio?.language || null
