@@ -1,0 +1,60 @@
+{
+  "name": "Sample Edit",
+  "version": "1.0",
+  "created": "2026-09-01T10:00:00.000Z",
+  "modified": "2026-09-02T10:00:00.000Z",
+  "settings": { "width": 1920, "height": 1080, "fps": 24, "aspectRatio": "1920:1080" },
+  "timelines": [
+    {
+      "id": "timeline-1",
+      "name": "Timeline 1",
+      "color": null,
+      "folderId": null,
+      "created": "2026-09-01T10:00:00.000Z",
+      "modified": "2026-09-02T10:00:00.000Z",
+      "width": null,
+      "height": null,
+      "fps": null,
+      "duration": 60,
+      "zoom": 100,
+      "tracks": [
+        { "id": "video-1", "name": "Video 1", "type": "video", "muted": false, "locked": false, "visible": true },
+        { "id": "audio-1", "name": "Audio 1", "type": "audio", "channels": "stereo", "muted": false, "locked": false, "visible": true, "volume": 1 }
+      ],
+      "clips": [
+        {
+          "id": "clip-1", "trackId": "video-1", "assetId": "asset-1", "name": "beach.mp4", "type": "video",
+          "startTime": 0, "duration": 4.5, "sourceDuration": 10, "trimStart": 0, "trimEnd": 4.5, "enabled": true,
+          "transform": { "positionX": 0, "positionY": 0, "scaleX": 100, "scaleY": 100, "rotation": 0, "opacity": 100 }
+        },
+        {
+          "id": "clip-2", "trackId": "audio-1", "assetId": "asset-2", "name": "music.mp3", "type": "audio",
+          "startTime": 0, "duration": 4.5, "sourceDuration": 120, "trimStart": 0, "trimEnd": 4.5, "gainDb": 0, "enabled": true
+        },
+        {
+          "id": "clip-3", "trackId": "video-1", "assetId": null, "name": "Title", "type": "text",
+          "startTime": 4.5, "duration": 3, "sourceDuration": 3, "trimStart": 0, "trimEnd": 3, "enabled": true,
+          "textProperties": { "text": "Title", "fontSize": 64 }
+        }
+      ],
+      "transitions": [],
+      "markers": [{ "id": "marker-1", "time": 2, "name": "Beat", "color": "#ff0000" }],
+      "clipCounter": 4,
+      "transitionCounter": 1,
+      "markerCounter": 2,
+      "snappingEnabled": true,
+      "snappingThreshold": 10,
+      "rippleEditMode": false
+    }
+  ],
+  "currentTimelineId": "timeline-1",
+  "assets": [
+    { "id": "asset-1", "name": "beach.mp4", "type": "video", "path": "assets/video/beach.mp4", "isImported": true, "url": null, "duration": 10, "folderId": null },
+    { "id": "asset-2", "name": "music.mp3", "type": "audio", "path": "assets/audio/music.mp3", "isImported": true, "url": null, "duration": 120, "folderId": null }
+  ],
+  "folders": [],
+  "folderCounter": 1,
+  "thumbnail": null,
+  "flowAi": null,
+  "generateWorkspace": null
+}
