@@ -18,6 +18,8 @@ import Welcome from './components/studio/Welcome'
 import AIPanel from './components/studio/AIPanel'
 import SceneStrip from './components/studio/SceneStrip'
 import { StudioOverlays, useStudioApp } from './components/studio/StudioRoot'
+import StudioBoundary from './components/studio/StudioBoundary'
+import WelcomeScreen from './components/WelcomeScreen'
 import BottomBar from './components/BottomBar'
 import useProjectStore from './stores/projectStore'
 import useAssetsStore from './stores/assetsStore'
@@ -629,8 +631,8 @@ function App() {
   if (!currentProject) {
     return (
       <>
-        <Welcome />
-        <StudioOverlays />
+        <StudioBoundary name="welcome" fallback={<WelcomeScreen />}><Welcome /></StudioBoundary>
+        <StudioBoundary name="overlays"><StudioOverlays /></StudioBoundary>
       </>
     )
   }
@@ -1044,7 +1046,7 @@ function App() {
                   )}
                 </div>
                 )}
-                <SceneStrip />
+                <StudioBoundary name="scene-strip"><SceneStrip /></StudioBoundary>
                 {/* Bottom editor view switcher */}
                 <div className="flex-shrink-0 h-7 px-2 bg-sf-dark-900 border-y border-sf-dark-700 flex items-center justify-between">
                   <div className="flex items-center gap-1">
@@ -1147,12 +1149,12 @@ function App() {
             )}
           </>
           {/* FILM-2015: the AI panel, right of the inspector */}
-          <AIPanel />
+          <StudioBoundary name="ai-panel"><AIPanel /></StudioBoundary>
         </div>
         )}
       </div>
       
-      <StudioOverlays />
+      <StudioBoundary name="overlays"><StudioOverlays /></StudioBoundary>
 
       {/* Bottom bar: settings menu + undo/redo */}
       <BottomBar
