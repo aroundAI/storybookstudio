@@ -174,6 +174,12 @@ export async function restoreStudioVersion(versionId, options) {
   return active.versions.restoreVersion(versionId, options)
 }
 
+// FILM-2015: the Review screen's per-scene accept writes a merged document.
+export async function replaceStudioDocument(document, options) {
+  if (!active) throw new Error('No Studio project is open.')
+  return active.versions.replaceDocument(document, options)
+}
+
 // studio:buildProject, the entry FILM-2011's pull job calls once the media is
 // on disk: writes the rough cut into projectPath, opens it, and saves the
 // 'Rough cut' version. projectStore imports this module, hence the dynamic import.

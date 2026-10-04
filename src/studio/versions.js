@@ -103,5 +103,24 @@ export function createVersionStore({ sink, oplog, getDocument, setDocument, cloc
       await oplog.sync()
       return { version: copy(record), document, op }
     },
+
+    // FILM-2015: a whole-document change that is not a version restore (per-scene
+    // accept on the Review screen). Logged like a restore: one op whose inverse
+    // names a snapshot of the document it replaced.
+    async replaceDocument(document, { by = 'user', reason = null, tool = 'studio_replace_document', args = {} } = {}) {
+      await oplog.flushPending()
+      const replacedPath = `edits/snapshots/before-op-${oplog.lastOpId() + 1}.json`
+      await sink.writeText(replacedPath, JSON.stringify(getDocument()))
+      await oplog.runAs('internal', () => setDocument(document))
+      const op = await oplog.append({
+        by,
+        tool,
+        args,
+        inverse: { tool: RESTORE_SNAPSHOT_TOOL, args: { snapshotPath: replacedPath } },
+        reason,
+      })
+      await oplog.sync()
+      return { document, op }
+    },
   }
 }
