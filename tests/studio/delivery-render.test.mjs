@@ -28,8 +28,12 @@ function workspace(t) {
   fs.mkdirSync(path.join(dir, 'assets'))
   // Grey 16:9 shot with a white square at x 75%, y 40%; quiet dialogue tone; a music bed.
   ff('-f', 'lavfi', '-i', 'color=c=0x404040:s=640x360:r=24:d=3', '-vf', 'drawbox=x=456:y=120:w=48:h=48:color=white:t=fill', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', path.join(dir, 'assets', 'shot.mp4'))
-  ff('-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=48000:duration=3', '-af', 'volume=-30dB', path.join(dir, 'assets', 'line.wav'))
-  ff('-f', 'lavfi', '-i', 'sine=frequency=220:sample_rate=48000:duration=3', '-af', 'volume=-28dB', path.join(dir, 'assets', 'music.wav'))
+  // Dialogue as StoryBook ships it: mono MP3. (A WAV mixed from it carries no
+  // channel-layout header; the loudness pass must still read it as stereo.)
+  ff('-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=24000:duration=3', '-af', 'volume=-30dB', '-ac', '1', '-c:a', 'libmp3lame', path.join(dir, 'assets', 'line.mp3'))
+  // A quiet bed with one loud hit: reaching -14 LUFS would push the hit over
+  // the true-peak ceiling, so loudnorm falls back to its dynamic mode (192 kHz).
+  ff('-f', 'lavfi', '-i', "aevalsrc='if(between(t,1.5,1.55),0.95*sin(2*PI*900*t),0.02*sin(2*PI*220*t))':s=48000:d=3", path.join(dir, 'assets', 'music.wav'))
   return dir
 }
 
@@ -58,7 +62,7 @@ function project({ width = 1920, height = 1080, keyframes = null } = {}) {
     timelines: [timeline],
     assets: [
       { id: 'shot', type: 'video', path: 'assets/shot.mp4', width: 640, height: 360 },
-      { id: 'line', type: 'audio', path: 'assets/line.wav' },
+      { id: 'line', type: 'audio', path: 'assets/line.mp3' },
       { id: 'music', type: 'audio', path: 'assets/music.wav' },
     ],
   }

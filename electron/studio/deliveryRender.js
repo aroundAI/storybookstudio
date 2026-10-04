@@ -223,10 +223,15 @@ async function mixAudio({ timeline, project, projectDir, language, duration, ffm
   return { clips: clips.length }
 }
 
-// Two-pass loudnorm: measure, then normalise linearly to the target.
+// Two passes: measure the mix's integrated loudness (EBU R128), then one
+// linear gain to the target and a peak limiter at -3 dBFS (headroom for the AAC encode) so the true peak
+// stays under QA's -1 dBTP. (loudnorm's own second pass falls back to its
+// dynamic mode whenever the gain would push a peak over the ceiling; that
+// mode resamples to 192 kHz and misses the target on short files.)
+const PEAK_LIMIT = 10 ** (-3 / 20)
 async function normalizeLoudness({ input, target, ffmpegPath, outFile, signal }) {
   const measure = `loudnorm=I=${target}:TP=-1.5:LRA=11:print_format=json`
-  const { stderr } = await runFfmpeg(ffmpegPath, ['-hide_banner', '-nostdin', '-y', '-v', 'info', '-i', input, '-af', measure, '-f', 'null', '-'], { signal })
+  const { stderr } = await runFfmpeg(ffmpegPath, ['-hide_banner', '-nostdin', '-y', '-v', 'info', '-i', input, '-af', `aformat=channel_layouts=stereo,${measure}`, '-f', 'null', '-'], { signal })
   const json = stderr.slice(stderr.lastIndexOf('{'), stderr.lastIndexOf('}') + 1)
   let measured = null
   try {
@@ -234,12 +239,12 @@ async function normalizeLoudness({ input, target, ffmpegPath, outFile, signal })
   } catch {
     measured = null
   }
-  const silent = !measured || !Number.isFinite(Number(measured.input_i)) || Number(measured.input_i) < -70
-  const filter = silent
-    ? 'anull'
-    : `loudnorm=I=${target}:TP=-1.5:LRA=11:measured_I=${measured.input_i}:measured_TP=${measured.input_tp}:measured_LRA=${measured.input_lra}:measured_thresh=${measured.input_thresh}:offset=${measured.target_offset}:linear=true`
-  await runFfmpeg(ffmpegPath, ['-hide_banner', '-nostdin', '-y', '-v', 'error', '-i', input, '-af', `${filter},aresample=48000`, '-c:a', 'pcm_s16le', outFile], { signal })
-  return { measuredLufs: silent ? null : Number(measured.input_i) }
+  const inputLufs = Number(measured?.input_i)
+  const silent = !Number.isFinite(inputLufs) || inputLufs < -70
+  const gainDb = silent ? 0 : round3(target - inputLufs)
+  const filter = `aformat=channel_layouts=stereo,volume=${gainDb}dB,alimiter=limit=${round3(PEAK_LIMIT)}:attack=5:release=50:level=false,aresample=48000,aformat=sample_fmts=s16:channel_layouts=stereo`
+  await runFfmpeg(ffmpegPath, ['-hide_banner', '-nostdin', '-y', '-v', 'error', '-i', input, '-af', filter, '-c:a', 'pcm_s16le', outFile], { signal })
+  return { measuredLufs: silent ? null : inputLufs, gainDb }
 }
 
 const vttTime = (seconds) => {
