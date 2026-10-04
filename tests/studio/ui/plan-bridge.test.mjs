@@ -388,3 +388,17 @@ test('an export to a folder shows each file’s QA: FILM-2017 lists them under f
   assert.deepEqual(delivery.qa, { 'youtube_16x9-en': pass, 'shorts_9x16-en': loud })
   assert.equal(qaAnnouncement, 'QA checked 2 files: 1 with issues.')
 })
+
+test('a delivery stopped by QA shows that file’s failing QA with its issues, and says so', () => {
+  const { api, emit } = fakeApi()
+  const store = createStudioUiStore()
+  startStudioUiBridge({ api, store })
+  store.getState().patch({ delivery: { jobId: 'q1', status: 'sending', destination: 'folder' } })
+  const qa = { pass: false, issues: [{ type: 'black_frames', severity: 0.9, timeRange: { start: 94, end: 99 }, scene: 5, detail: '5.0 s of black from 94.0 s: the footage itself is black.' }] }
+  emit('studio:job-progress', { id: 'q1', kind: 'deliver', phase: 'qa youtube_16x9-en', status: 'failed', error: 'youtube_16x9-en failed QA: 5.0 s of black from 94.0 s: the footage itself is black.', failure: { code: 'QA_FAILED', details: { render: 'youtube_16x9-en', qa, file: '/tmp/out/youtube_16x9-en.mp4' } } })
+  const { delivery, qaAnnouncement } = store.getState()
+  assert.equal(delivery.status, 'failed')
+  assert.equal(delivery.code, 'QA_FAILED')
+  assert.deepEqual(delivery.qa, { 'youtube_16x9-en': qa })
+  assert.equal(qaAnnouncement, 'QA stopped the delivery: youtube_16x9-en has 1 issue.')
+})
