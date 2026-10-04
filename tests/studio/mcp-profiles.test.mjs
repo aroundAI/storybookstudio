@@ -1,5 +1,5 @@
 // FILM-2013 AC1: /mcp?profile=agent (the default) lists only the capability
-// tools; ?profile=expert lists Velorn's 130 plus the studio_* lifecycle
+// tools; ?profile=expert lists Velorn's tools plus the studio_* lifecycle
 // tools; both need the FILM-2010 bearer. Tools other specs build answer
 // VALIDATION_FAILED "not available yet". Raw HTTP against the real server.
 import assert from 'node:assert/strict'
@@ -66,14 +66,14 @@ test('the agent profile is the default and lists only the 18 capability tools, e
   assert.equal(edit.inputSchema.properties.previewOnly.default, true)
 })
 
-test('the expert profile lists Velorn\'s 130 tools plus the 6 lifecycle tools, by query or by header', async () => {
+test('the expert profile lists every Velorn tool plus the 6 lifecycle tools, by query or by header', async () => {
   const velorn = extractTools(source).map((tool) => tool.name)
-  assert.equal(velorn.length, 130)
+  assert.ok(velorn.length >= 130, `${velorn.length} Velorn tools`)
   for (const options of [{ profile: 'expert' }, { header: 'expert' }]) {
     const names = (await rpc('tools/list', {}, options)).body.result.tools.map((tool) => tool.name)
-    assert.equal(names.length, 136)
-    assert.deepEqual(names.slice(0, 130), velorn)
-    assert.deepEqual(names.slice(130), ['studio_open_episode', 'studio_get_job_status', 'studio_check_readiness', 'studio_create_version', 'studio_restore_version', 'studio_deliver'])
+    assert.equal(names.length, velorn.length + 6)
+    assert.deepEqual(names.slice(0, velorn.length), velorn)
+    assert.deepEqual(names.slice(velorn.length), ['studio_open_episode', 'studio_get_job_status', 'studio_check_readiness', 'studio_create_version', 'studio_restore_version', 'studio_deliver'])
   }
 })
 

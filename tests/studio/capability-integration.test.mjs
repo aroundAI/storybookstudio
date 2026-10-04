@@ -40,7 +40,7 @@ const sceneSpan = (scene) => {
   return Math.round((Math.max(...clips.map((clip) => clip.startTime + clip.duration)) - Math.min(...clips.map((clip) => clip.startTime))) * 1000) / 1000
 }
 
-test('M2: "tighten scene 3 to 12 s" over MCP: context, preview cards, apply into a version, one logged line per step, the report', async () => {
+test('M2: "tighten scene 3 to 12 s and fix the audio" over MCP: context, preview cards, apply into versions, one logged line per step, the report', async () => {
   const { body: context } = await call('studio_get_context', { scope: { scene: 3 } })
   assert.deepEqual(context.sceneMap.map((entry) => [entry.scene, entry.actualDuration]), [[3, 21]])
   assert.equal(context.screenplay[0].dialogue.length, 8)
@@ -100,6 +100,27 @@ test('M2: "tighten scene 3 to 12 s" over MCP: context, preview cards, apply into
     await writeFile(path.join(dir, 'm2-oplog.jsonl'), `${log.map((entry) => JSON.stringify({ ...entry, args: undefined, inverse: undefined })).join('\n')}\n`)
     await writeFile(path.join(dir, 'm2-report.txt'), applied.reportText)
     await writeFile(path.join(dir, 'm2-report.json'), `${JSON.stringify(applied.report, null, 2)}\n`)
+  }
+
+  // "...and fix the audio": FILM-2016's fade compiler puts de-click fades on
+  // the cuts the tighten made, previewed and applied the same way.
+  const audioArgs = { intent: 'fade', params: { instruction: 'fix the audio' } }
+  const { result: audioPreviewResult, body: audioPreview } = await call('studio_edit_audio', audioArgs)
+  assert.equal(audioPreviewResult.isError, undefined, JSON.stringify(audioPreview.error))
+  assert.ok(audioPreview.plan.steps.length > 0)
+  assert.ok(audioPreview.plan.steps.every((step) => step.tool === 'set_clip_audio'))
+  assert.ok(audioPreview.stepPreviews.every((step) => step.ok))
+  const { body: audioApplied } = await call('studio_edit_audio', { ...audioArgs, previewOnly: false, planId: audioPreview.planId })
+  assert.equal(audioApplied.applied, true, JSON.stringify(audioApplied.error))
+  assert.equal(audioApplied.version.name, 'AI: fix the audio')
+  assert.deepEqual(audioApplied.opLog.map((entry) => entry.reason), audioPreview.plan.reasons)
+  const scene3Lines = harness.timeline().clips.filter((clip) => clip.metadata?.semantic?.scene === 3 && clip.metadata?.semantic?.role === 'dialogue')
+  assert.ok(scene3Lines.some((clip) => clip.fadeIn > 0 || clip.fadeOut > 0), 'the lines at the new cuts have fades')
+  if (process.env.STUDIO_EVIDENCE_DIR) {
+    await writeFile(path.join(process.env.STUDIO_EVIDENCE_DIR, 'm2-audio-cards.json'), `${JSON.stringify(audioPreview.cards, null, 2)}\n`)
+    await writeFile(path.join(process.env.STUDIO_EVIDENCE_DIR, 'm2-audio-report.txt'), audioApplied.reportText)
+    const full = await harness.readLog()
+    await writeFile(path.join(process.env.STUDIO_EVIDENCE_DIR, 'm2-oplog.jsonl'), `${full.map((entry) => JSON.stringify({ ...entry, args: undefined, inverse: undefined })).join('\n')}\n`)
   }
 
   // Undo the plan: restore the version, whose snapshot is the timeline before it.

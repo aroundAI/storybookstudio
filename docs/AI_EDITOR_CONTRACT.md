@@ -13,7 +13,7 @@ Each clause has an id, its inputs (**In**), its outputs (**Out**), the invariant
 - **Version**: a named snapshot of the timeline document plus the op range since its parent (FILM-2012).
 - **Scope**: `{ scene?: number, scenes?: number[], range?: [start, end], clipIds?: string[], timelineId?: string }`. An empty scope means the active timeline. An unknown scene, or a timeline other than the active one, is `VALIDATION_FAILED` (FILM-2013 adopted this shape and added `scene`).
 
-Both profiles are served on `http://127.0.0.1:19790/mcp`, chosen by `?profile=agent|expert` or the `X-MCP-Profile` header (any other value is a `400`), and both require the bearer secret (S1). `agent`, the default, lists the 18 capability tools; `expert` lists Velorn's 130 tools plus the 6 lifecycle tools (`studio_open_episode`, `studio_get_job_status`, `studio_check_readiness`, `studio_create_version`, `studio_restore_version`, `studio_deliver`). Each profile refuses the other's tools.
+Both profiles are served on `http://127.0.0.1:19790/mcp`, chosen by `?profile=agent|expert` or the `X-MCP-Profile` header (any other value is a `400`), and both require the bearer secret (S1). `agent`, the default, lists the 18 capability tools; `expert` lists Velorn's tools (131 with FILM-2016's `set_audio_buses`) plus the 6 lifecycle tools (`studio_open_episode`, `studio_get_job_status`, `studio_check_readiness`, `studio_create_version`, `studio_restore_version`, `studio_deliver`). Each profile refuses the other's tools.
 
 ## 1. Inputs
 
@@ -263,7 +263,7 @@ The order is L1 to L8. L9 can happen at any point after L3.
 
 These come from reading `electron/mcpServer.js` at fork commit 233f35f (Velorn v0.3.36). Each is assigned to the spec that has to close it.
 
-- **G1 Tool count.** There are 130 tools, not the 129 the design and specs state; `docs/MCP.md` says 125. `node scripts/capability-matrix.mjs` prints the count.
+- **G1 Tool count.** There are 130 upstream tools, not the 129 the design and specs state; `docs/MCP.md` said 125 (corrected by FILM-2013). FILM-2016 added `set_audio_buses`, making 131. `node scripts/capability-matrix.mjs` prints the count.
 - **G2 Plan preview does not preview steps.** `run_mcp_action_plan` with `previewOnly` checks step names and returns them unexecuted. Per-step previews are the compiler's job (A3, FILM-2013).
 - **G3 Write tools missing from the writable set.** `split_clip`, `extract_range`, `set_clip_speed`, `set_clip_audio`, `update_caption_cues` and `generate_captions` accept `previewOnly` but `run_mcp_action_plan` refused them. Closed: FILM-2013 added the first five, and every `studio_*` write tool but `studio_deliver`; caption generation stays a sequenced job.
 - **G4 No ducking primitive.** Closed by FILM-2016: ducking is a bus setting (`set_audio_buses`), applied at preview by gain automation from the dialogue bus's analyser and at export by `sidechaincompress` keyed from the dialogue bus. Velorn's UI ducking (`src/utils/audioDucking.mjs`) still writes a volume envelope on one clip and is unchanged. `set_master_audio` had no route in `callTool` (it answered Unknown tool); FILM-2016 routes it.

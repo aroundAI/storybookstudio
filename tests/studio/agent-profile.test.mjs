@@ -85,8 +85,6 @@ test('every other capability tool: same result from both clients (the stubs refu
     studio_search_assets: { query: 'Line 18', role: 'dialogue' },
     studio_check_readiness: {},
     studio_deliver: { presets: ['youtube_16x9'] },
-    studio_edit_audio: { intent: 'duck' },
-    studio_add_captions: { language: 'en' },
     studio_add_graphic: { kind: 'lower_third', text: 'Maya', at: 1, duration: 2 },
     studio_create_variant: { kind: 'short' },
     studio_review: {},
@@ -100,13 +98,20 @@ test('every other capability tool: same result from both clients (the stubs refu
   for (const [name, args] of Object.entries(calls)) {
     assert.deepEqual(stable(await viaAgent(name, args)), stable(await viaSdk(name, args)), name)
   }
+  // FILM-2016's tools return plan cards when its compilers are in the build.
+  for (const [name, args] of [['studio_edit_audio', { intent: 'fade' }], ['studio_add_captions', { language: 'en' }]]) {
+    const sdk = await viaSdk(name, args)
+    const agent = await viaAgent(name, args)
+    if (sdk.isError) assert.deepEqual(stable(agent), stable(sdk), name)
+    else assert.deepEqual([agent.cards, stable(agent.notes), agent.expected], [sdk.cards, stable(sdk.notes), sdk.expected], name)
+  }
   const agentVersion = await viaAgent('studio_create_version', { name: 'From the panel' })
   const sdkVersion = await viaSdk('studio_create_version', { name: 'From Claude' })
   assert.deepEqual([agentVersion.version.createdBy, sdkVersion.version.createdBy], ['ai', 'ai'])
   assert.deepEqual(Object.keys(agentVersion.version).sort(), Object.keys(sdkVersion.version).sort())
   const restored = await viaAgent('studio_restore_version', { versionId: agentVersion.version.id })
   assert.equal(restored.version.id, agentVersion.version.id)
-  assert.equal(Object.keys(calls).length + 3, capabilities.definitionsFor('agent').length)
+  assert.equal(Object.keys(calls).length + 5, capabilities.definitionsFor('agent').length)
 })
 
 test('the in-app agent applies a plan the same way: one logged line per step with the preview\'s reasons', async () => {

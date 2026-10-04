@@ -54,7 +54,7 @@ The same server and the same bearer serve two tool lists (FILM-2013):
 | Profile | URL | Lists | For |
 | --- | --- | --- | --- |
 | `agent` (default) | `http://127.0.0.1:19790/mcp` or `/mcp?profile=agent` | the 18 `studio_*` capability tools ([below](#the-agent-profile-capability-tools)) | editing a StoryBook episode by intent: plan, preview as cards, apply into a version, explain |
-| `expert` | `http://127.0.0.1:19790/mcp?profile=expert` | Velorn's 130 tools plus the 6 `studio_*` lifecycle tools | everything Velorn can do, one primitive at a time |
+| `expert` | `http://127.0.0.1:19790/mcp?profile=expert` | Velorn's 131 tools plus the 6 `studio_*` lifecycle tools | everything Velorn can do, one primitive at a time |
 
 The profile can also be sent as an `X-MCP-Profile: agent|expert` header; any other value is a `400`. Each profile refuses the other's tools. The bearer is required on both: a missing or wrong one is a `401` before the profile is read.
 
@@ -216,8 +216,8 @@ The card with `scene: null` is the whole timeline (caption re-timing, beds, mark
 | `studio_get_context` | agent | Script, scene map, policy, brand, timeline summary, versions, user edits, last QA. `{scope?}` | built |
 | `studio_search_assets` | agent | Ranks assets by name, transcript and semantic fields. `{query, role?, scene?, durationRange?, limit?}` | built |
 | `studio_edit` | agent | Intent → plan cards → apply into a version. `{intent, scope?, params?, previewOnly?, planId?, autoRepair?}` | built |
-| `studio_edit_audio` | agent | `balance`, `duck`, `normalize`, `fade` over the buses, same preview/apply flow | compiled by FILM-2016's `intents/audio.js` when the build has it, else "not available yet" |
-| `studio_add_captions` | agent | Brand-styled captions inside the aspect's safe area. `{language, style?}` | compiled by FILM-2016's `intents/captions.js`; needs cues on the language's captions clip (transcribe first) |
+| `studio_edit_audio` | agent | `balance`, `duck`, `normalize`, `fade` over the buses, same preview/apply flow | built: FILM-2016's `intents/audio.js` compiles, FILM-2013 previews and applies; `balance` and `normalize` need measured loudness |
+| `studio_add_captions` | agent | Brand-styled captions inside the aspect's safe area. `{language, style?}` | built over FILM-2016's `intents/captions.js`; styles the cues on the language's captions clip (a StoryBook rough cut has them); with none, transcribe first |
 | `studio_add_graphic` | agent | Brand graphics | not available yet (FILM-2018) |
 | `studio_create_variant` | agent | `short`, `hook`, `language` variants | not available yet (FILM-2017, FILM-2019) |
 | `studio_review` | agent | QA, then the critic | not available yet (FILM-2014) |
@@ -377,7 +377,7 @@ For interchange, preview `export_fcpxml` before writing a file. Use `format: "fc
 
 ## Tool Catalog
 
-Velorn exposes 130 MCP tools in the `expert` profile (`node scripts/capability-matrix.mjs` counts them); the `agent` profile serves the 18 capability tools above instead.
+Velorn exposes 131 MCP tools in the `expert` profile (130 upstream, plus FILM-2016's `set_audio_buses`) (`node scripts/capability-matrix.mjs` counts them); the `agent` profile serves the 18 capability tools above instead.
 
 StorybookStudio's AI editor builds on these tools: [AI_EDITOR_CONTRACT.md](AI_EDITOR_CONTRACT.md) defines what an agent may do, and [CAPABILITY_MATRIX.md](CAPABILITY_MATRIX.md) maps every tool onto it.
 
