@@ -252,11 +252,12 @@ The order is L1 to L8. L9 can happen at any point after L3.
 
 ## 8. Errors and safety
 
-- **S1 Bearer:** Every request to the local MCP server carries `Authorization: Bearer <secret>`. The secret is generated on first run in `userData/mcp-secret`. A non-loopback `Origin` or `Host` gets 403. Built by FILM-2010.
-- **S2 Tokens:** StoryBook tokens live in the main process under `safeStorage`. They never appear in the renderer, the MCP snapshot or the logs. Built by FILM-2010 (secrets module) and FILM-2011.
+- **S1 Bearer:** Every request to the local MCP server carries `Authorization: Bearer <secret>`. The secret is 32 random bytes, generated on first run in `userData/mcp-secret` (mode 0600) and kept across restarts. A request whose `Host`, or `Origin` when present, is not loopback (`127.0.0.1`, `localhost`, `[::1]`, any port) gets 403, checked first. A missing or wrong bearer then gets 401 with `WWW-Authenticate: Bearer`. A CORS preflight is checked for `Host` and `Origin` only. Settings > Agents (MCP) shows the connect commands, masked until Show. Built by FILM-2010 (`electron/studio/mcpAuth.js`, `mcpSecret.js`).
+- **S2 Tokens:** StoryBook tokens live in the main process under `safeStorage`, in `userData/studio-secrets.json`. When the OS cannot encrypt, storing a secret fails with `SECRETS_UNAVAILABLE`; nothing is written in plaintext. No IPC handler reads the store, so a token never appears in the renderer, the MCP snapshot or the logs. Built by FILM-2010 (`electron/studio/secrets.js`) and FILM-2011.
 - **S3 Delivery confirmation:** See L8. `studio_deliver` is never in `MCP_ACTION_PLAN_WRITABLE_TOOLS`. Every other `studio_*` write tool is.
 - **S4 Not available yet:** A capability tool whose spec has not landed returns `VALIDATION_FAILED "not available yet"`, never a partial result. This covers `studio_render_preview`, `studio_review` and `studio_repair` until FILM-2014; `studio_edit_audio` and `studio_add_captions` until FILM-2016; `studio_deliver` and `studio_create_variant` until FILM-2017; and `studio_add_graphic` until FILM-2018.
 - **S5 Error codes:** `VALIDATION_FAILED` (bad input or not available), `TARGET_CHANGED` (document or episode changed since preview or pull), `NOT_FOUND`, `FORBIDDEN` (role), `UNAUTHORIZED` (sign in again). StoryBook-side codes pass through unchanged.
+- **S6 Local files:** `comfystudio://` serves only files under the open project folder, `userData` and the app's temp caches, plus exact files the app's own windows asked a URL for through `media:getFileUrl`. Paths are resolved through symlinks first, and any `..` segment is refused. Everything else gets 403. Built by FILM-2010 (`electron/studio/protocolAllowlist.js`).
 
 ## 9. Gaps found while writing this contract
 
