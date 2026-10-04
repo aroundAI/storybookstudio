@@ -88,9 +88,9 @@ Perception never changes the document. Every perception verb is callable at any 
 
 ### P7 Review
 - **In:** `studio_review({scope, versionId?})`.
-- **Out:** `{qa: QaResult, critic: QaResult, skipped?: ['visual']}`†.
-- **Guarantees:** Runs V1, then V2. Reports the visual analyser as skipped, not passed, when no hosted model is configured.
-- **Built by:** FILM-2014.
+- **Out:** `{pass, issues, qa: QaResult, critic: QaResult, skipped: [{analyser: 'visual', reason}], range, keyframes, renders, vision}`. `pass` and `issues` merge QA and the critic, which is what V4 reads.
+- **Guarantees:** Renders the scope's keyframes, a 720p preview and the bus mix with stems, then runs V1, then V2. Reports the visual analyser as skipped, not passed, when no hosted model is configured.
+- **Built by:** FILM-2014 (`electron/studio/reviewTools.js` `review`; FILM-2013 registers it).
 
 ### P8 Job status
 - **In:** `studio_get_job_status({jobId})`.
@@ -180,19 +180,21 @@ Every intent compiles to an action plan (A1) and reads its bounds from the polic
 - **Out:** `QaResultSchema`: `{pass, issues: [{type, severity 0..1, timeRange, scene, detail, repairIntent?}]}`.
 - **Checks:** ebur128 loudness and true peak against the preset (-14 LUFS YouTube, -16 Reels); astats clipping; blackdetect; freezedetect; silencedetect longer than policy; ffprobe duration within ±5% of `targetDurationSeconds`; codec, fps and resolution against the preset; caption cues inside safe rectangles and not overlapping; `check_media_health`; script coverage (every scene has a clip, every dialogue line is placed or logged as cut).
 - **Guarantees:** No model is involved, so the same render gives the same result. Every issue a repair can fix names its `repairIntent`.
-- **Built by:** FILM-2014 (`electron/studio/qa.js`). The schema is defined in `@kit/desktop-integration` (FILM-2003) and copied in.
+- **Thresholds:** Loudness ±1 LU of the preset target (`src/studio/review/presetTargets.js`, FILM-2016's per-preset values); true peak at most -1 dBTP; black at least 0.5 s; frozen at least 2 s; silence longer than `policy.maxSilenceSeconds`, 1.5 s while EditPolicySchema has no such field. Per-preset loudness and the caption safe areas come from FILM-2016 (`audio/buses.js`, `captions/layout.js`); the caption check is its `checkCaptionSafeArea`, so a cue not placed for the aspect fails even where Velorn's default box happens to fit. An issue of severity 0.5 or more fails the render; below that it is advice.
+- **Built by:** FILM-2014 (`electron/studio/qa.js` runs FFmpeg and ffprobe; the checks are `src/studio/review/qaChecks.js`). The schema is defined in `@kit/desktop-integration` (FILM-2003) and copied in. The export regression runner runs the same QA on its fixture render (`electron/studio/exportRegressionQa.js`).
 
 ### V2 Critic analysers
 - **In:** Keyframes, the bus-stem mix, the scene map.
 - **Out:** Issues in the V1 shape from `pacing` (shot length against policy, dialogue end against clip end, repeated shots, cut density), `audio` (dialogue-to-music ratio, fades at cuts, abrupt level changes) and `visual` (framing, caption overlap, continuity across cuts, script fidelity).
 - **Guarantees:** Only `visual` spends tokens. It sends at most 40 keyframes per review and records its token cost in the op log.
-- **Built by:** FILM-2014 (`src/studio/critic/`).
+- **Built by:** FILM-2014 (`src/studio/critic/{pacing,audio,visual}.js`; `src/studio/package.json` declares `"type": "module"` so the main process, on Electron 28's Node 18, imports them and FILM-2016's modules). The vision model is chosen by env (`STUDIO_VISION_PROVIDER`, `STUDIO_VISION_MODEL`, key in secrets) in `electron/studio/visionClient.js`; script fidelity (scene order, characters) needs no model and always runs.
 
 ### V3 Repair
 - **In:** `studio_repair({issues[]})`.
 - **Out:** One action plan. Repair intents are `duck_music`, `trim_silence`, `normalize_loudness`, `move_caption`, `replace_missing_media`, `add_fade` and `re-time`.
-- **Guarantees:** Repair is a plan with reasons, not a prompt. It follows A3 and A4 like any other edit.
-- **Built by:** FILM-2014.
+- **Guarantees:** Repair is a plan with reasons, not a prompt. It follows A3 and A4 like any other edit. Targets are found in the document at the issue's time range when the plan compiles. What no primitive can fix comes back in `unrepaired` with why.
+- **Steps:** `normalize_loudness` → `set_audio_buses` master target (a plain Velorn project: `set_master_audio` volume and a limiter); `duck_music` → `set_audio_buses` ducks the music bus deeper toward 12 dB dialogue-over-music, FILM-2016's target (plain project: `set_clip_audio` gain); `trim_silence` → `extract_range` keeping 0.25 s each side; `move_caption` → `update_caption_cues` with the cues FILM-2016's placement styles for the aspect's safe area; `replace_missing_media` → `replace_clip_with_asset` onto the shot's own still; `add_fade` → `set_clip_audio` fades of FILM-2016's per-bus length; `re-time` → `extract_range` over a gap or `update_caption_cues` on an overlap (a length change is left to `hit_duration`).
+- **Built by:** FILM-2014 (`src/studio/intents/repair.js`, an intent compiler FILM-2013 registers as `repair`).
 
 ### V4 Auto-repair loop
 - **In:** `studio_edit({..., autoRepair: true})`.
@@ -234,9 +236,9 @@ The order is L1 to L8. L9 can happen at any point after L3.
 
 ### L7 Render
 - **In:** `studio_render_preview({scope, range, timeline, quality})`.
-- **Out:** A file path, keyframe paths and the V1 result.
-- **Guarantees:** Keyframes are rendered after every applied plan. Scene and audio-only tiers are rendered for the critic. Preview renders bypass the media-preparation queue, so a long export never blocks them.
-- **Built by:** FILM-2014.
+- **Out:** `{quality, range, file, renderMs, realtimeFactor, keyframes: {dir, count, files}, qa}`. `quality` is `keyframes` (default), `scene` (default with a scene scope), `audio` or `full`.
+- **Guarantees:** Keyframes are rendered after every applied plan: one 640 px JPEG per cut and per 2 s under `cache/kf/`. The scene tier is 720p24 H.264 from proxies when they are ready; the audio tier is a 48 kHz WAV of the bus mix, with one stem per bus for the critic. The picture is one FFmpeg run of the render plan (`src/studio/review/renderPlan.js`: cuts and caption boxes), not the canvas exporter, so it shows picture cuts and caption boxes but not effects, text clips or kinetic caption motion; delivery stays on the exporter. The audio of a Studio project goes through FILM-2016's export bus mix (`electron/studio/audioBusMix.mjs`: sidechain ducking, loudnorm to `master.limiterLufs`), so the preview sounds like the delivery. Preview renders never enter the media-preparation queue, and a preview proxy can bypass it (`bypassQueue`), so a long export never blocks them. Delivery encodes go through the queue (`kind: 'delivery'`) with the VideoToolbox/NVENC route and x264 fallback.
+- **Built by:** FILM-2014 (`electron/studio/previewRender.js`, `reviewTools.js` `renderPreview`; FILM-2013 registers it).
 
 ### L8 Deliver
 - **In:** `studio_deliver({presets[], languages[], confirm, confirmationToken?, destination?, folder?})`.
@@ -255,7 +257,7 @@ The order is L1 to L8. L9 can happen at any point after L3.
 - **S1 Bearer:** Every request to the local MCP server carries `Authorization: Bearer <secret>`. The secret is 32 random bytes, generated on first run in `userData/mcp-secret` (mode 0600) and kept across restarts. A request whose `Host`, or `Origin` when present, is not loopback (`127.0.0.1`, `localhost`, `[::1]`, any port) gets 403, checked first. A missing or wrong bearer then gets 401 with `WWW-Authenticate: Bearer`. A CORS preflight is checked for `Host` and `Origin` only. Settings > Agents (MCP) shows the connect commands, masked until Show. Built by FILM-2010 (`electron/studio/mcpAuth.js`, `mcpSecret.js`).
 - **S2 Tokens:** StoryBook tokens live in the main process under `safeStorage`, in `userData/studio-secrets.json`. When the OS cannot encrypt, storing a secret fails with `SECRETS_UNAVAILABLE`; nothing is written in plaintext. No IPC handler reads the store, so a token never appears in the renderer, the MCP snapshot or the logs. Built by FILM-2010 (`electron/studio/secrets.js`) and FILM-2011.
 - **S3 Delivery confirmation:** See L8. `studio_deliver` is never in `MCP_ACTION_PLAN_WRITABLE_TOOLS`. Every other `studio_*` write tool is.
-- **S4 Not available yet:** A capability tool whose spec has not landed returns `VALIDATION_FAILED "not available yet"` with `details.availableAfter`, never a partial result. This covers `studio_render_preview`, `studio_review` and `studio_repair` until FILM-2014; `studio_edit_audio` and `studio_add_captions` in a build without FILM-2016's `src/studio/intents/{audio,captions}.js` (the renderer registers them when present); and `studio_add_graphic` until FILM-2018.
+- **S4 Not available yet:** A capability tool whose spec has not landed returns `VALIDATION_FAILED "not available yet"` with `details.availableAfter`, never a partial result. This covers `studio_review` and `studio_render_preview` on a server started without the preview renderer (FILM-2014's `reviewTools`); `studio_edit_audio` and `studio_add_captions` in a build without FILM-2016's `src/studio/intents/{audio,captions}.js` (the renderer registers them when present); and `studio_add_graphic` until FILM-2018.
 - **S5 Error codes:** `VALIDATION_FAILED` (bad input or not available), `TARGET_CHANGED` (document or episode changed since preview or pull), `NOT_FOUND`, `FORBIDDEN` (role), `UNAUTHORIZED` (sign in again). StoryBook-side codes pass through unchanged.
 - **S6 Local files:** `comfystudio://` serves only files under the open project folder, `userData` and the app's temp caches, plus exact files the app's own windows asked a URL for through `media:getFileUrl`. Paths are resolved through symlinks first, and any `..` segment is refused. Everything else gets 403. Built by FILM-2010 (`electron/studio/protocolAllowlist.js`).
 
