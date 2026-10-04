@@ -116,7 +116,7 @@
     "set_playhead": { "group": "timeline", "verbs": ["E1"], "class": "exists", "note": "" },
     "select_clips": { "group": "timeline", "verbs": ["E1"], "class": "exists", "note": "" },
     "select_assets": { "group": "assets", "verbs": ["E10"], "class": "exists", "note": "" },
-    "create_project_checkpoint": { "group": "checkpoints", "verbs": ["E9", "L5"], "class": "adapter", "note": "In memory (MCP_PROJECT_CHECKPOINTS) until FILM-2010 persists it under edits/checkpoints/." },
+    "create_project_checkpoint": { "group": "checkpoints", "verbs": ["E9", "L5"], "class": "adapter", "note": "Persists to edits/checkpoints/<id>.json in the project and survives a restart (FILM-2010 part A); the renderer map is a cache." },
     "restore_project_checkpoint": { "group": "checkpoints", "verbs": ["E9"], "class": "adapter", "note": "As create_project_checkpoint." },
     "import_asset_from_path": { "group": "assets", "verbs": ["E10", "L9"], "class": "exists", "note": "Re-sync imports changed media under new names (FILM-2011)." },
     "relink_asset": { "group": "assets", "verbs": ["E10", "V3"], "class": "exists", "note": "The replace_missing_media repair." },

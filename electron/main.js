@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, protocol, net, shell, screen, session } = require('electron')
+const { app, BrowserWindow, ipcMain, dialog, protocol, net, shell, screen, session, safeStorage } = require('electron')
 const crypto = require('crypto')
 const path = require('path')
 const os = require('os')
@@ -7,7 +7,7 @@ const fsSync = require('fs')
 const http = require('http')
 const { spawn } = require('child_process')
 const { Readable } = require('stream')
-const { fileURLToPath } = require('url')
+const { fileURLToPath, pathToFileURL } = require('url')
 const yaml = require('js-yaml')
 const ffmpegStaticPath = require('ffmpeg-static')
 const ffprobeStaticPath = require('@derhuerst/ffprobe-static')
@@ -45,6 +45,7 @@ const {
   DEFAULT_MCP_PORT,
   createComfyStudioMcpServer,
 } = require('./mcpServer')
+const { createStudioMain } = require('./studio/studioMain')
 const { loadMyWorkflowCatalog } = require('./myWorkflowCatalog')
 const {
   REQUEST_HEADER_REWRITE_URLS,
@@ -97,6 +98,13 @@ let splashWindow = null
 let exportWorkerWindow = null
 let mcpServer = null
 const pendingMcpActionRequests = new Map()
+const studioMain = createStudioMain({
+  app,
+  ipcMain,
+  safeStorage,
+  getMainWindow: () => mainWindow,
+  getMcpServer: () => mcpServer,
+})
 let downloadSaveDialogHandlerInstalled = false
 let downloadCounter = 0
 const activeDownloads = new Map()
@@ -3507,14 +3515,13 @@ ipcMain.handle('window:toggleFullScreen', () => {
 // Register custom protocol for serving local files
 function registerFileProtocol() {
   protocol.handle('comfystudio', async (request) => {
-    const url = request.url.replace('comfystudio://', '')
-    const filePath = decodeURIComponent(url)
-    
     try {
-      // Security: Only allow access to files within user's documents or app paths
-      const normalizedPath = path.normalize(filePath)
-      
-      return net.fetch(`file://${normalizedPath}`)
+      // FILM-2010: serves only files under the open project folder, userData and
+      // Velorn's temp caches, plus exact files this app asked a URL for through
+      // media:getFileUrl. Symlinks are resolved first; anything else is 403.
+      const allowedPath = studioMain.resolveProtocolUrl(request.url)
+      if (!allowedPath) return new Response('Forbidden', { status: 403 })
+      return net.fetch(pathToFileURL(allowedPath).toString())
     } catch (err) {
       console.error('Protocol error:', err)
       return new Response('File not found', { status: 404 })
@@ -4290,6 +4297,7 @@ ipcMain.handle('path:exists', (event, filePath) => {
 
 ipcMain.handle('media:getFileUrl', (event, filePath) => {
   // Convert file path to comfystudio:// protocol URL
+  studioMain.grantFile(filePath)
   const encodedPath = encodeURIComponent(filePath)
   return `comfystudio://${encodedPath}`
 })
@@ -7757,8 +7765,10 @@ function installRequestHeaderRewrite() {
 app.whenReady().then(async () => {
   registerFileProtocol()
   installRequestHeaderRewrite()
+  studioMain.onReady()
   mcpServer = createComfyStudioMcpServer({
     port: DEFAULT_MCP_PORT,
+    authSecret: studioMain.getMcpSecret(),
     version: app.getVersion(),
     performAction: performMcpRendererAction,
     diagnoseComfyUIConnection: diagnoseComfyUIConnectionInternal,

@@ -492,6 +492,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       return () => ipcRenderer.removeListener('mcp:action', handler)
     },
     sendActionResult: (response) => ipcRenderer.send('mcp:actionResult', response),
+    // FILM-2010: the bearer-carrying connect commands, for Settings > Agents (MCP).
+    getConnectCommand: () => ipcRenderer.invoke('studio:getMcpConnectCommand'),
   },
 
   // ============================================

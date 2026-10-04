@@ -16,18 +16,19 @@ The MCP server is part of the desktop app. It exposes the current project, activ
 http://127.0.0.1:19790/mcp
 ```
 
-The in-app settings panel also shows copyable setup commands.
-
-For Codex:
-
-```bash
-codex mcp add velorn --url http://127.0.0.1:19790/mcp
-```
+Every request needs `Authorization: Bearer <secret>`. The app generates a 32-byte secret on first run into `mcp-secret` in its user-data folder (macOS: `~/Library/Application Support/<app>/mcp-secret`). `Settings > Agents (MCP)` shows the ready-made commands with the secret masked; `Show` reveals them and `Copy` copies the real command.
 
 For Claude Code:
 
 ```bash
-claude mcp add --transport http velorn http://127.0.0.1:19790/mcp
+claude mcp add --transport http storybookstudio http://127.0.0.1:19790/mcp --header "Authorization: Bearer <secret>"
+```
+
+For Codex, which reads the token from an environment variable at run time:
+
+```bash
+export STORYBOOKSTUDIO_MCP_TOKEN=<secret>   # in your shell profile
+codex mcp add storybookstudio --url http://127.0.0.1:19790/mcp --bearer-token-env-var STORYBOOKSTUDIO_MCP_TOKEN
 ```
 
 For clients that use an `.mcp.json` file:
@@ -35,15 +36,16 @@ For clients that use an `.mcp.json` file:
 ```json
 {
   "mcpServers": {
-    "velorn": {
+    "storybookstudio": {
       "type": "http",
-      "url": "http://127.0.0.1:19790/mcp"
+      "url": "http://127.0.0.1:19790/mcp",
+      "headers": { "Authorization": "Bearer ${STORYBOOKSTUDIO_MCP_TOKEN}" }
     }
   }
 }
 ```
 
-Velorn keeps this same local config in the repository root for development.
+The repository root keeps this config for development; export `STORYBOOKSTUDIO_MCP_TOKEN` before starting the client.
 
 ## What Agents Can Do
 
@@ -65,7 +67,12 @@ The server runs only on loopback:
 127.0.0.1:19790
 ```
 
-Do not proxy or expose this port to a network. Any local process that can connect to the port can call the MCP server while Velorn is running.
+Do not proxy or expose this port to a network. The server answers:
+
+- `403` when the `Host` header, or an `Origin` header if present, is not loopback (`127.0.0.1`, `localhost`, `[::1]`, any port). This stops web pages and DNS-rebinding attacks from driving the editor.
+- `401` when the `Authorization: Bearer <secret>` header is missing or wrong.
+
+A local process that can read the user-data folder can still read the secret; the bearer keeps out everything that cannot.
 
 Most write-capable tools support `previewOnly` and many default to preview mode. In preview mode the tool returns the planned operation and usually a suggested apply call. To apply, the agent calls the same tool again with:
 
@@ -117,6 +124,7 @@ Protocol:
 - MCP over local HTTP.
 - JSON-RPC endpoint: `POST http://127.0.0.1:19790/mcp`
 - Server-sent-event probe: `GET http://127.0.0.1:19790/mcp`
+- Authentication: `Authorization: Bearer <secret>` on every request (see Quick Start)
 - Server name: `velorn`
 - Default protocol version: `2024-11-05`
 
@@ -141,6 +149,7 @@ Most users should use an MCP client, but developers can test the server directly
 ```bash
 curl -s http://127.0.0.1:19790/mcp \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $STORYBOOKSTUDIO_MCP_TOKEN" \
   -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\",\"params\":{}}"
 ```
 
@@ -149,6 +158,7 @@ Call a read-only tool:
 ```bash
 curl -s http://127.0.0.1:19790/mcp \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $STORYBOOKSTUDIO_MCP_TOKEN" \
   -d "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"get_project\",\"arguments\":{}}}"
 ```
 
@@ -342,8 +352,8 @@ These tools use the same persistent Director state as the visible Music Video UI
 | `set_playhead` | Move the playhead by seconds, timecode, or frame. |
 | `select_clips` | Select clips by ID, filter, track, time, type, label, or search. |
 | `select_assets` | Select/preview project assets by ID, name, type, folder, status, or latest match. |
-| `create_project_checkpoint` | Create an in-memory MCP safety checkpoint for this app session. |
-| `restore_project_checkpoint` | Preview or restore an in-memory MCP checkpoint. |
+| `create_project_checkpoint` | Create an MCP safety checkpoint, saved to `edits/checkpoints/` in the project folder (the newest 20 are kept). |
+| `restore_project_checkpoint` | Preview or restore a checkpoint of the open project, including one from an earlier app session. |
 | `set_in_out_range` | Set, preview, or clear the active timeline In/Out range. |
 | `run_mcp_action_plan` | Preview or run a checkpointed ordered batch of approved MCP actions. |
 
