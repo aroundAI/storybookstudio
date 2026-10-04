@@ -253,6 +253,8 @@ For interchange, preview `export_fcpxml` before writing a file. Use `format: "fc
 
 Velorn currently exposes 125 MCP tools.
 
+StorybookStudio's AI editor builds on these tools: [AI_EDITOR_CONTRACT.md](AI_EDITOR_CONTRACT.md) defines what an agent may do, and [CAPABILITY_MATRIX.md](CAPABILITY_MATRIX.md) maps every tool onto it.
+
 ### Project, Recipes, And Discovery
 
 | Tool | Purpose |

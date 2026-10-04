@@ -173,6 +173,7 @@ Velorn includes a local MCP server with 100+ tools for Codex, Claude Code, Curso
 - Endpoint: `http://127.0.0.1:19790/mcp`
 - In-app setup: `Settings > Agents (MCP)` (one copy-paste command per client)
 - Guide: [docs/MCP.md](docs/MCP.md)
+- AI editor contract: [docs/AI_EDITOR_CONTRACT.md](docs/AI_EDITOR_CONTRACT.md), with every tool mapped in [docs/CAPABILITY_MATRIX.md](docs/CAPABILITY_MATRIX.md)
 
 Agents can inspect the open project, review timeline frames and visible shots, troubleshoot ComfyUI setup, preview safe timeline edits, queue approved generation work, and start delivery exports.
 
