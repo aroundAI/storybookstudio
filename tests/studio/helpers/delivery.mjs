@@ -44,11 +44,10 @@ export function fakePrepare({ dir }) {
     { op: 3, by: 'user', tool: 'move_clips', args: {}, inverse: null },
     { op: 4, by: 'user', tool: 'studio_create_version', args: { versionId: 'v2' }, inverse: null },
   ]
-  return async () => ({
-    versionId: 'v2',
-    report: buildDeliveryReport({ log, versions, deliveredVersionId: 'v2', before: document, after: document }),
-    versionCreated: versionCreatedData({ version: versions[1], versions, log, document }),
-  })
+  return async () => {
+    const report = buildDeliveryReport({ log, versions, deliveredVersionId: 'v2', before: document, after: document })
+    return { versionId: 'v2', report, versionCreated: versionCreatedData({ version: versions[1], versions, log, document, durationSeconds: report.finalDuration }) }
+  }
 }
 
 // A stand-in renderer: a file of a known size, a thumbnail, a sidecar.

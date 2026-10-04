@@ -60,6 +60,6 @@ export async function prepareStudioDelivery(payload = {}) {
     prepared: true,
     versionId: version.id,
     report,
-    versionCreated: versionCreatedData({ version, versions, log: entries, document: after }),
+    versionCreated: versionCreatedData({ version, versions, log: entries, document: after, durationSeconds: report.finalDuration }),
   }
 }

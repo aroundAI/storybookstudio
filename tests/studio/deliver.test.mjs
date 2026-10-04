@@ -170,7 +170,7 @@ test('delivery: exact PUTs, finalize per file, TARGET_CHANGED keeps finalized re
   const deliveredEvents = storybook.events.filter((event) => event.type === 'delivered')
   assert.equal(new Set(versionCreated.map((event) => event.clientEventId)).size, 1, 'version_created has one id across attempts')
   assert.equal(new Set(deliveredEvents.map((event) => event.clientEventId)).size, 1, 'delivered has one id across attempts')
-  assert.deepEqual(versionCreated[0].data, { versionId: 'v2', name: 'Delivered', durationSeconds: 99, aiOps: 1, userOps: 1 })
+  assert.deepEqual(versionCreated[0].data, { versionId: 'v2', name: 'Delivered', durationSeconds: delivered.report.finalDuration, aiOps: 1, userOps: 1 })
   assert.deepEqual(deliveredEvents[0].data.renderIds, delivered.renders.map((r) => r.renderId))
   // The session summary StoryBook builds takes versions, duration and op counts from this report.
   assert.equal(deliveredEvents[0].data.durationSeconds, delivered.report.finalDuration)

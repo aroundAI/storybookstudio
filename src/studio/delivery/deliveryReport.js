@@ -41,8 +41,11 @@ export function buildDeliveryReport({ log, versions, deliveredVersionId, before,
   return report
 }
 
-// FILM-2002's version_created data: ops since the previous version.
-export function versionCreatedData({ version, versions, log, document }) {
+// FILM-2002's version_created data: ops since the previous version. Pass the
+// report's finalDuration as durationSeconds so the event and the report
+// StoryBook stores agree (FILM-2012 counts every non-audio clip, captions
+// included); without it, the picture's end.
+export function versionCreatedData({ version, versions, log, document, durationSeconds = null }) {
   const index = versions.findIndex((entry) => entry.id === version.id)
   const previous = index > 0 ? versions[index - 1] : null
   const from = previous ? previous.opRange?.[0] ?? 0 : 0
@@ -51,7 +54,7 @@ export function versionCreatedData({ version, versions, log, document }) {
   return {
     versionId: version.id,
     name: String(version.name || version.id).slice(0, 200),
-    durationSeconds: documentDuration(document),
+    durationSeconds: Number.isFinite(durationSeconds) ? durationSeconds : documentDuration(document),
     aiOps: ops.filter((entry) => entry.by === 'ai').length,
     userOps: ops.filter((entry) => entry.by === 'user').length,
   }
