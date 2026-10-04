@@ -8472,7 +8472,7 @@ function createToolDefinitions() {
     },
     {
       name: 'create_project_checkpoint',
-      description: 'Create an in-memory MCP safety checkpoint of the open project/timeline/assets for this app session. Use before risky AI edits; this does not create a saved project copy on disk.',
+      description: 'Create an MCP safety checkpoint of the open project/timeline/assets. It is written to edits/checkpoints/ in the project folder and survives an app restart. Use before risky AI edits; it is not a saved project copy.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -8484,7 +8484,7 @@ function createToolDefinitions() {
     },
     {
       name: 'restore_project_checkpoint',
-      description: 'Preview or restore an in-memory MCP project checkpoint created during this StorybookStudio session. Defaults to previewOnly because it can replace current timeline/asset state.',
+      description: 'Preview or restore an MCP project checkpoint of the open project, including ones from earlier app sessions. Defaults to previewOnly because it can replace current timeline/asset state.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -8640,7 +8640,7 @@ function createToolDefinitions() {
             },
           },
           label: { type: 'string', description: 'Optional label for the plan/checkpoint.' },
-          createCheckpointFirst: { type: 'boolean', description: 'Create an in-memory checkpoint before applying. Defaults to true.' },
+          createCheckpointFirst: { type: 'boolean', description: 'Create a project checkpoint before applying. Defaults to true.' },
           stopOnError: { type: 'boolean', description: 'Stop applying after the first failed step. Defaults to true.' },
           previewOnly: { type: 'boolean', description: 'When true, validates and returns the plan without running it. Defaults to true.' },
         },

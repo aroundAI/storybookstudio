@@ -63,11 +63,18 @@ import {
   handleUpdateCaptionCues,
   handleGenerateCaptions,
 } from './mcpCaptions'
+import { createCheckpointStore } from '../studio/checkpointStore'
 
 export const MCP_ACTION_BRIDGE_VERSION = 6
 
 const MCP_PROJECT_CHECKPOINTS = new Map()
 const MCP_PROJECT_CHECKPOINT_LIMIT = 20
+// FILM-2010: checkpoints persist under <project>/edits/checkpoints/; the map above is their cache.
+const MCP_CHECKPOINT_STORE = createCheckpointStore({
+  io: () => (typeof window !== 'undefined' ? window.electronAPI : null),
+  cache: MCP_PROJECT_CHECKPOINTS,
+  limit: MCP_PROJECT_CHECKPOINT_LIMIT,
+})
 
 function normalizeClipLabelColor(color) {
   const value = String(color || '').trim()
@@ -7643,7 +7650,7 @@ function buildProjectCheckpointSnapshot(label = '') {
   }
 }
 
-function handleCreateProjectCheckpoint(payload = {}) {
+async function handleCreateProjectCheckpoint(payload = {}) {
   const checkpoint = buildProjectCheckpointSnapshot(payload.label || payload.name || '')
   if (payload.previewOnly === true) {
     return {
@@ -7657,35 +7664,36 @@ function handleCreateProjectCheckpoint(payload = {}) {
         timelineCount: checkpoint.project?.timelines?.length || 0,
         assetCount: checkpoint.assetsState.assets.length,
       },
-      existingCheckpointCount: MCP_PROJECT_CHECKPOINTS.size,
+      existingCheckpointCount: await MCP_CHECKPOINT_STORE.count(checkpoint.projectHandle),
     }
   }
 
-  MCP_PROJECT_CHECKPOINTS.set(checkpoint.id, checkpoint)
-  while (MCP_PROJECT_CHECKPOINTS.size > MCP_PROJECT_CHECKPOINT_LIMIT) {
-    const oldest = MCP_PROJECT_CHECKPOINTS.keys().next().value
-    MCP_PROJECT_CHECKPOINTS.delete(oldest)
-  }
+  const { filePath, persisted } = await MCP_CHECKPOINT_STORE.save(checkpoint.projectHandle, checkpoint)
   return {
     success: true,
     action: 'create_project_checkpoint',
     checkpointId: checkpoint.id,
     label: checkpoint.label,
     createdAt: checkpoint.createdAt,
-    checkpointCount: MCP_PROJECT_CHECKPOINTS.size,
-    message: 'Created an in-memory MCP project checkpoint for this StorybookStudio session.',
+    checkpointCount: await MCP_CHECKPOINT_STORE.count(checkpoint.projectHandle),
+    persisted,
+    filePath,
+    message: persisted
+      ? 'Created an MCP project checkpoint in the project folder (edits/checkpoints/); it survives an app restart.'
+      : 'Created an in-memory MCP project checkpoint; this project has no folder to persist it in.',
   }
 }
 
 async function handleRestoreProjectCheckpoint(payload = {}) {
   const requestedId = String(payload.checkpointId || payload.id || '').trim()
+  const projectPath = useProjectStore.getState().currentProjectHandle
   const checkpoint = requestedId
-    ? MCP_PROJECT_CHECKPOINTS.get(requestedId)
-    : [...MCP_PROJECT_CHECKPOINTS.values()][MCP_PROJECT_CHECKPOINTS.size - 1]
+    ? await MCP_CHECKPOINT_STORE.load(projectPath, requestedId)
+    : await MCP_CHECKPOINT_STORE.latest(projectPath)
   if (!checkpoint) {
     throw new Error(requestedId
       ? `Checkpoint ${requestedId} was not found.`
-      : 'No MCP project checkpoints exist in this app session.')
+      : 'No MCP project checkpoints exist for this project.')
   }
 
   if (payload.previewOnly !== false) {
