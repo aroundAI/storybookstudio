@@ -30,6 +30,7 @@ import { startComfyLauncherEventBridge } from './services/comfyLauncherEventBrid
 import { startComfyAutoImport } from './services/comfyAutoImport'
 import { startMcpSnapshotPublisher } from './services/mcpSnapshot'
 import { MCP_ACTION_BRIDGE_VERSION, startMcpActionBridge } from './services/mcpActions'
+import { startPlanProposedSink } from './studio/planProposedSink'
 import { attachProjectDirtyWatchers, isProjectDirty } from './services/projectDirtyTracker'
 import { VELORN_OPEN_STOCK_EVENT } from './services/pexelsStock'
 import {
@@ -252,6 +253,9 @@ function App() {
     const stop = startMcpActionBridge()
     return () => { try { stop?.() } catch (_) { /* ignore */ } }
   }, [MCP_ACTION_BRIDGE_VERSION])
+
+  // FILM-2013: plan cards from any client (FILM-2015's AI panel renders them).
+  useEffect(() => startPlanProposedSink(), [])
 
   useLayoutEffect(() => {
     const previousTab = mainTabRef.current
