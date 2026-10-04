@@ -78,9 +78,16 @@ ipcMain.handle('export-scheduler-native-finish', async (event, id) => {
   // Decode all frames too: ffprobe metadata alone cannot prove a good stream.
   execFileSync(require('ffmpeg-static'), ['-hide_banner', '-v', 'error', '-xerror', '-i', state.outputPath, '-f', 'null', '-'],
     { timeout: 15000, maxBuffer: 128 * 1024, windowsHide: true })
+  // FILM-2014: the Studio's deterministic QA on the same file. The fixture is
+  // one still colour, so frozen frames are expected; black frames, the wrong
+  // length or format fail the run.
+  const { runExportRegressionQa } = require('../../electron/studio/exportRegressionQa')
+  const qa = await runExportRegressionQa({ file: state.outputPath, durationSeconds: 6, width: 1280, height: 720, fps: 24,
+    allow: ['frozen_frames'], ffmpegPath: require('ffmpeg-static'), ffprobePath: typeof probeBinary === 'string' ? probeBinary : probeBinary.path })
+  if (!qa.pass) throw new Error('Encoded MP4 failed QA: ' + JSON.stringify(qa.blocking))
   nativeVerification = { outputPath: state.outputPath, bytes: fs.statSync(state.outputPath).size,
     submittedFrames: state.frames, encoder: 'libx264 medium CRF18', nativeElapsedMs: Date.now() - state.startedAt,
-    ffprobe: probe, fullDecodePassed: true }
+    ffprobe: probe, fullDecodePassed: true, qa: { pass: qa.pass, issues: qa.issues, measured: qa.measured } }
   return { success: true, encoderUsed: 'libx264', verified: true }
 })
 ipcMain.handle('export-scheduler-native-abort', async (event, id) => {
