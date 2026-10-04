@@ -854,7 +854,7 @@
       "theme": "Theme",
       "active": "Active",
       "themes": {
-        "velorn": "Default brand theme with deep blues, violet, and readable old-gold accents",
+        "velorn": "Default StoryBook theme: deep midnight blues and violet with a blue accent",
         "midnight": "Neutral dark grey inspired by DaVinci Resolve",
         "soft-dark": "Softer contrast with a subtle cool-purple tint",
         "high-contrast": "Maximum readability with vivid blue accent",

@@ -66,6 +66,10 @@ test('the shipped icons are the StoryBook kit, not Velorn\'s', () => {
   }
   const welcome = readFileSync(new URL('src/components/WelcomeScreen.jsx', root), 'utf8')
   assert.doesNotMatch(welcome, /velorn-(home|project)/, 'welcome screen uses no Velorn imagery')
+  const studioWelcome = readFileSync(new URL('src/components/studio/Welcome.jsx', root), 'utf8')
+  assert.match(studioWelcome, /<StudioMark /, 'the StoryBook Welcome carries the monogram')
+  assert.match(studioWelcome, /storybookstudio-welcome-bg\.webp/, 'the StoryBook Welcome sits on the brand wave')
+  assert.ok(existsSync(new URL('public/storybookstudio-welcome-bg.webp', root)), 'the welcome background ships')
   const bottomBar = readFileSync(new URL('src/components/BottomBar.jsx', root), 'utf8')
   assert.doesNotMatch(bottomBar, /#f6d985/i, 'bottom bar drops Velorn\'s gold gradient')
   const css = readFileSync(new URL('src/index.css', root), 'utf8')

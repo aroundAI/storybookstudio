@@ -12,6 +12,10 @@ import { projectFoldersIn, readLocalLink } from '../../studio/ui/studioRuntime'
 import { formatAgo } from '../../studio/ui/pickerModel'
 import { Chip, StudioButton } from './StudioDialog'
 import { studioApi, useStudioText, useStudioUi } from './studioUi'
+import StudioMark from '../../studio/brand/StudioMark'
+
+// The StoryBook brand wave (build/brand/background-wave.svg), text-free.
+const WELCOME_BG = `${import.meta.env?.BASE_URL ?? './'}storybookstudio-welcome-bg.webp`
 
 export function SignInForm({ compact = false }) {
   const t = useStudioText()
@@ -180,11 +184,18 @@ export default function Welcome() {
   }
 
   return (
-    <main className="flex h-screen flex-col bg-sf-dark-950 text-sf-text-primary" data-test="studio-welcome">
+    <main
+      className="flex h-screen flex-col bg-sf-dark-950 bg-cover bg-bottom text-sf-text-primary"
+      style={{ backgroundImage: `url(${WELCOME_BG})` }}
+      data-test="studio-welcome"
+    >
       <div className="mx-auto grid w-full max-w-5xl flex-1 grid-cols-1 gap-10 overflow-y-auto px-8 py-14 md:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
         <section aria-labelledby="studio-welcome-title" className="space-y-6">
           <div>
-            <h1 id="studio-welcome-title" className="text-2xl font-semibold tracking-tight">StorybookStudio</h1>
+            <h1 id="studio-welcome-title" className="flex items-center gap-3 text-2xl font-semibold tracking-tight">
+              <StudioMark className="h-9 w-9 flex-shrink-0" />
+              StorybookStudio
+            </h1>
             <p className="mt-2 text-sm leading-relaxed text-sf-text-secondary">{t('welcome.lede')}</p>
           </div>
           <div className="rounded-xl border border-sf-dark-700 bg-sf-dark-900 p-5">
