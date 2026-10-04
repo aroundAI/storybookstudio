@@ -47,6 +47,8 @@ const {
   createComfyStudioMcpServer,
 } = require('./mcpServer')
 const { createStudioMain } = require('./studio/studioMain')
+const { createReviewTools } = require('./studio/reviewTools')
+const { getSecret: getStudioSecret } = require('./studio/secrets')
 const { loadMyWorkflowCatalog } = require('./myWorkflowCatalog')
 const {
   REQUEST_HEADER_REWRITE_URLS,
@@ -117,6 +119,14 @@ let restoreFullscreenAfterMinimize = false
 let mainWindowStateSaveTimer = null
 const settingsPath = path.join(app.getPath('userData'), 'settings.json')
 let settingsWriteQueue = Promise.resolve()
+
+// A studio_* renderer action as a value or a thrown, coded error (refusals
+// cross the bridge as {studioError}).
+async function studioRendererAction(action, payload = {}) {
+  const result = await performMcpRendererAction({ action, payload })
+  if (result?.studioError) throw Object.assign(new Error(result.studioError.message), { code: result.studioError.code })
+  return result
+}
 
 function performMcpRendererAction(request = {}) {
   if (!mainWindow || mainWindow.isDestroyed()) {
@@ -7820,6 +7830,15 @@ app.whenReady().then(async () => {
     getStudioCloud: () => studioMain.cloud,
     getStudioDeliver: () => studioMain.deliver,
     emitPlanProposed: (proposal) => studioMain.emitPlanProposed(proposal),
+    // FILM-2014: preview tiers, QA and the critic run here; the document and
+    // the op log come from the renderer.
+    reviewTools: createReviewTools({
+      getReviewContext: (payload) => studioRendererAction('studio_review_context', payload),
+      appendOpLog: (entry) => studioRendererAction('studio_append_oplog', entry),
+      ffmpegPath,
+      ffprobePath,
+      getSecret: (key) => getStudioSecret(key),
+    }),
   })
   // FILM-2017: set_auto_reframe and set_focal_point run in electron/studio/deliver.js.
   mcpServer.studioTools = studioMain.deliver.expertTools

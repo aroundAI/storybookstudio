@@ -13,6 +13,7 @@ import { buildStudioContext, documentFingerprint, searchAssets, summarizeContext
 import { COMPILER_TOOLS, STUDIO_EDIT_INTENTS, buildDraftReport, buildPlanCards, listIntents, previewIntent, readsFor, validatePlan } from './compile.js'
 import { buildExplainWhyReport, formatExplainWhyText, reportPathFor } from './report.js'
 import { createStudioVersion, getStudioEditLog, restoreStudioVersion, timelineDocument } from './editLogRuntime.js'
+import { snapshotPathFor } from './versions.js'
 import { STORYBOOK_FILES } from './projectBuilder.js'
 import { RENDER_PRESETS, RENDER_PRESET_NAMES } from './contracts/render-presets.mjs'
 import { finishPlan, pictureEnd, shotLabel } from './intents/shared.js'
@@ -335,11 +336,22 @@ export async function handleStudioAction(action, payload = {}) {
       const projectState = useProjectStore.getState()
       const projectPath = projectPathOf()
       const files = await loadStoryBookFiles(projectPath)
-      const document = active?.getDocument ? active.getDocument() : timelineDocument(projectState)
+      let document = active?.getDocument ? active.getDocument() : timelineDocument(projectState)
+      // FILM-2014: studio_review {versionId} reviews that version's snapshot
+      // (its timelines and buses; the asset library is the live one).
+      const { versionId = null } = payload
+      if (versionId && versionId !== (active?.versions?.current()?.id ?? null)) {
+        const text = await readEdits(snapshotPathFor(versionId))
+        const snapshot = text ? JSON.parse(text) : null
+        if (!snapshot?.timelines) throw studioError('NOT_FOUND', `No snapshot for version ${versionId}.`)
+        document = { ...document, timelines: snapshot.timelines, currentTimelineId: snapshot.currentTimelineId ?? document.currentTimelineId, ...(snapshot.audioBuses ? { audioBuses: snapshot.audioBuses } : {}) }
+      }
+      const project = { ...(projectState.currentProject || {}), ...document }
+      if (document.audioBuses) project.studio = { ...(project.studio || {}), audioBuses: document.audioBuses }
       return {
-        project: { ...(projectState.currentProject || {}), ...document },
+        project,
         projectPath,
-        timelineId: projectState.currentTimelineId ?? null,
+        timelineId: document.currentTimelineId ?? projectState.currentTimelineId ?? null,
         policy: (await loadStudioContext()).context.policy,
         pkg: files.package,
         opLog: active?.oplog?.entries() ?? [],

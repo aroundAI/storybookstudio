@@ -333,6 +333,9 @@ export function compile(context, scope = {}, params = {}, policy = context?.poli
   const spans = sceneSpans(timeline)
   const sceneNumbers = (context.sceneMap || []).map((entry) => entry.scene).filter(Number.isInteger)
   const scenes = sceneNumbers.length ? sceneNumbers : [...spans.keys()].sort((a, b) => a - b)
+  // What no edit fixes rides in the notes too, so the cards show it however
+  // the compiler is registered.
+  notes.push(...unrepaired.map((entry) => ({ scene: entry.issue?.scene ?? null, text: `Not repaired (${entry.issue?.type || 'issue'}): ${entry.why}` })))
   return {
     intent: INTENT,
     steps: entries.map((entry) => entry.step),

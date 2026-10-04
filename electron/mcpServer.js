@@ -10676,6 +10676,7 @@ class ComfyStudioMcpServer {
     getStudioCloud = null,
     getStudioDeliver = null,
     emitPlanProposed = null,
+    reviewTools = null,
   } = {}) {
     this.port = port
     this.authSecret = typeof authSecret === 'string' && authSecret ? authSecret : null
@@ -10708,6 +10709,8 @@ class ComfyStudioMcpServer {
       getProjectPath: () => this.lastSnapshot?.project?.path || null,
       getDeliver: () => (typeof getStudioDeliver === 'function' ? getStudioDeliver() : null),
       getSnapshot: () => this.lastSnapshot,
+      // FILM-2014: studio_review, studio_render_preview and the autoRepair loop.
+      reviewTools,
     })
   }
 
