@@ -66,11 +66,16 @@ const liveTimelines = (projectState) => {
   ))
 }
 
-// What versions snapshot and restore: the project's timelines.
-export const timelineDocument = (projectState) => ({
-  currentTimelineId: projectState?.currentTimelineId ?? null,
-  timelines: liveTimelines(projectState),
-})
+// What versions snapshot and restore: the project's timelines, and the
+// audio buses (FILM-2016) when the project has them.
+export const timelineDocument = (projectState) => {
+  const audioBuses = projectState?.currentProject?.studio?.audioBuses
+  return {
+    currentTimelineId: projectState?.currentTimelineId ?? null,
+    timelines: liveTimelines(projectState),
+    ...(audioBuses ? { audioBuses } : {}),
+  }
+}
 
 // What the op log diffs: the timelines plus the asset library.
 export const projectDocument = (projectState) => ({
@@ -90,10 +95,13 @@ const loadTimelineDocument = (projectStore, document) => {
     const fps = timeline.fps || state.currentProject?.settings?.fps || 24
     useTimelineStore.getState().loadFromProject(timeline, useAssetsStore.getState().getProjectData(), fps)
   }
-  projectStore.setState((current) => ({
-    currentProject: current.currentProject ? { ...current.currentProject, timelines, currentTimelineId } : null,
-    currentTimelineId,
-  }))
+  projectStore.setState((current) => {
+    if (!current.currentProject) return { currentProject: null, currentTimelineId }
+    const studio = document.audioBuses && current.currentProject.studio
+      ? { studio: { ...current.currentProject.studio, audioBuses: JSON.parse(JSON.stringify(document.audioBuses)) } }
+      : {}
+    return { currentProject: { ...current.currentProject, timelines, currentTimelineId, ...studio }, currentTimelineId }
+  })
 }
 
 let active = null

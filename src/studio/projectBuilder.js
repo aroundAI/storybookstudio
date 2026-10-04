@@ -25,12 +25,12 @@ import { EDITGRAPH_SCHEMA, roleForStoryBookSource } from './contracts/editgraph.
 import { PROJECT_VERSION_STUDIO } from './projectVersion.js'
 import { quantizeTimeToFrame, roundDurationToFrame } from '../utils/timelineFrames.js'
 import { MIN_AUDIO_CLIP_GAIN_DB, normalizeAudioClipGainDb } from '../utils/audioClipGain.js'
+import { AUDIO_BUSES, DEFAULT_DUCK_DB, DUCK_ATTACK_MS, DUCK_RELEASE_MS, defaultAudioBuses } from './audio/buses.js'
 
 export const MASTER_TIMELINE_ID = 'tl-master'
 export const SHOT_TRACK_ID = 'video-1'
-export const DEFAULT_DUCK_DB = -8
-export const DUCK_ATTACK_MS = 120
-export const DUCK_RELEASE_MS = 400
+// The bus model lives in audio/buses.js (FILM-2016); re-exported for callers of the builder.
+export { AUDIO_BUSES, DEFAULT_DUCK_DB, DUCK_ATTACK_MS, DUCK_RELEASE_MS }
 // Velorn's subtitle style: the captions clip stores the preset id and the
 // renderer fills in the rest (captionRenderer mergePresetWithOverrides).
 export const ROUGH_CUT_CAPTION_PRESET_ID = 'kinetic-traditional'
@@ -42,8 +42,7 @@ export const STORYBOOK_FILES = Object.freeze({
   policy: 'storybook/policy.json',
 })
 
-// Buses per FILM-2016; language dependency per FILM-2019.
-export const AUDIO_BUSES = Object.freeze(['dialogue', 'music', 'sfx', 'ambience', 'shotaudio'])
+// Language dependency per FILM-2019.
 const AUDIO_TRACK_ORDER = ['dialogue', 'shotaudio', 'music', 'sfx', 'ambience']
 const LANGUAGE_DEPENDENT_ROLES = new Set(['dialogue', 'caption'])
 export const languageDependencyForRole = (role) => (LANGUAGE_DEPENDENT_ROLES.has(role) ? 'language' : 'none')
@@ -656,7 +655,6 @@ export function buildProject({ package: input, probedAssets = new Map(), brand: 
     studio: { kind: 'master', variantOf: null, aspect: episode.aspect, language: episode.language },
   }
 
-  const duck = { duckUnder: 'dialogue', duckDb: policy.music.duckDb ?? DEFAULT_DUCK_DB, attackMs: DUCK_ATTACK_MS, releaseMs: DUCK_RELEASE_MS }
   const project = {
     name: `${pkg.project.name} - E${String(episode.number).padStart(2, '0')} ${episode.title}`,
     version: PROJECT_VERSION_STUDIO,
@@ -673,14 +671,7 @@ export function buildProject({ package: input, probedAssets = new Map(), brand: 
       schema: EDITGRAPH_SCHEMA,
       episodeId: episode.id,
       currentVersion: null,
-      audioBuses: {
-        dialogue: { gainDb: 0 },
-        music: { gainDb: 0, ...(policy.music.duckUnderDialogue ? duck : { duckUnder: null }) },
-        sfx: { gainDb: 0 },
-        ambience: { gainDb: 0 },
-        shotaudio: { gainDb: 0, ...duck },
-        master: { limiterLufs: policy.loudnessTargetLufs },
-      },
+      audioBuses: defaultAudioBuses(policy),
       storybook: { projectId: pkg.project.id, episodeId: episode.id, episodeVersion: episode.version, etag: pkg.etag, languages },
     },
   }

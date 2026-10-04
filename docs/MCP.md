@@ -392,6 +392,7 @@ These tools use the same persistent Director state as the visible Music Video UI
 | `extract_range` | Remove a time range across unlocked tracks, optionally ripple-closing the gap. |
 | `set_clip_speed` | Retime clips from 0.1x to 8x and optionally reverse. |
 | `set_clip_audio` | Set audio gain and fades. |
+| `set_audio_buses` | StorybookStudio projects: preview/change bus gain, ducking under the dialogue bus (duckDb, attack, release) and the master loudness target (`project.studio.audioBuses`). The dialogue bus is never ducked. Preview and export both mix on the buses; a Studio export can also write stems beside the render. |
 | `set_clip_style` | Batch-update label color, enabled state, transform, crop, blur, blend mode, and motion blur. |
 
 ### Media Placement And Replacement
@@ -431,7 +432,7 @@ Search Pexels photos for "ocean drone shots" with search_stock_media. Show me th
 | --- | --- |
 | `transcribe_captions` | Preview/start Qwen ASR caption transcription for timeline or asset scope. |
 | `get_caption_status` | Poll caption transcription/render jobs and get the cue draft. |
-| `update_caption_cues` | Edit the cue draft before rendering. |
+| `update_caption_cues` | Edit the cue draft or a live captions clip; a StorybookStudio caption plan sends per-cue `globalOverrides` (brand style, safe area) and a clip `preset` in the same call. |
 | `generate_captions` | Preview/render an animated transparent caption overlay and place it on the Captions track. |
 
 ### Graphics, Effects, And Keyframes

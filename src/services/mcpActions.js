@@ -65,6 +65,7 @@ import {
 } from './mcpCaptions'
 import { createCheckpointStore } from '../studio/checkpointStore'
 import { runMcpActionWithEditLog } from '../studio/editLogRuntime.js'
+import { handleSetAudioBuses } from '../studio/audio/busActions.js'
 
 export const MCP_ACTION_BRIDGE_VERSION = 6
 
@@ -8854,6 +8855,8 @@ async function handleMcpAction(request = {}) {
       return handleUpdateTrack(request.payload || {})
     case 'set_master_audio':
       return handleSetMasterAudio(request.payload || {})
+    case 'set_audio_buses':
+      return handleSetAudioBuses(request.payload || {}, { projectStore: useProjectStore })
     case 'remove_track':
       return handleRemoveTrack(request.payload || {})
     case 'switch_timeline':

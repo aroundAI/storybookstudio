@@ -6021,7 +6021,11 @@ ipcMain.handle('export:mixAudio', async (event, options = {}) => {
     // single frame so a doomed mix fails in seconds, not after an hour of
     // frame encoding (the "38 of 50 clips after 95 minutes" incident).
     validateOnly = false,
+    // FILM-2016: a StorybookStudio project mixes on buses (ducking, loudnorm,
+    // stems): { audioBuses, loudnessTargetLufs, stems: {directory, baseName}, stemOnlyTrackIds }.
+    studio = null,
   } = options
+  const studioStemOnly = new Set(studio?.audioBuses && Array.isArray(studio.stemOnlyTrackIds) ? studio.stemOnlyTrackIds : [])
 
   if (!outputPath && !validateOnly) {
     return { success: false, error: 'Missing output path for audio mix.' }
@@ -6071,7 +6075,8 @@ ipcMain.handle('export:mixAudio', async (event, options = {}) => {
   for (const clip of clips || []) {
     const track = trackMap.get(clip?.trackId)
     if (!isAudioMixClip(clip, track)) { if (clip) skip(clip, 'not-an-audio-clip'); continue }
-    if (!track || track.type !== 'audio' || track.muted || track.visible === false) {
+    const stemOnly = Boolean(track && studioStemOnly.has(track.id))
+    if (!track || track.type !== 'audio' || ((track.muted || track.visible === false) && !stemOnly)) {
       // The renderer only sends clips on audible audio tracks, so landing
       // here means renderer/main disagree — count it as a problem.
       skip(clip, 'track-not-audible', true)
@@ -6139,11 +6144,15 @@ ipcMain.handle('export:mixAudio', async (event, options = {}) => {
       trackVolume: track.volume ?? 100,
       trackPan: Math.max(-100, Math.min(100, Number(track.pan) || 0)),
       forceMono: track.channels === 'mono',
+      bus: track.bus ?? null,
+      language: track.language ?? null,
+      stemOnly,
     })
   }
+  const mixedInputCount = preparedInputs.filter((entry) => !entry.stemOnly).length
 
   if (validateOnly) {
-    return { success: true, validateOnly: true, clipCount: preparedInputs.length, skipped }
+    return { success: true, validateOnly: true, clipCount: mixedInputCount, skipped }
   }
 
   if (preparedInputs.length === 0) {
@@ -6165,9 +6174,7 @@ ipcMain.handle('export:mixAudio', async (event, options = {}) => {
     args.push('-i', entry.inputPath)
   }
 
-  const inputFilters = []
-  const mixLabels = []
-  preparedInputs.forEach((entry, index) => {
+  const mixInputFilters = (entry) => {
     // No atempo at unity rate: ffmpeg 6.1.1 amix silently truncates the whole
     // mix at input 0's delay when that input's chain has atempo before adelay.
     const filters = [
@@ -6200,9 +6207,34 @@ ipcMain.handle('export:mixAudio', async (event, options = {}) => {
     if (entry.delayMs > 0) {
       filters.push(`adelay=${formatFilterNumber(entry.delayMs)}:all=1`)
     }
+    return filters
+  }
 
+  if (studio?.audioBuses) {
+    const { runStudioBusMix } = await import('./studio/audioBusMix.mjs')
+    const result = await runStudioBusMix({
+      ffmpegPath,
+      inputs: preparedInputs.map((entry) => ({ inputPath: entry.inputPath, filters: mixInputFilters(entry), bus: entry.bus, language: entry.language, stemOnly: entry.stemOnly })),
+      buses: studio.audioBuses,
+      outputPath,
+      totalDuration,
+      sampleRate: normalizedSampleRate,
+      channels: normalizedChannels,
+      masterGain: Math.max(0, Math.min(2, (Number(masterVolume) || 100) / 100)),
+      loudnessTargetLufs: Number.isFinite(Number(studio.loudnessTargetLufs)) ? Number(studio.loudnessTargetLufs) : null,
+      stems: studio.stems?.directory ? { directory: String(studio.stems.directory), baseName: String(studio.stems.baseName || 'render') } : null,
+      timeoutMs: normalizedTimeout,
+    })
+    if (!result.success) return { ...result, skipped }
+    const outputDuration = await probeAudioDurationSeconds(outputPath)
+    return { success: true, clipCount: mixedInputCount, outputDuration, expectedDuration: totalDuration, skipped, loudness: result.loudness, stems: result.stems, stemsSumToMix: result.stemsSumToMix }
+  }
+
+  const inputFilters = []
+  const mixLabels = []
+  preparedInputs.forEach((entry, index) => {
     const label = `mix${index}`
-    inputFilters.push(`[${index}:a]${filters.join(',')}[${label}]`)
+    inputFilters.push(`[${index}:a]${mixInputFilters(entry).join(',')}[${label}]`)
     mixLabels.push(`[${label}]`)
   })
 

@@ -55,6 +55,7 @@ const MCP_ACTION_PLAN_WRITABLE_TOOLS = new Set([
   'add_track',
   'update_track',
   'set_master_audio',
+  'set_audio_buses',
   'remove_track',
   'add_transition',
   'update_transition',
@@ -7712,6 +7713,7 @@ function createToolDefinitions() {
                 start: { type: 'number' },
                 end: { type: 'number' },
                 text: { type: 'string' },
+                globalOverrides: { type: 'object', additionalProperties: true, description: 'Optional per-cue style for a live captions clip (StorybookStudio caption style: colours, size, safeArea, maxCharsPerLine, emphasisWords). Omit to keep the cue\'s current style.' },
               },
               required: ['start', 'end', 'text'],
             },
@@ -7731,6 +7733,7 @@ function createToolDefinitions() {
             },
           },
           removeIds: { type: 'array', items: { type: 'string' }, description: 'Cue IDs to delete.' },
+          preset: { type: 'object', additionalProperties: true, description: 'Optional live captions clip style, merged into the clip\'s caption preset (font, colours, text style). Clip target only.' },
           previewOnly: { type: 'boolean', description: 'When true, returns the resulting cue list without changing the draft or clip.' },
         },
       },
@@ -9119,6 +9122,29 @@ function createToolDefinitions() {
           },
           previewOnly: { type: 'boolean', description: 'When true, returns the master update plan without changing the timeline. Defaults to true.' },
         },
+      },
+    },
+    {
+      name: 'set_audio_buses',
+      description: 'StorybookStudio projects: preview or change the audio buses (project.studio.audioBuses) that tracks are mixed through: per-bus gain in dB; ducking of music, sfx, ambience or shotaudio under the dialogue bus (duckUnder "dialogue" or null, duckDb, attackMs, releaseMs); and master.limiterLufs, the loudness the export normalizes to. The dialogue bus is never ducked. Applies to preview and export. Defaults to previewOnly.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          buses: {
+            type: 'object',
+            description: 'Changes keyed by bus: dialogue, music, sfx, ambience, shotaudio, master. Fields left out keep their value.',
+            properties: {
+              dialogue: { type: 'object', properties: { gainDb: { type: 'number' } } },
+              music: { type: 'object', additionalProperties: true },
+              sfx: { type: 'object', additionalProperties: true },
+              ambience: { type: 'object', additionalProperties: true },
+              shotaudio: { type: 'object', additionalProperties: true },
+              master: { type: 'object', properties: { limiterLufs: { type: 'number', description: 'Loudness target in LUFS, -31..-5.' } } },
+            },
+          },
+          previewOnly: { type: 'boolean', description: 'When true, returns the bus changes without making them. Defaults to true.' },
+        },
+        required: ['buses'],
       },
     },
     {
@@ -10922,6 +10948,10 @@ class ComfyStudioMcpServer {
         return this.runRendererActionTool('transcribe_captions', args, { bridgeName: 'MCP captions bridge', suggestedTool: 'transcribe_captions', defaultPreviewOnly: true })
       case 'get_caption_status':
         return this.runRendererActionTool('get_caption_status', args, { bridgeName: 'MCP captions bridge', suggestedTool: 'get_caption_status' })
+      case 'set_audio_buses':
+        return this.runRendererActionTool('set_audio_buses', args, { bridgeName: 'MCP audio bus bridge', suggestedTool: 'set_audio_buses', defaultPreviewOnly: true })
+      case 'set_master_audio':
+        return this.runRendererActionTool('set_master_audio', args, { bridgeName: 'MCP master audio bridge', suggestedTool: 'set_master_audio', defaultPreviewOnly: true })
       case 'update_caption_cues':
         return this.runRendererActionTool('update_caption_cues', args, { bridgeName: 'MCP captions bridge', suggestedTool: 'update_caption_cues' })
       case 'generate_captions':

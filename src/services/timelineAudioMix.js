@@ -33,6 +33,7 @@ import { scheduleAudioVolumeEnvelope } from '../utils/audioVolumeAutomation.mjs'
 import { normalizeAudioEq } from '../utils/audioEq.mjs'
 import { createAudioEqChain } from './audioEqChain'
 import { getCompoundRenderState, getClipPlaybackWindow } from '../utils/compoundPlayback.mjs'
+import { transcriptionTracks } from '../studio/audio/buses.js'
 
 // Qwen3-ASR native rate. Sticking to 16k saves ~2/3 of the upload size vs
 // 44.1/48k without losing any transcription accuracy.
@@ -116,7 +117,8 @@ function buildIpcPayload({ duration }) {
 
   // Fold solo into muted so the FFmpeg IPC (which only understands mute)
   // hears the same tracks the preview graph plays.
-  const tracks = applySoloAsMute(timelineState.tracks || []).map((track) => ({
+  // FILM-2016: a bussed project transcribes speech buses only.
+  const tracks = applySoloAsMute(transcriptionTracks(timelineState.tracks || [])).map((track) => ({
     id: track.id,
     type: track.type,
     muted: !!track.muted,
@@ -218,7 +220,7 @@ async function mixViaWebAudio({ report }) {
   const assetsState = useAssetsStore.getState()
 
   const clips = Array.isArray(timelineState.clips) ? timelineState.clips : []
-  const tracks = Array.isArray(timelineState.tracks) ? timelineState.tracks : []
+  const tracks = transcriptionTracks(Array.isArray(timelineState.tracks) ? timelineState.tracks : [])
 
   const enabledClips = clips
     .filter((clip) => clip.enabled !== false)
@@ -382,7 +384,7 @@ export async function mixTimelineAudioToWav({ onProgress } = {}) {
   if (timelineState.compoundRenderErrors?.length) throw new Error(timelineState.compoundRenderErrors.join(' '))
   const assetsState = useAssetsStore.getState()
   const clips = Array.isArray(timelineState.clips) ? timelineState.clips : []
-  const tracks = Array.isArray(timelineState.tracks) ? timelineState.tracks : []
+  const tracks = transcriptionTracks(Array.isArray(timelineState.tracks) ? timelineState.tracks : [])
 
   const report = (status, pct) => {
     if (typeof onProgress === 'function') onProgress(status, clamp(pct, 0, 100))

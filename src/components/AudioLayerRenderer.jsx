@@ -11,6 +11,9 @@ import { holdAudioPreviewEntry } from '../utils/audioPlaybackHold.mjs'
 import { getCurrentPlaybackJump } from '../utils/playbackJump.mjs'
 import { createAudioEqChain } from '../services/audioEqChain'
 import useAudioEqPreview from '../services/audioEqPreview'
+import useProjectStore from '../stores/projectStore'
+import { createStudioBusGraph, DUCK_TICK_MS } from '../studio/audio/busGraph.js'
+import { busForTrack, resolveAudioBuses } from '../studio/audio/buses.js'
 import {
   hasAudioSolo,
   isAudioTrackAudible,
@@ -21,6 +24,7 @@ import { getAudioInsertsSignature } from '../utils/audioInserts'
 import { buildInsertChain } from '../services/audioInsertChain'
 import {
   registerMixerGraph,
+  registerStudioBusGraph,
   unregisterMixerGraph,
   setTrackAnalyser,
   removeTrackAnalyser,
@@ -190,6 +194,7 @@ function AudioLayerRenderer() {
   const masterChainSignatureRef = useRef(null)
   const programGainRef = useRef(null)
   const monitorGainRef = useRef(null)
+  const studioBusGraphRef = useRef(null) // FILM-2016: buses between track and master
 
   const timelineState = useTimelineStore()
   const {
@@ -211,9 +216,11 @@ function AudioLayerRenderer() {
   const eqPreviewClip = useAudioEqPreview(state => state.clip)
   const eqPreviewValue = useAudioEqPreview(state => state.eq)
   const duckingPreview = useAudioDuckingPreview()
+  const studioAudioBuses = useProjectStore(state => state.currentProject?.studio?.audioBuses)
 
   useEffect(() => {
     let audioContext = null
+    let studioDuckTimer = null
     try {
       const AudioContextCtor = window.AudioContext || window.webkitAudioContext
       if (!AudioContextCtor) return undefined
@@ -239,11 +246,21 @@ function AudioLayerRenderer() {
       masterChainRef.current = null
       masterChainSignatureRef.current = null
       registerMixerGraph({ context: audioContext, masterAnalyser })
+      // Bussed tracks (StorybookStudio projects) feed the bus graph, which
+      // sums into the master bus input; the follower ducks under dialogue.
+      const studioBusGraph = createStudioBusGraph(audioContext, masterBusInput)
+      studioBusGraph.update(resolveAudioBuses(useProjectStore.getState().currentProject?.studio?.audioBuses))
+      studioBusGraphRef.current = studioBusGraph
+      registerStudioBusGraph(audioContext, studioBusGraph)
+      studioDuckTimer = setInterval(() => studioBusGraph.tick(), DUCK_TICK_MS)
     } catch (err) {
       console.warn('Failed to initialize preview audio context:', err)
     }
 
     return () => {
+      if (studioDuckTimer) clearInterval(studioDuckTimer)
+      studioBusGraphRef.current?.dispose()
+      studioBusGraphRef.current = null
       unregisterMixerGraph(audioContext)
       masterChainRef.current?.dispose?.()
       masterChainRef.current = null
@@ -379,6 +396,10 @@ function AudioLayerRenderer() {
   }), [])
 
   useEffect(() => {
+    studioBusGraphRef.current?.update(resolveAudioBuses(studioAudioBuses))
+  }, [studioAudioBuses])
+
+  useEffect(() => {
     const audioContext = audioContextRef.current
     if (audioContext && audioContext.state === 'suspended' && audioIsPlaying) {
       audioContext.resume().catch(() => {})
@@ -417,13 +438,23 @@ function AudioLayerRenderer() {
   }
 
   // Lazily create the per-track bus (insert chain + fader gain + meter analyser)
-  const ensureTrackBus = (trackId) => {
+  const ensureTrackBus = (trackId, studioBus = null) => {
     const audioContext = audioContextRef.current
     const masterBusInput = masterBusInputRef.current
     if (!audioContext || !masterBusInput || !trackId) return null
+    const destination = studioBusGraphRef.current?.inputFor(studioBus) || masterBusInput
 
     let bus = trackBusesRef.current.get(trackId)
-    if (bus) return bus
+    if (bus) {
+      if (bus.destination !== destination) {
+        try {
+          bus.analyser.disconnect()
+          bus.analyser.connect(destination)
+          bus.destination = destination
+        } catch (_) {}
+      }
+      return bus
+    }
 
     try {
       const input = audioContext.createGain()
@@ -448,8 +479,8 @@ function AudioLayerRenderer() {
       } else {
         fader.connect(analyser)
       }
-      analyser.connect(masterBusInput)
-      bus = { input, chain: null, chainSignature: null, fader, panner, analyser }
+      analyser.connect(destination)
+      bus = { input, chain: null, chainSignature: null, fader, panner, analyser, destination }
       trackBusesRef.current.set(trackId, bus)
       setTrackAnalyser(trackId, analyser)
       return bus
@@ -625,7 +656,7 @@ function AudioLayerRenderer() {
         }
 
         const audioContext = audioContextRef.current
-        const bus = ensureTrackBus(track.id)
+        const bus = ensureTrackBus(track.id, busForTrack(track))
         if (audioContext && bus) {
           try {
             syncTrackChain(bus, track)
@@ -650,7 +681,7 @@ function AudioLayerRenderer() {
         audioEntries.set(clip.id, entry)
       } else if (entry.gainNode && entry.trackId !== track.id) {
         // Clip moved to a different audio track: reroute through the new bus
-        const bus = ensureTrackBus(track.id)
+        const bus = ensureTrackBus(track.id, busForTrack(track))
         if (bus) {
           try {
             syncTrackChain(bus, track)
