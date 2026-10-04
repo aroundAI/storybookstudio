@@ -92,7 +92,8 @@ test('the running server answers 401 / 401 / 403 / 200 over HTTP', async (t) => 
 
   const ok = await request(port, { headers: { ...json, Authorization: `Bearer ${SECRET}` }, body })
   assert.equal(ok.status, 200)
-  assert.ok(JSON.parse(ok.body).result.tools.length > 100)
+  // FILM-2013: the agent profile (18 capability tools) is the default; Velorn's are at ?profile=expert.
+  assert.equal(JSON.parse(ok.body).result.tools.length, 18)
 
   const loopbackOrigin = await request(port, { headers: { ...json, Authorization: `Bearer ${SECRET}`, Origin: 'http://localhost:5173' }, body })
   assert.equal(loopbackOrigin.status, 200)

@@ -10,17 +10,23 @@
 // studio_finish_apply, studio_deliver_summary.
 import { useProjectStore } from '../stores/projectStore'
 import { buildStudioContext, documentFingerprint, searchAssets, summarizeContext } from './context.js'
-import { COMPILER_TOOLS, STUDIO_EDIT_INTENTS, listIntents, previewIntent, readsFor } from './compile.js'
+import { COMPILER_TOOLS, STUDIO_EDIT_INTENTS, buildDraftReport, buildPlanCards, listIntents, previewIntent, readsFor, validatePlan } from './compile.js'
 import { buildExplainWhyReport, formatExplainWhyText, reportPathFor } from './report.js'
 import { createStudioVersion, getStudioEditLog, restoreStudioVersion, timelineDocument } from './editLogRuntime.js'
 import { STORYBOOK_FILES } from './projectBuilder.js'
 import { RENDER_PRESETS, RENDER_PRESET_NAMES } from './contracts/render-presets.mjs'
-import { pictureEnd } from './intents/shared.js'
+import { finishPlan, pictureEnd, shotLabel } from './intents/shared.js'
+import { registerExternalIntents } from './externalIntents.js'
+
+// FILM-2016's audio and caption compilers, when this build has them.
+export const EXTERNAL_INTENTS = registerExternalIntents(import.meta.glob('./intents/{audio,captions}.js', { eager: true }))
+const EXTERNAL_OWNERS = { audio: 'FILM-2016', captions: 'FILM-2016' }
 
 export const STUDIO_RENDERER_ACTIONS = Object.freeze([
   'studio_get_context', 'studio_compile', 'studio_search_assets', 'studio_readiness_local',
-  'studio_create_version', 'studio_restore_version', 'studio_finish_apply', 'studio_deliver_summary',
+  'studio_create_version', 'studio_restore_version', 'studio_finish_apply', 'studio_deliver_summary', 'studio_resync_plan',
 ])
+export const RESYNC_PLAN_PATH = 'storybook/resync-plan.json'
 export const LAST_QA_PATH = 'edits/qa/latest.json'
 
 export const isStudioRendererAction = (action) => STUDIO_RENDERER_ACTIONS.includes(action)
@@ -134,6 +140,10 @@ async function runCompileReads(intent, context, scope, params) {
 
 async function compileAction(payload = {}) {
   const { intent, scope = {}, params = {}, writable } = payload
+  const family = String(intent || '').split(':')[0]
+  if (EXTERNAL_OWNERS[family] && !listIntents().includes(intent)) {
+    throw studioError('VALIDATION_FAILED', `${intent} is not available yet: ${EXTERNAL_OWNERS[family]} builds it (its compilers are not in this build).`, { availableAfter: EXTERNAL_OWNERS[family] })
+  }
   if (!STUDIO_EDIT_INTENTS.includes(intent) && !listIntents().includes(intent)) {
     throw studioError('VALIDATION_FAILED', `Unknown intent "${intent}". Intents: ${listIntents().join(', ')}.`)
   }
@@ -156,6 +166,39 @@ async function compileAction(payload = {}) {
     if (error.code) throw studioError(error.code, error.message, error.details)
     throw error
   }
+}
+
+// FILM-2011's re-sync proposal (storybook/resync-plan.json) as a plan in
+// the compile shape: its steps and reasons as proposed, cards, a draft report.
+async function resyncPlan({ writable } = {}) {
+  const { context, document, projectPath } = await loadStudioContext()
+  const proposal = await readJson(projectPath, RESYNC_PLAN_PATH)
+  if (!proposal?.steps) throw studioError('NOT_FOUND', 'No StoryBook update to apply: studio_check_updates proposes one when the episode changed.')
+  const clips = new Map((context.timeline?.clips || []).map((clip) => [clip.id, clip]))
+  const userEdited = new Set(context.userEditedClipIds)
+  const imported = new Map()
+  const previewAfter = []
+  const entries = proposal.steps.map((raw, index) => {
+    const { previewOnly, studioMeta, ...args } = raw.arguments || {}
+    const targets = [...(args.clipIds || []), ...(args.clipId ? [args.clipId] : [])]
+    if (raw.tool === 'import_asset_from_path') imported.set(String(args.path || '').split(/[\\/]/).pop(), index)
+    if (args.assetName && imported.has(args.assetName)) previewAfter[index] = imported.get(args.assetName)
+    const text = raw.tool === 'import_asset_from_path' ? `Imported ${String(args.path || '').split(/[\\/]/).pop()}`
+      : raw.tool === 'replace_clip_with_asset' ? `Replaced ${shotLabel(clips.get(args.clipId))} with ${args.assetName}`
+        : raw.tool === 'delete_clips' ? `Removed ${targets.map((id) => shotLabel(clips.get(id))).join(', ')}`
+          : `${raw.tool}`
+    return { step: { tool: raw.tool, arguments: args }, reason: raw.reason || studioMeta?.reason || 'StoryBook changed', scene: studioMeta?.scene ?? null, text, touches: targets.filter((id) => userEdited.has(id)) }
+  })
+  const notes = [
+    ...(proposal.unresolved || []).map((item) => ({ scene: null, text: `Not in the plan: ${item.kind} ${item.id}: ${item.reason}` })),
+    ...(proposal.failedDownloads || []).map((item) => ({ scene: null, text: `Not downloaded: ${item.key} (${item.reason})` })),
+  ]
+  const plan = { ...finishPlan(context, { intent: 'apply_updates', entries, notes }), previewAfter, scope: {}, params: {} }
+  const problems = validatePlan(plan, { writable: writable || COMPILER_TOOLS })
+  if (problems.length) throw studioError('VALIDATION_FAILED', `The update plan cannot run: ${problems.join('; ')}`)
+  const prompt = `Sync from StoryBook (${proposal.summary ? JSON.stringify(proposal.summary) : proposal.planId})`
+  const { report, text } = buildDraftReport(plan, context, { prompt })
+  return { plan, cards: buildPlanCards(plan, context), report, reportText: text, prompt, fingerprint: documentFingerprint(document), planKey: proposal.planId ?? null, currentVersionId: context.currentVersionId }
 }
 
 async function finishApply({ versionId, hookType = null } = {}) {
@@ -259,6 +302,8 @@ export async function handleStudioAction(action, payload = {}) {
       return finishApply(payload)
     case 'studio_deliver_summary':
       return deliverSummary(payload)
+    case 'studio_resync_plan':
+      return resyncPlan(payload)
     default:
       throw studioError('VALIDATION_FAILED', `Unknown Studio action ${action}`)
   }

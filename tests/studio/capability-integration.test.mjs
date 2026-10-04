@@ -111,7 +111,7 @@ test('M2: "tighten scene 3 to 12 s" over MCP: context, preview cards, apply into
 test('apply refuses without a preview, and with TARGET_CHANGED when the timeline changed after the preview', async () => {
   const noPlan = await call('studio_edit', { ...M2, previewOnly: false })
   assert.equal(noPlan.result.isError, true)
-  assert.match(noPlan.body.error.message, /Preview the edit first/)
+  assert.match(noPlan.body.error.message, /Preview first/)
 
   const { body: preview } = await call('studio_edit', M2)
   const s1 = harness.timeline().clips.find((clip) => clip.trackId === 'video-1' && clip.metadata?.semantic?.scene === 1)
@@ -171,4 +171,48 @@ test('autoRepair runs one round inside the version and says QA is FILM-2014\'s; 
 
   const { body: search } = await call('studio_search_assets', { query: 'alarm', role: 'generated_video', scene: 3 })
   assert.equal(search.results.length, 4)
+
+  // Without FILM-2016's compilers in the build, its tools say whose they are.
+  if (!(await m.capability.EXTERNAL_INTENTS).length) {
+    for (const [name, args] of [['studio_edit_audio', { intent: 'duck' }], ['studio_add_captions', { language: 'en' }]]) {
+      const { result, body } = await call(name, args)
+      assert.equal(result.isError, true, name)
+      assert.match(body.error.message, /not available yet: FILM-2016 builds it/, name)
+    }
+  }
+})
+
+test('studio_apply_updates: FILM-2011\'s re-sync plan for a shot StoryBook removed previews as cards, applies into "Sync from StoryBook", and the newer package becomes the project\'s', async () => {
+  const { createRequire } = await import('node:module')
+  const require = createRequire(import.meta.url)
+  const { diffEditPackages, buildResyncPlan } = require('../../electron/studio/packageDiff.js')
+  const none = await call('studio_apply_updates', {})
+  assert.equal(none.body.error.code, 'NOT_FOUND')
+
+  const current = JSON.parse(await readFile(path.join(harness.dir, 'storybook/package.json'), 'utf8'))
+  const next = JSON.parse(JSON.stringify(current))
+  const removed = next.shots.find((shot) => shot.sceneNumber === 3 && shot.shotNumber === 2)
+  next.shots = next.shots.filter((shot) => shot.id !== removed.id)
+  next.etag = 'v8-resynced'
+  const diff = diffEditPackages(current, next)
+  const projectFile = JSON.parse(await readFile(path.join(harness.dir, 'project.comfystudio'), 'utf8'))
+  const { steps, unresolved } = buildResyncPlan({ diff, project: projectFile, assetPaths: {}, session: null })
+  assert.deepEqual(steps.map((step) => step.tool), ['delete_clips'])
+  await writeFile(path.join(harness.dir, 'storybook/package.next.json'), JSON.stringify(next))
+  await writeFile(path.join(harness.dir, 'storybook/resync-plan.json'), JSON.stringify({ source: 'resync', planId: 'resync-v8-resynced', steps, unresolved, failedDownloads: [], summary: { shotsRemoved: 1 } }))
+
+  const { result, body: preview } = await call('studio_apply_updates', {})
+  assert.equal(result.isError, undefined, JSON.stringify(preview.error))
+  const card = preview.cards.find((entry) => entry.scene === 3)
+  assert.deepEqual(card.changes.map((change) => [change.tool, change.text, change.reason]), [['delete_clips', 'Removed S3.2, S3.2', `${steps[0].reason}`]])
+  assert.equal(card.durationAfter, card.durationBefore, 'a delete without ripple leaves the scene span')
+
+  const { body: applied } = await call('studio_apply_updates', { previewOnly: false, planId: preview.planId })
+  assert.equal(applied.applied, true, JSON.stringify(applied.error))
+  assert.equal(applied.version.name, 'Sync from StoryBook')
+  assert.equal(applied.packagePromoted, true)
+  assert.equal(JSON.parse(await readFile(path.join(harness.dir, 'storybook/package.json'), 'utf8')).etag, 'v8-resynced')
+  assert.ok(!harness.timeline().clips.some((clip) => clip.assetId === `sb-shot-${removed.id}`), 'the shot and its own sound are gone')
+  assert.ok(harness.timeline().clips.some((clip) => clip.metadata?.semantic?.shotId === removed.id && clip.metadata?.semantic?.role === 'dialogue'), 'its dialogue stays')
+  assert.deepEqual(applied.opLog.map((entry) => [entry.tool, entry.reason, entry.scene]), [['delete_clips', steps[0].reason, 3]])
 })

@@ -95,7 +95,7 @@ test('a plan id applies once; a different scope or params needs a new preview', 
   const other = body(await tools.call('studio_edit', { intent: 'tighten_pacing', scope: { scene: 2 }, previewOnly: false, planId }))
   assert.match(other.error.message, /differ from the previewed plan/)
   assert.equal((await apply(tools, planId)).applied, true)
-  assert.match((await apply(tools, planId)).error.message, /Preview the edit first/)
+  assert.match((await apply(tools, planId)).error.message, /Preview first/)
 })
 
 test('the cloud tools run over FILM-2011\'s client when one is passed in, with its error codes', async () => {
@@ -109,5 +109,28 @@ test('the cloud tools run over FILM-2011\'s client when one is passed in, with i
   assert.equal(body(await tools.call('studio_get_job_status', { jobId: 'pull-e1' })).done, 3)
   const refused = await tools.call('studio_check_updates', {})
   assert.deepEqual([refused.isError, body(refused).error.code], [true, 'UNAUTHORIZED'])
-  assert.match(body(await tools.call('studio_apply_updates', {})).error.message, /FILM-2011 pending/)
+  const none = createCapabilityTools({ performAction: async () => ({}), callPrimitive: async () => text({}) })
+  assert.match(body(await none.call('studio_open_episode', { episodeId: 'e1' })).error.message, /not available yet: FILM-2011 builds it\. \(the FILM-2011 cloud client is not in this build\)/)
+  const missing = createCapabilityTools({ performAction: async () => ({}), callPrimitive: async () => text({}), getCloud: () => ({ getJobStatus: () => null }) })
+  assert.equal(body(await missing.call('studio_get_job_status', { jobId: 'nope' })).error.code, 'NOT_FOUND')
+})
+
+test('studio_apply_updates previews the re-sync plan; a replace that needs its import is previewed when the import has run', async () => {
+  const previews = []
+  const plan = {
+    steps: [{ tool: 'import_asset_from_path', arguments: { path: '/p/assets/video/shot-2b.mp4' } }, { tool: 'replace_clip_with_asset', arguments: { clipId: 'clip-2', assetName: 'shot-2b.mp4' } }],
+    reasons: ['StoryBook has a new video for S1.2.', 'StoryBook has a new video for S1.2.'],
+    scenes: [1, 1],
+    previewAfter: [undefined, 0],
+    notes: [],
+    touchesUserEdits: [],
+    expected: {},
+  }
+  const performAction = async (action) => (action === 'studio_resync_plan' ? { plan, cards: [{ scene: 1 }], report: {}, reportText: '', prompt: 'Sync from StoryBook', fingerprint: 'f', planKey: 'resync-v8' } : {})
+  const tools = createCapabilityTools({ performAction, callPrimitive: async (name) => { previews.push(name); return text({ previewOnly: true }) } })
+  const result = body(await tools.call('studio_apply_updates', {}))
+  assert.deepEqual(previews, ['import_asset_from_path'])
+  assert.deepEqual(result.stepPreviews.map((step) => [step.tool, step.ok]), [['import_asset_from_path', true], ['replace_clip_with_asset', true]])
+  assert.match(result.stepPreviews[1].message, /when step 1 has run/)
+  assert.deepEqual(result.applyWith, { tool: 'studio_apply_updates', arguments: { previewOnly: false, planId: result.planId } })
 })

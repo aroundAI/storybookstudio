@@ -67,15 +67,7 @@ function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, get
     return server.callCapabilityTool(String(name || ''), args, { source: 'in-app' })
   })
 
-  // FILM-2011 sets this when its cloud client starts; until then the cloud
-  // capability tools answer "not available yet".
-  let cloud = null
-
   return {
-    getCloud: () => cloud,
-    setCloud(next) {
-      cloud = next || null
-    },
     // Plan cards to the AI panel (FILM-2015), from any client.
     emitPlanProposed(proposal) {
       const mainWindow = getMainWindow()

@@ -10639,6 +10639,7 @@ class ComfyStudioMcpServer {
       getCloud: () => (typeof getStudioCloud === 'function' ? getStudioCloud() : null),
       emitPlanProposed: typeof emitPlanProposed === 'function' ? emitPlanProposed : () => {},
       writableTools: MCP_ACTION_PLAN_WRITABLE_TOOLS,
+      getProjectPath: () => this.lastSnapshot?.project?.path || null,
     })
   }
 
