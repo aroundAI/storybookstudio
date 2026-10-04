@@ -12,6 +12,7 @@
 //   bite (the dialogue's text and emotion from FILM-2012's asset semantics;
 //   when no line carries them, the loudest dialogue), each its own timeline
 //   and its own exported file, for StoryBook's hook tests.
+import { lineImportance } from './common.js'
 import { presetFor, resolvePreset, VERTICAL_PRESET_NAMES } from '../delivery/presets.js'
 
 export const HOOK_SECONDS = 5
@@ -44,15 +45,9 @@ export function masterTimeline(project, timelineId = null) {
 
 export const timelineEnd = (timeline) => Math.max(0, ...(timeline?.clips || []).map(clipEnd))
 
-// Same weights as FILM-2013's lineImportance (intents/common.js): emotion, a
-// question or exclamation, brevity. Kept identical so the hook a variant
+// The weights are FILM-2013's (intents/common.js), so the hook a variant
 // opens on is the one open_with_strongest_line would pick.
-const EMOTION_WEIGHT = { urgent: 0.3, angry: 0.3, afraid: 0.3, excited: 0.3, shocked: 0.3, determined: 0.2, sad: 0.2, tense: 0.2, hopeful: 0.15 }
-export function lineImportance({ text = '', emotion = '' } = {}) {
-  const words = String(text).split(/\s+/).filter(Boolean).length
-  const score = (EMOTION_WEIGHT[String(emotion).toLowerCase()] ?? 0) + (text.includes('?') ? 0.25 : 0) + (text.includes('!') ? 0.2 : 0) + (words > 0 && words <= 12 ? 0.1 : 0)
-  return round(score)
-}
+export { lineImportance }
 
 const isDialogue = (clip, tracks, assets) => {
   if (clip.type !== 'audio' || clip.enabled === false) return false
