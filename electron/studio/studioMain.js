@@ -9,6 +9,7 @@ const { createStudioCloud } = require('./cloud')
 const { createStudioDeliver } = require('./deliver')
 const { createDeliveryPath } = require('./deliveryPath')
 const { createAudioReads } = require('./audioReads')
+const { createStudioUiMain } = require('./studioUi')
 
 // Velorn's own temp working directories; Electron has no "cache" path name.
 const CACHE_DIR_NAMES = ['comfystudio-shot-audio', 'comfystudio-caption-audio']
@@ -110,6 +111,9 @@ function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, get
 
   // FILM-2013: the intent compilers' audio reads, with ffmpeg in this process.
   const audioReads = createAudioReads({ getFfmpegPath })
+
+  // FILM-2015: the quit prompt when a plan or a delivery is in flight.
+  createStudioUiMain({ app, ipcMain, getMainWindow, isMainWindowSender })
 
   return {
     audioReads,
