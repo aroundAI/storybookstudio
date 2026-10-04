@@ -8,7 +8,7 @@ import { BookOpen, FolderOpen, LogOut, RefreshCw } from 'lucide-react'
 import WelcomeScreen from '../WelcomeScreen'
 import useProjectStore from '../../stores/projectStore'
 import { studioUiStore } from '../../studio/ui/studioStore'
-import { readLocalLink } from '../../studio/ui/studioRuntime'
+import { projectFoldersIn, readLocalLink } from '../../studio/ui/studioRuntime'
 import { formatAgo } from '../../studio/ui/pickerModel'
 import { Chip, StudioButton } from './StudioDialog'
 import { studioApi, useStudioText, useStudioUi } from './studioUi'
@@ -108,27 +108,40 @@ function SignedInCard() {
 function RecentProjects({ onOpen }) {
   const t = useStudioText()
   const recentProjects = useProjectStore((state) => state.recentProjects)
-  const [links, setLinks] = useState(new Map())
+  const projectsRoot = useStudioUi((state) => state.projectsRoot)
+  const [scan, setScan] = useState({ links: new Map(), pulled: [] })
 
-  // The badges read each project's storybook/ files; recent projects change rarely.
+  // The badges read each project's storybook/ files. Episodes pulled into the
+  // Studio's projects folder are listed too: Velorn writes its recent list
+  // lazily, so after a crash the project being edited may be missing from it.
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const next = new Map()
+      const links = new Map()
       for (const project of recentProjects) {
         if (typeof project.path !== 'string') continue
         const link = await readLocalLink(project.path)
-        if (link) next.set(project.path, link)
+        if (link) links.set(project.path, link)
       }
-      if (!cancelled) setLinks(next)
+      const pulled = []
+      for (const folder of await projectFoldersIn(projectsRoot)) {
+        if (links.has(folder) || recentProjects.some((project) => project.path === folder)) continue
+        const link = await readLocalLink(folder)
+        if (!link) continue
+        links.set(folder, link)
+        pulled.push({ name: link.title || folder.split('/').pop(), path: folder, modified: null, pulled: true })
+      }
+      if (!cancelled) setScan({ links, pulled })
     })()
     return () => { cancelled = true }
-  }, [recentProjects])
+  }, [recentProjects, projectsRoot])
 
-  if (recentProjects.length === 0) return <p className="text-sm text-sf-text-muted">{t('welcome.noRecent')}</p>
+  const { links } = scan
+  const projects = [...recentProjects, ...scan.pulled]
+  if (projects.length === 0) return <p className="text-sm text-sf-text-muted">{t('welcome.noRecent')}</p>
   return (
     <ul className="divide-y divide-sf-dark-700 overflow-hidden rounded-lg border border-sf-dark-700" data-test="studio-recent-projects">
-      {recentProjects.map((project) => {
+      {projects.map((project) => {
         const link = links.get(project.path)
         return (
           <li key={project.path || project.name}>
@@ -136,7 +149,7 @@ function RecentProjects({ onOpen }) {
               <FolderOpen className="h-4 w-4 flex-shrink-0 text-sf-text-muted" aria-hidden />
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm text-sf-text-primary">{project.name}</span>
-                <span className="block truncate text-[11px] text-sf-text-muted">{link?.title ? `${t('welcome.fromStoryBook')} · ${link.title}` : project.path} · {formatAgo(project.modified)}</span>
+                <span className="block truncate text-[11px] text-sf-text-muted">{link?.title ? `${t('welcome.fromStoryBook')} · ${link.title}` : project.path}{project.modified ? ` · ${formatAgo(project.modified)}` : ''}</span>
               </span>
               {link?.updatesAvailable && <Chip tone="warn" data-test="studio-updates-badge"><RefreshCw className="h-3 w-3" aria-hidden />{t('welcome.updatesAvailable')}</Chip>}
               {link && !link.updatesAvailable && <Chip tone="neutral">StoryBook</Chip>}
@@ -152,6 +165,7 @@ export default function Welcome() {
   const t = useStudioText()
   const signedIn = useStudioUi((state) => Boolean(state.auth?.signedIn))
   const openRecentProject = useProjectStore((state) => state.openRecentProject)
+  const openProject = useProjectStore((state) => state.openProject)
   const [showVelornStart, setShowVelornStart] = useState(false)
 
   if (showVelornStart) {
@@ -185,7 +199,7 @@ export default function Welcome() {
               {t('welcome.allProjects')}
             </button>
           </div>
-          <RecentProjects onOpen={(project) => openRecentProject(project)} />
+          <RecentProjects onOpen={(project) => (project.pulled ? openProject(project.path) : openRecentProject(project))} />
         </section>
       </div>
     </main>
