@@ -243,7 +243,7 @@ function VideoPlayerModal({ item, onClose }) {
             {t(
               'discover.player.privacy',
               undefined,
-              'Thumbnails are provided by YouTube. Velorn loads the player only after you choose to watch a video.',
+              'Thumbnails are provided by YouTube. StorybookStudio loads the player only after you choose to watch a video.',
             )}
           </p>
           <button
@@ -318,11 +318,11 @@ function SubmissionModal({ onClose }) {
       `Creator/display name: ${form.creator.trim()}`,
       `Category: ${categoryLabel}`,
       '',
-      'How Velorn was used:',
+      'How StorybookStudio was used:',
       form.description.trim(),
       '',
       'Rights/authorization confirmed: Yes',
-      'Permission for Velorn to feature the work: Yes',
+      'Permission for StorybookStudio to feature the work: Yes',
     ].join('\n')
 
     if (message.length > FEEDBACK_MESSAGE_MAX_LENGTH) {
@@ -381,7 +381,7 @@ function SubmissionModal({ onClose }) {
               {t(
                 'discover.submit.body',
                 undefined,
-                'Share a YouTube video made with Velorn. Every submission is reviewed before anything is featured.',
+                'Share a YouTube video made with StorybookStudio. Every submission is reviewed before anything is featured.',
               )}
             </p>
           </div>
@@ -412,7 +412,7 @@ function SubmissionModal({ onClose }) {
                 {t(
                   'discover.submit.successBody',
                   undefined,
-                  'Thank you. The Velorn team will review your submission; it will not be published automatically.',
+                  'Thank you. The StorybookStudio team will review your submission; it will not be published automatically.',
                 )}
               </p>
             </div>
@@ -490,7 +490,7 @@ function SubmissionModal({ onClose }) {
 
               <label className="sm:col-span-2">
                 <span className="mb-1.5 block text-xs font-medium text-sf-text-secondary">
-                  {t('discover.submit.description', undefined, 'How did you use Velorn?')}
+                  {t('discover.submit.description', undefined, 'How did you use StorybookStudio?')}
                 </span>
                 <textarea
                   required
@@ -501,7 +501,7 @@ function SubmissionModal({ onClose }) {
                   placeholder={t(
                     'discover.submit.descriptionPlaceholder',
                     undefined,
-                    'Tell us briefly which parts of the project you made or edited in Velorn.',
+                    'Tell us briefly which parts of the project you made or edited in StorybookStudio.',
                   )}
                   className="w-full resize-y rounded-lg border border-sf-dark-600 bg-sf-dark-800 px-3 py-2 text-sm text-sf-text-primary outline-none transition-colors placeholder:text-sf-text-muted focus:border-sf-accent"
                 />
@@ -552,7 +552,7 @@ function SubmissionModal({ onClose }) {
                 <span>{t(
                   'discover.submit.featurePermission',
                   undefined,
-                  'Velorn may feature the video title, thumbnail, link, description, and creator attribution.',
+                  'StorybookStudio may feature the video title, thumbnail, link, description, and creator attribution.',
                 )}</span>
               </label>
             </div>
@@ -683,7 +683,7 @@ export default function DiscoverWorkspace({ onClose }) {
               {t(
                 'discover.subtitle',
                 undefined,
-                'See what creators make with Velorn and learn the workflows behind it.',
+                'See what creators make with StorybookStudio and learn the workflows behind it.',
               )}
             </p>
             <p className="mt-1 text-[11px] leading-relaxed text-sf-text-secondary">

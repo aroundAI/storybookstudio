@@ -5,20 +5,20 @@ import { buildVocabularyHint } from './captionVocabulary.js'
 
 test('joins parts comma-separated with normalized whitespace, terminated like a sentence', () => {
   assert.equal(
-    buildVocabularyHint(['Velorn', '  Seedance   shots ', 'ComfyUI']),
-    'Velorn, Seedance shots, ComfyUI.'
+    buildVocabularyHint(['StorybookStudio', '  Seedance   shots ', 'ComfyUI']),
+    'StorybookStudio, Seedance shots, ComfyUI.'
   )
 })
 
 test('drops empties, non-strings, and case-insensitive duplicates', () => {
   assert.equal(
-    buildVocabularyHint(['Velorn', '', null, undefined, 'velorn', '  ', 'VELORN', 'Qwen']),
-    'Velorn, Qwen.'
+    buildVocabularyHint(['StorybookStudio', '', null, undefined, 'velorn', '  ', 'VELORN', 'Qwen']),
+    'StorybookStudio, Qwen.'
   )
 })
 
 test('ignores default app-planted strings', () => {
-  assert.equal(buildVocabularyHint(['Sample Text', 'Velorn']), 'Velorn.')
+  assert.equal(buildVocabularyHint(['Sample Text', 'StorybookStudio']), 'StorybookStudio.')
   assert.equal(buildVocabularyHint(['sample   text']), '')
 })
 

@@ -136,7 +136,7 @@
   },
   "build": {
     "appId": "com.comfystudio.app",
-    "productName": "Velorn",
+    "productName": "StorybookStudio",
     "copyright": "Copyright © 2024-2026",
     "beforePack": "scripts/electron-builder-before-pack.cjs",
     "afterPack": "scripts/electron-builder-after-pack.cjs",

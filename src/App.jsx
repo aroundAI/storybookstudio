@@ -766,7 +766,7 @@ function App() {
                 title="Save the workflow currently open below to your library (Generate → Custom), so you can reopen it here anytime"
               >
                 {comfySaveState.phase === 'busy' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BookmarkPlus className="w-3.5 h-3.5" />}
-                Save to Velorn
+                Save to StorybookStudio
               </button>
             )}
             <button

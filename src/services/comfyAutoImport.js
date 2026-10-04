@@ -2,7 +2,7 @@
  * ComfyUI-tab auto-import bridge.
  *
  * Listens for ComfyUI websocket activity and, for eligible prompts that
- * weren't queued by Velorn's own managed workflow pipeline, pulls the
+ * weren't queued by StorybookStudio's own managed workflow pipeline, pulls the
  * resulting output files into the current project's `Imported from ComfyUI/`
  * folder. Eligibility is provided by the app shell, currently meaning prompts
  * observed while the embedded ComfyUI tab is active.
@@ -850,7 +850,7 @@ async function importStitchedSequence({ classification, apiWorkflow, promptId, p
 // {node:null}`, `execution_error`) with `broadcast=False` — only to the
 // websocket client that originally queued the prompt. When the user
 // queues from the embedded ComfyUI tab (its own client_id), an external
-// browser, or CLI, Velorn's websocket never sees these events.
+// browser, or CLI, StorybookStudio's websocket never sees these events.
 //
 // What *is* broadcast to every connected client:
 //   - `executing` for each node (broadcast=True)

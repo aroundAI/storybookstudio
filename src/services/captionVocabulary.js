@@ -1,7 +1,7 @@
 // Vocabulary hint assembly for caption transcription.
 //
 // Whisper's initial prompt (--prompt) biases decoding toward words it has
-// seen, which is the difference between "Velorn" and "the lawn" for brand
+// seen, which is the difference between "StorybookStudio" and "the lawn" for brand
 // names. This module is the pure assembly half (unit-tested, no store or
 // window access); captionTranscription.js collects the project strings and
 // injects the finished hint into local transcriptions.

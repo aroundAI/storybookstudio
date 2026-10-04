@@ -68,7 +68,7 @@ import { useI18n } from '../i18n/I18nContext'
 const AUTO_IMPORT_KEY = 'comfystudio-auto-import-comfy-outputs'
 const OUTPUT_DIRECTORY_SETTING_KEY = 'outputDirectory'
 const WORKFLOWS_DIRECTORY_SETTING_KEY = 'workflowsDirectory'
-const OUTPUT_DIRECTORY_PLACEHOLDER = 'C:\\Users\\...\\Velorn\\outputs'
+const OUTPUT_DIRECTORY_PLACEHOLDER = 'C:\\Users\\...\\StorybookStudio\\outputs'
 const WORKFLOWS_DIRECTORY_PLACEHOLDER = 'C:\\Users\\...\\ComfyUI\\workflow_API'
 const HOTKEY_CATEGORY_KEY = {
   'Timeline selection': 'selection',
@@ -110,7 +110,7 @@ const SETTINGS_SECTIONS = [
     id: 'launcher',
     title: 'ComfyUI Launcher',
     icon: Power,
-    description: 'Let Velorn start, stop, and restart your local ComfyUI process.',
+    description: 'Let StorybookStudio start, stop, and restart your local ComfyUI process.',
   },
   {
     id: 'paths',
@@ -128,7 +128,7 @@ const SETTINGS_SECTIONS = [
     id: 'language',
     title: 'Language',
     icon: Globe2,
-    description: 'Choose the language used in the Velorn interface.',
+    description: 'Choose the language used in the StorybookStudio interface.',
   },
   {
     id: 'appearance',
@@ -655,7 +655,7 @@ function GeneralTab({ initialSection = null }) {
       setHardwareExportFfmpegMessage(
         result.status?.source === 'environment'
           ? 'Saved path cleared. VELORN_FFMPEG_PATH remains active.'
-          : 'Velorn will use its bundled FFmpeg for hardware checks and software fallback.'
+          : 'StorybookStudio will use its bundled FFmpeg for hardware checks and software fallback.'
       )
     } catch (error) {
       setHardwareExportFfmpegMessage(error?.message || 'Could not restore the bundled FFmpeg setting.')
@@ -1169,7 +1169,7 @@ function GeneralTab({ initialSection = null }) {
           <div className="rounded-lg border border-sf-dark-700 bg-sf-dark-900/60 px-3 py-3">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <div className="text-sm font-medium text-sf-text-primary">Velorn MCP server</div>
+                <div className="text-sm font-medium text-sf-text-primary">StorybookStudio MCP server</div>
                 <p className="mt-1 text-[11px] text-sf-text-muted">
                   {t('settings.agents.serverDescription')}
                 </p>
@@ -1312,7 +1312,7 @@ function GeneralTab({ initialSection = null }) {
               <div>
                 <div className="text-sm font-medium text-sf-text-primary">Hardware export FFmpeg</div>
                 <p className="mt-1 text-[10px] text-sf-text-muted">
-                  Advanced: choose an FFmpeg build with NVENC on Linux. It is used only for final H.264/H.265 hardware video encoding; Velorn keeps its bundled FFmpeg for media tools and as the safe CPU fallback.
+                  Advanced: choose an FFmpeg build with NVENC on Linux. It is used only for final H.264/H.265 hardware video encoding; StorybookStudio keeps its bundled FFmpeg for media tools and as the safe CPU fallback.
                 </p>
               </div>
               <span className="flex-shrink-0 rounded border border-sf-dark-600 bg-sf-dark-800 px-2 py-1 text-[10px] text-sf-text-secondary">
@@ -1389,7 +1389,7 @@ function GeneralTab({ initialSection = null }) {
 
             {hardwareExportFfmpegStatus?.environmentPath && (
               <p className="mt-2 text-[10px] text-yellow-300">
-                VELORN_FFMPEG_PATH is active and takes priority over the saved path until Velorn is restarted without it.
+                VELORN_FFMPEG_PATH is active and takes priority over the saved path until StorybookStudio is restarted without it.
               </p>
             )}
             {hardwareExportFfmpegStatus?.warning && (

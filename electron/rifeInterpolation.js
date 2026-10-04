@@ -154,7 +154,7 @@ async function validateReadableFile(filePath, label, {
     return stat
   } catch (error) {
     throw makeRifeError(
-      `${label} could not be found or opened${executable ? ' as an executable' : ''}. Reinstall Velorn to restore Optical Flow.`,
+      `${label} could not be found or opened${executable ? ' as an executable' : ''}. Reinstall StorybookStudio to restore Optical Flow.`,
       'OPTICAL_FLOW_UNAVAILABLE',
       { path: filePath, reason: error?.code || error?.message || String(error) }
     )
@@ -191,7 +191,7 @@ async function validateRifeRuntime({
     await fsPromises.access(modelPath, fs.constants.R_OK)
   } catch (error) {
     throw makeRifeError(
-      'The portable RIFE model folder is missing or unreadable. Reinstall Velorn to restore Optical Flow.',
+      'The portable RIFE model folder is missing or unreadable. Reinstall StorybookStudio to restore Optical Flow.',
       'OPTICAL_FLOW_UNAVAILABLE',
       { path: modelPath, reason: error?.code || error?.message || String(error) }
     )
@@ -244,7 +244,7 @@ async function probeRifeRuntime({
     if (error?.code === 'OPTICAL_FLOW_CANCELLED') throw error
     if (requireSecureBuild) {
       throw makeRifeError(
-        `Velorn's trusted smooth-motion engine failed its secure startup check: ${error?.message || String(error)}`,
+        `StorybookStudio's trusted smooth-motion engine failed its secure startup check: ${error?.message || String(error)}`,
         'OPTICAL_FLOW_UNAVAILABLE'
       )
     }
@@ -263,7 +263,7 @@ async function probeRifeRuntime({
   const compatible = /rife-ncnn-vulkan|num-frame|target frame count/i.test(output)
   if (requireSecureBuild && (!compatible || !output.includes(RIFE_SECURE_BUILD_MARKER))) {
     throw makeRifeError(
-      'Velorn\'s trusted smooth-motion engine did not report the required PNG-only secure-build marker.',
+      'StorybookStudio\'s trusted smooth-motion engine did not report the required PNG-only secure-build marker.',
       'OPTICAL_FLOW_UNAVAILABLE'
     )
   }
@@ -353,12 +353,12 @@ async function createOwnedWorkDirectory({ paths, allowedOutputRoot, fsPromises =
     }
     if (error?.code === 'EEXIST') {
       throw makeRifeError(
-        'A RIFE scratch folder for this job already exists. Wait for that job to finish or restart Velorn.',
+        'A RIFE scratch folder for this job already exists. Wait for that job to finish or restart StorybookStudio.',
         'OPTICAL_FLOW_BUSY'
       )
     }
     throw makeRifeError(
-      `Velorn could not create a safe RIFE scratch folder: ${error?.message || String(error)}`,
+      `StorybookStudio could not create a safe RIFE scratch folder: ${error?.message || String(error)}`,
       'OPTICAL_FLOW_INVALID_INPUT'
     )
   }

@@ -57,7 +57,7 @@ export const resolveAvailablePngSequenceFolder = async ({
   maxAttempts = 10000,
 }) => {
   if (!api?.pathJoin || !api?.exists) {
-    throw new Error('PNG image sequence folder selection is unavailable. Restart Velorn and try again.')
+    throw new Error('PNG image sequence folder selection is unavailable. Restart StorybookStudio and try again.')
   }
   if (typeof parentFolder !== 'string' || !isAbsoluteDesktopPath(parentFolder)) {
     throw new Error('Choose an absolute parent folder for the PNG image sequence.')
@@ -96,7 +96,7 @@ export const cleanupCompletedPngSequenceTemp = async ({ api, tempFolder }) => {
  */
 export const withOwnedPngSequenceOutput = async ({ api, outputPath, run }) => {
   if (!api?.exists || !api?.createDirectory || !api?.deleteDirectory) {
-    throw new Error('PNG sequence export requires the Velorn desktop app.')
+    throw new Error('PNG sequence export requires the StorybookStudio desktop app.')
   }
   if (typeof run !== 'function') {
     throw new Error('PNG sequence export is missing its render operation.')

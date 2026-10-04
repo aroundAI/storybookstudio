@@ -1058,7 +1058,7 @@ function ExportPanel({ active = true }) {
   const rtxSourceResolution = resolveResolution()
   const rtxTargetResolution = resolveRtx4kDimensions(rtxSourceResolution.width, rtxSourceResolution.height)
   const rtxToggleDisabledReason = !window.electronAPI?.checkRtxVideoUpscaleRuntime
-    ? 'RTX upscale is available only in the Velorn desktop app.'
+    ? 'RTX upscale is available only in the StorybookStudio desktop app.'
     : settings.transparent
       ? 'RTX upscale does not preserve transparent backgrounds.'
       : window.electronAPI.platform !== 'win32'
@@ -1274,7 +1274,7 @@ function ExportPanel({ active = true }) {
         let finalOutputPath
         if (isPngSequence) {
           if (!window.electronAPI.selectDirectory) {
-            throw new Error('PNG image sequence folder selection is unavailable. Restart Velorn and try again.')
+            throw new Error('PNG image sequence folder selection is unavailable. Restart StorybookStudio and try again.')
           }
           setExportStatus('Choose where to save the PNG image sequence...')
           const selectedParentFolder = await window.electronAPI.selectDirectory({
@@ -1369,7 +1369,7 @@ function ExportPanel({ active = true }) {
           if (workerExportCompletionRef.current === completionRecord) {
             workerExportCompletionRef.current = null
           }
-          throw new Error('Could not correlate the export worker job. Restart Velorn and try again.')
+          throw new Error('Could not correlate the export worker job. Restart StorybookStudio and try again.')
         }
         return await workerExportCompletion
       } catch (err) {
@@ -1391,14 +1391,14 @@ function ExportPanel({ active = true }) {
       throw new Error(
         window.electronAPI.runExportInWorker
           ? 'Export worker unavailable: the project location is not a local folder path. Re-open the project from disk and try again.'
-          : 'Export worker unavailable. Restart Velorn and try again.'
+          : 'Export worker unavailable. Restart StorybookStudio and try again.'
       )
     }
 
     if (isVisualOnlyFormat) {
       setExportStatus('Export failed')
       setIsExporting(false)
-      throw new Error(`${isGif ? 'Animated GIF' : 'PNG image sequence'} export is available in the Velorn desktop app.`)
+      throw new Error(`${isGif ? 'Animated GIF' : 'PNG image sequence'} export is available in the StorybookStudio desktop app.`)
     }
 
     const directAbortController = new AbortController()

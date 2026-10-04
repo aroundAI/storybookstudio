@@ -21,7 +21,7 @@ export async function checkRtxVideoUpscaleReadiness() {
     return {
       ready: false,
       installAvailable: false,
-      error: 'RTX upscale is available only in the Velorn desktop app.',
+      error: 'RTX upscale is available only in the StorybookStudio desktop app.',
     }
   }
   return await window.electronAPI.checkRtxVideoUpscaleRuntime()
@@ -30,7 +30,7 @@ export async function checkRtxVideoUpscaleReadiness() {
 export async function installRtxVideoUpscaleRuntime(options = {}) {
   const { onStatus = () => {} } = options
   if (!window.electronAPI?.installRtxVideoUpscaleRuntime) {
-    throw new Error('The RTX runtime installer is unavailable. Restart Velorn and try again.')
+    throw new Error('The RTX runtime installer is unavailable. Restart StorybookStudio and try again.')
   }
   const unsubscribe = window.electronAPI.onRtxVideoUpscaleSetupProgress?.((status) => onStatus(status))
   try {
@@ -54,7 +54,7 @@ export async function runRtxVideoUpscale(options = {}) {
     onStatus = () => {},
   } = options
   if (!window.electronAPI?.runRtxVideoUpscale) {
-    throw new Error('Direct RTX upscaling is unavailable. Restart Velorn and try again.')
+    throw new Error('Direct RTX upscaling is unavailable. Restart StorybookStudio and try again.')
   }
   if (!inputPath) throw new Error('RTX upscale requires a source export path.')
   if (!outputPath) throw new Error('RTX upscale requires a final output path.')

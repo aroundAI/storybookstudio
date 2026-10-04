@@ -174,7 +174,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   // Direct NVIDIA RTX Video Super Resolution. The optional runtime is
-  // managed by Velorn and does not require a running ComfyUI server.
+  // managed by StorybookStudio and does not require a running ComfyUI server.
   checkRtxVideoUpscaleRuntime: () => ipcRenderer.invoke('rtx:checkRuntime'),
   installRtxVideoUpscaleRuntime: () => ipcRenderer.invoke('rtx:installRuntime'),
   runRtxVideoUpscale: (options) => ipcRenderer.invoke('rtx:run', options),

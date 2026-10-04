@@ -1761,7 +1761,7 @@ function CaptionWorkspace({
             type="text"
             value={captionVocabulary}
             onChange={(event) => useProjectStore.getState().updateProjectSettings({ captionVocabulary: event.target.value })}
-            placeholder="e.g. Velorn, Seedance, ComfyUI"
+            placeholder="e.g. StorybookStudio, Seedance, ComfyUI"
             disabled={busy}
             className="mt-2 w-full rounded-lg border border-sf-dark-600 bg-sf-dark-950 px-2 py-1.5 text-xs text-sf-text-primary placeholder:text-sf-text-muted/60 focus:border-sf-accent focus:outline-none disabled:opacity-50"
           />

@@ -474,7 +474,7 @@ function buildDirectorScript(data) {
 
 function buildExternalLlmPrompt(data, currentScript) {
   return [
-    'Write a Velorn Director Mode product ad script using this exact structure.',
+    'Write a StorybookStudio Director Mode product ad script using this exact structure.',
     '',
     'Return only the script. Do not include explanation, markdown, or notes.',
     '',
@@ -509,7 +509,7 @@ function buildExternalLlmPrompt(data, currentScript) {
     'Rules:',
     '- Use one block per shot.',
     '- Keep prompts visually specific and production-ready.',
-    '- Do not ask Velorn to render text into images. Reserve space for editor-native text instead.',
+    '- Do not ask StorybookStudio to render text into images. Reserve space for editor-native text instead.',
     '- Avoid split screens, collages, storyboard grids, before/after panels, watermarks, captions, random letters, and fake typography.',
     '- Keep product packaging and talent identity consistent with references when references are available.',
     '- Avoid overpromising claims.',
@@ -1176,7 +1176,7 @@ export default function AdEasyMode({
                 </span>
               </div>
               <p className="mt-1 text-[10px] leading-4 text-sf-text-muted">
-                Adds a Send to Velorn button inside ComfyUI. Import JSON stays available as the fallback.
+                Adds a Send to StorybookStudio button inside ComfyUI. Import JSON stays available as the fallback.
               </p>
               {bridgeMessage && (
                 <div className={`mt-2 text-[10px] ${bridgeInstalled ? 'text-emerald-300' : bridgeState === 'unavailable' ? 'text-amber-200' : 'text-sf-text-secondary'}`}>
@@ -1238,7 +1238,7 @@ export default function AdEasyMode({
       {step === 'setup' && (
         <div className="rounded-xl border border-sf-dark-700 bg-sf-dark-900/60 p-4 space-y-4">
           <div>
-            <div className="text-[10px] uppercase tracking-[0.14em] text-sf-accent">Velorn asks</div>
+            <div className="text-[10px] uppercase tracking-[0.14em] text-sf-accent">StorybookStudio asks</div>
             <h2 className="mt-1 text-lg font-semibold text-sf-text-primary">Set up the ad.</h2>
             <p className="mt-1 text-xs text-sf-text-muted">Define the product, creative direction, and delivery settings before choosing references.</p>
           </div>
@@ -1364,7 +1364,7 @@ export default function AdEasyMode({
       {step === 'references' && (
         <div className="rounded-xl border border-sf-dark-700 bg-sf-dark-900/60 p-4 space-y-4">
           <div>
-            <div className="text-[10px] uppercase tracking-[0.14em] text-sf-accent">Velorn asks</div>
+            <div className="text-[10px] uppercase tracking-[0.14em] text-sf-accent">StorybookStudio asks</div>
             <h2 className="mt-1 text-lg font-semibold text-sf-text-primary">Do you have product, talent, or environment references?</h2>
             <p className="mt-1 text-xs text-sf-text-muted">Optional, but best results come from clear product sheets, character sheets, and location references.</p>
           </div>
@@ -1433,7 +1433,7 @@ export default function AdEasyMode({
               <div>
                 <div className="text-[10px] uppercase tracking-[0.14em] text-sf-accent">Optional: use your own LLM</div>
                 <p className="mt-1 max-w-3xl text-[11px] leading-relaxed text-sf-text-muted">
-                  No Velorn API key or setup required. Copy this prompt into ChatGPT, Claude, Gemini, or another LLM, then paste the result back into the editable Director Script below.
+                  No StorybookStudio API key or setup required. Copy this prompt into ChatGPT, Claude, Gemini, or another LLM, then paste the result back into the editable Director Script below.
                 </p>
               </div>
               <div className="flex items-center gap-2">

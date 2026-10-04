@@ -109,7 +109,7 @@ export async function importImageSequenceAsAsset({ projectDir, sequence, fps, jo
     baseName: sequenceBaseName(sequence),
     alpha: 'auto',
     // Linear EXR baked to display through the standard curve; experimental
-    // until Velorn does real color management.
+    // until StorybookStudio does real color management.
     applyTrc: isExr ? 'bt709' : null,
     jobId: jobId || null,
   })

@@ -97,7 +97,7 @@ function getComfyPythonCandidates(comfyRootPath = '') {
 function getRuntimeCandidates({ userDataPath, comfyRootPath = '', explicitPythonPath = '' }) {
   const managed = getManagedRuntimePaths(userDataPath)
   const candidates = [
-    { pythonPath: managed.pythonPath, kind: 'managed', label: 'Velorn RTX runtime' },
+    { pythonPath: managed.pythonPath, kind: 'managed', label: 'StorybookStudio RTX runtime' },
   ]
   if (String(explicitPythonPath || '').trim()) {
     candidates.push({
@@ -271,7 +271,7 @@ async function checkRtxRuntime(options = {}) {
     installAvailable: true,
     error: failures.length > 0
       ? `A local Python runtime was found, but NVIDIA RTX support is incomplete. ${failures[0]}`
-      : 'Install the optional Velorn RTX runtime to enable direct 4K upscaling. ComfyUI is not required.',
+      : 'Install the optional StorybookStudio RTX runtime to enable direct 4K upscaling. ComfyUI is not required.',
   }
 }
 
@@ -309,7 +309,7 @@ function downloadFile(urlText, outputPath, options = {}, redirectsRemaining = 5)
     }
 
     signal?.addEventListener?.('abort', abort, { once: true })
-    request = transport.get(url, { headers: { 'User-Agent': 'Velorn RTX Runtime Installer' } }, (response) => {
+    request = transport.get(url, { headers: { 'User-Agent': 'StorybookStudio RTX Runtime Installer' } }, (response) => {
       if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
         response.resume()
         cleanup()
@@ -554,7 +554,7 @@ async function installRtxRuntime(options = {}) {
         ready: true,
         pythonPath: managed.pythonPath,
         kind: 'managed',
-        label: 'Velorn RTX runtime',
+        label: 'StorybookStudio RTX runtime',
         ...details,
       }
     } catch (error) {
@@ -603,9 +603,9 @@ async function runRtxVideoUpscale(options = {}) {
   if (!runtime?.pythonPath || !fs.existsSync(runtime.pythonPath)) throw new Error('The NVIDIA RTX runtime is not ready.')
   if (!inputPath || !fs.existsSync(path.resolve(inputPath))) throw new Error('The RTX source video does not exist.')
   if (!outputPath) throw new Error('No RTX output path was provided.')
-  if (!helperPath || !fs.existsSync(helperPath)) throw new Error('The Velorn RTX helper is missing.')
+  if (!helperPath || !fs.existsSync(helperPath)) throw new Error('The StorybookStudio RTX helper is missing.')
   if (!ffmpegPath || !fs.existsSync(ffmpegPath) || !ffprobePath || !fs.existsSync(ffprobePath)) {
-    throw new Error('Velorn could not find its FFmpeg tools.')
+    throw new Error('StorybookStudio could not find its FFmpeg tools.')
   }
   if (path.resolve(inputPath).toLowerCase() === path.resolve(outputPath).toLowerCase()) {
     throw new Error('The RTX output must use a different path from the source render.')

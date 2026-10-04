@@ -105,7 +105,7 @@ export async function loadSystemFontFamilies({ forceRefresh = false, fontApi } =
         status: installed.length > 0 ? 'ready' : 'error',
         error: installed.length > 0
           ? null
-          : (result?.error || 'Velorn could not read the fonts installed on this computer.'),
+          : (result?.error || 'StorybookStudio could not read the fonts installed on this computer.'),
         source: result?.source || 'system',
       })
     } catch (error) {
@@ -113,7 +113,7 @@ export async function loadSystemFontFamilies({ forceRefresh = false, fontApi } =
       return publishFontCatalog({
         families: [...CURATED_FONT_FAMILIES],
         status: 'error',
-        error: error?.message || 'Velorn could not read the fonts installed on this computer.',
+        error: error?.message || 'StorybookStudio could not read the fonts installed on this computer.',
         source: 'unavailable',
       })
     } finally {

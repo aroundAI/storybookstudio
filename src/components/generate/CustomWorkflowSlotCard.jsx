@@ -37,7 +37,7 @@ export default function CustomWorkflowSlotCard({
   const bridgeMessage = String(
     bridgeStatus?.message
     || bridgeStatus?.error
-    || 'Optional bridge lets ComfyUI send the current graph back to Velorn.'
+    || 'Optional bridge lets ComfyUI send the current graph back to StorybookStudio.'
   ).trim()
   const bridgeBadge = bridgeState === 'unavailable'
     ? { label: 'Needs setup', className: 'border-amber-500/40 bg-amber-500/10 text-amber-200' }
@@ -161,7 +161,7 @@ export default function CustomWorkflowSlotCard({
             {bridgeInstalled ? (
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-[10px] text-emerald-300">
-                  Velorn Bridge installed — Send to Velorn is available inside ComfyUI.
+                  Velorn Bridge installed — Send to StorybookStudio is available inside ComfyUI.
                 </span>
                 <span className="flex flex-wrap items-center gap-1.5">
                   <button

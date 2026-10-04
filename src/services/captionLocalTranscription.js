@@ -134,7 +134,7 @@ export async function isLocalCaptionEngineAvailable() {
 export async function installLocalCaptionEngine({ modelId = 'base', onProgress } = {}) {
   const api = typeof window !== 'undefined' ? window.electronAPI : null
   if (!api?.whisperEngineInstall) {
-    throw new Error('The local caption engine requires the Velorn desktop app.')
+    throw new Error('The local caption engine requires the StorybookStudio desktop app.')
   }
   let unsubscribe = null
   if (typeof onProgress === 'function' && api.onCaptionEngineProgress) {
@@ -206,7 +206,7 @@ async function runLocalTranscription({
 }) {
   const api = typeof window !== 'undefined' ? window.electronAPI : null
   if (!api?.whisperTranscribe) {
-    throw new Error('The local caption engine requires the Velorn desktop app.')
+    throw new Error('The local caption engine requires the StorybookStudio desktop app.')
   }
 
   const report = (message, progress) => {

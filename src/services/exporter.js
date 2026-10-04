@@ -4046,7 +4046,7 @@ const runExportTimeline = async (options, onProgress, scheduler) => {
   let encodeResult = null
   if (gifExport) {
     if (!window.electronAPI?.encodeGif || !window.electronAPI?.abortGifEncode) {
-      throw new Error('GIF export requires the Velorn desktop app. Restart Velorn and try again.')
+      throw new Error('GIF export requires the StorybookStudio desktop app. Restart StorybookStudio and try again.')
     }
     throwIfCancelled()
     const gifEncodeSessionId = globalThis.crypto?.randomUUID?.()
@@ -4225,7 +4225,7 @@ export const exportTimeline = async (options = {}, onProgress = () => {}, runtim
 
     const api = typeof window !== 'undefined' ? window.electronAPI : null
     if (!api?.exists || !api?.createDirectory || !api?.deleteDirectory || !api?.pathJoin || !api?.writeFileFromArrayBuffer) {
-      throw new Error('PNG sequence export requires the Velorn desktop app.')
+      throw new Error('PNG sequence export requires the StorybookStudio desktop app.')
     }
 
     return await withOwnedPngSequenceOutput({

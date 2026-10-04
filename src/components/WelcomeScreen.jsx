@@ -481,7 +481,7 @@ function WelcomeScreen() {
           <div className="max-w-md w-full mx-4">
           {/* Branding */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-sf-text-primary">Velorn</h1>
+            <h1 className="text-4xl font-bold text-sf-text-primary">StorybookStudio</h1>
           </div>
           
           {/* Browser Support Warning - only show in web mode */}
@@ -689,7 +689,7 @@ function WelcomeScreen() {
           </div>
           {/* Subtle attribution */}
           <div className="absolute bottom-3 right-4 text-[10px] uppercase tracking-wider text-white/40 pointer-events-none">
-            Made with Velorn
+            Made with StorybookStudio
           </div>
         </div>
       ) : null}

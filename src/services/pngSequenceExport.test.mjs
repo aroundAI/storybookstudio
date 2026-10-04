@@ -290,7 +290,7 @@ test('owned output works against a real fresh filesystem directory', async () =>
   }
 })
 
-test('exported filenames round-trip through Velorn image-sequence detection', async () => {
+test('exported filenames round-trip through StorybookStudio image-sequence detection', async () => {
   // The production detector is an ESM .js file in a legacy CommonJS package.
   // Loading its source as a data module keeps this test compatible with the
   // Node 20 release builder without changing the Electron package type.

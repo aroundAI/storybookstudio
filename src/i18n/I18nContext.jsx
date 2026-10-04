@@ -115,7 +115,7 @@ export function I18nProvider({ children }) {
       <div className="min-h-screen bg-sf-dark-950 text-sf-text-primary flex items-center justify-center p-6">
         <div className="max-w-md text-center" role={englishLoadError ? 'alert' : 'status'}>
           <p className="text-sm font-medium">
-            {englishLoadError ? 'Velorn could not load its English language dictionary.' : 'Loading Velorn…'}
+            {englishLoadError ? 'StorybookStudio could not load its English language dictionary.' : 'Loading StorybookStudio…'}
           </p>
           {englishLoadError && (
             <>
