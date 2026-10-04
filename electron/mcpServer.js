@@ -10674,6 +10674,7 @@ class ComfyStudioMcpServer {
     inspectComfyStudioWorkflow = null,
     authSecret = null,
     getStudioCloud = null,
+    getStudioDeliver = null,
     emitPlanProposed = null,
   } = {}) {
     this.port = port
@@ -10705,6 +10706,8 @@ class ComfyStudioMcpServer {
       emitPlanProposed: typeof emitPlanProposed === 'function' ? emitPlanProposed : () => {},
       writableTools: MCP_ACTION_PLAN_WRITABLE_TOOLS,
       getProjectPath: () => this.lastSnapshot?.project?.path || null,
+      getDeliver: () => (typeof getStudioDeliver === 'function' ? getStudioDeliver() : null),
+      getSnapshot: () => this.lastSnapshot,
     })
   }
 

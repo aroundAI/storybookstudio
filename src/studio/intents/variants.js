@@ -20,8 +20,8 @@ export const MAX_HOOK_VARIANTS = 5
 // maxDuration, if shorter), ending on a cut.
 export const HOOK_SHORT_TARGET_SECONDS = 45
 // FILM-2016's 9:16 safe rectangle (src/studio/captions/layout.js SAFE_AREAS):
-// clear of the bottom 25% and the right 15%. Used until FILM-2016's
-// styleCaptionCues is passed in as `styleCues`.
+// clear of the bottom 25% and the right 15%. Used when no `styleCues` is
+// passed; deliver.js passes FILM-2016's styleCaptionCues.
 export const VERTICAL_CAPTION_SAFE_AREA = Object.freeze({ left: 0.05, right: 0.15, top: 0.08, bottom: 0.25 })
 
 const EPS = 1e-6

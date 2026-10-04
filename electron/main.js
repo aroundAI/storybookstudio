@@ -7818,6 +7818,7 @@ app.whenReady().then(async () => {
     inspectComfyStudioWorkflow: inspectComfyStudioWorkflowInternal,
     // FILM-2013: the agent profile's cloud tools and the plan-card event.
     getStudioCloud: () => studioMain.cloud,
+    getStudioDeliver: () => studioMain.deliver,
     emitPlanProposed: (proposal) => studioMain.emitPlanProposed(proposal),
   })
   // FILM-2017: set_auto_reframe and set_focal_point run in electron/studio/deliver.js.

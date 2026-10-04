@@ -16,6 +16,9 @@ import {
   resolvePreset,
 } from '../../src/studio/delivery/presets.js'
 import { applyDeliveryPresetFilter } from '../../src/studio/delivery/exportFilter.js'
+import { PRESET_LOUDNESS_LUFS } from '../../src/studio/audio/buses.js'
+import { SAFE_AREAS } from '../../src/studio/captions/layout.js'
+import { VERTICAL_CAPTION_SAFE_AREA } from '../../src/studio/intents/variants.js'
 
 const FIELDS = ['name', 'width', 'height', 'fps', 'codec', 'bitrate', 'audioCodec', 'audioLufs', 'maxDuration', 'captionPolicy']
 
@@ -48,6 +51,9 @@ test('loudness agrees with FILM-2016 (-14, reels -16) and master follows the pol
   assert.deepEqual(Object.fromEntries(DELIVERY_PRESET_NAMES.map((name) => [name, DELIVERY_PRESETS[name].audioLufs])), {
     youtube_16x9: -14, shorts_9x16: -14, tiktok_9x16: -14, reels_9x16: -16, square_1x1: -14, master: null,
   })
+  // FILM-2016's bus mixer keeps its own copy for a preset passed by name: the two agree.
+  for (const [name, lufs] of Object.entries(PRESET_LOUDNESS_LUFS)) assert.equal(DELIVERY_PRESETS[name].audioLufs, lufs, name)
+  assert.deepEqual({ ...VERTICAL_CAPTION_SAFE_AREA }, { ...SAFE_AREAS['9:16'] }, 'the fallback 9:16 safe area is FILM-2016\'s')
   assert.equal(resolvePreset('master', { timeline: { width: 1920, height: 1080, fps: 24 } }).audioLufs, -14)
   assert.equal(resolvePreset('master', { timeline: { width: 1920, height: 1080, fps: 24 }, policy: { loudnessTargetLufs: -16 } }).audioLufs, -16)
 })

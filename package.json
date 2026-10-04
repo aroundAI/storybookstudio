@@ -161,6 +161,7 @@
       "src/studio/reframeDetect.js",
       "src/studio/vendor/**/*",
       "src/studio/intents/variants.js",
+      "src/studio/captions/**/*",
       "build/icon.png",
       "package.json",
       "!node_modules/ffmpeg-static/ffmpeg*",

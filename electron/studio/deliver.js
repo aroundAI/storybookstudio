@@ -186,11 +186,13 @@ function createStudioDeliver({
     }
   }
 
-  // FILM-2014 writes the last preview's QA; until it does there is none.
-  async function lastPreviewQa(projectDir, timelineId) {
-    const record = (await readJson(path.join(projectDir, 'edits', 'qa', `${timelineId}.json`))) || (await readJson(path.join(projectDir, 'edits', 'qa', 'latest.json')))
-    if (!record?.qa) return { state: 'not_run' }
-    return { state: record.qa.pass ? 'pass' : 'fail', issues: record.qa.issues?.length ?? 0, at: record.at ?? null }
+  // The last preview's QA: edits/qa/latest.json (FILM-2013's LAST_QA_PATH,
+  // written by FILM-2014's review), a QaResult or {qa, at}.
+  async function lastPreviewQa(projectDir) {
+    const record = await readJson(path.join(projectDir, 'edits', 'qa', 'latest.json'))
+    const qa = record?.qa ?? record
+    if (typeof qa?.pass !== 'boolean') return { state: 'not_run' }
+    return { state: qa.pass ? 'pass' : 'fail', issues: qa.issues?.length ?? 0, at: record.at ?? null }
   }
 
   // Which timeline a preset renders: a variant of the preset's aspect when
@@ -253,7 +255,7 @@ function createStudioDeliver({
           maxDuration: resolved.maxDuration,
           overMaxDuration: resolved.maxDuration != null && duration > resolved.maxDuration,
           estimatedBytes: presetsModule.estimateBytes(name, duration),
-          lastQa: await lastPreviewQa(projectDir, timeline.id),
+          lastQa: await lastPreviewQa(projectDir),
           file: presetsModule.deliveryFileName(name, language),
           contentHash: sha256(JSON.stringify(timeline)),
         })
@@ -535,8 +537,10 @@ function createStudioDeliver({
     const context = await episodeContext(projectDir)
     const variants = await studioModule('intents/variants.js')
     if (args.kind === 'short') {
-      const built = variants.buildShortVariant(document, { source: args.source || {}, presetName: args.preset || 'shorts_9x16', shortsCandidates: context.shortsCandidates, language: args.language || null, brand: context.brand || {}, policy: context.policy || {}, now })
-      const response = { kind: 'short', previewOnly, timelineId: built.timeline.id, name: built.timeline.name, range: built.range, expectedDuration: built.expectedDuration, maxDuration: built.maxDuration, overMaxDuration: built.overMaxDuration, durationNote: built.durationNote, captionsPlaced: built.captionsPlaced, pictureClips: built.pictureClipIds.length, captionsPlacement: 'FILM-2016 safe area (9:16: clear of the bottom 25% and right 15%)' }
+      // FILM-2016's caption styling places the cues in the 9:16 safe area, in the brand's style.
+      const { styleCaptionCues } = await studioModule('captions/style.js')
+      const built = variants.buildShortVariant(document, { source: args.source || {}, presetName: args.preset || 'shorts_9x16', shortsCandidates: context.shortsCandidates, language: args.language || null, styleCues: styleCaptionCues, brand: context.brand || {}, policy: context.policy || {}, now })
+      const response = { kind: 'short', previewOnly, timelineId: built.timeline.id, name: built.timeline.name, range: built.range, expectedDuration: built.expectedDuration, maxDuration: built.maxDuration, overMaxDuration: built.overMaxDuration, durationNote: built.durationNote, captionsPlaced: built.captionsPlaced, pictureClips: built.pictureClipIds.length, captionsPlacement: 'FILM-2016 styleCaptionCues: the brand caption style inside the 9:16 safe area (clear of the bottom 25% and right 15%)' }
       if (previewOnly) return { ...response, reframe: 'Applying detects faces and subjects on each clip\'s keyframes and adds set_clip_keyframes crop paths.' }
       const reframed = await reframeTimelineClips({ timeline: built.timeline, document, projectDir, aspect: built.timeline.studio.aspect })
       built.timeline.studio.reframeWarnings = reframed.filter((entry) => entry.warning).map((entry) => entry.warning)

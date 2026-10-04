@@ -10,11 +10,14 @@ import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { makePulledProject } from './helpers/delivery.mjs'
+import { SAFE_AREAS } from '../../src/studio/captions/layout.js'
+import { checkCaptionSafeArea } from '../../src/studio/captions/style.js'
 
 const require = createRequire(import.meta.url)
 const ffmpegPath = require('ffmpeg-static')
 const { createStudioDeliver } = require('../../electron/studio/deliver.js')
 const { createJobRegistry } = require('../../electron/studio/jobs.js')
+const { createCapabilityTools } = require('../../electron/studio/mcpCapabilities.js')
 
 test('a short variant follows the subject in each shot and flags the shot it cannot frame', async (t) => {
   const { dir } = makePulledProject(t)
@@ -62,6 +65,34 @@ test('a short variant follows the subject in each shot and flags the shot it can
     assert.equal(entry.warning.type, 'reframe_no_subject')
   }
   assert.deepEqual(variant.studio.reframeWarnings.map((w) => w.type), flatShots.map(() => 'reframe_no_subject'))
+
+  // Captions re-placed by FILM-2016's styleCaptionCues for 9:16, and inside that safe area.
+  const captions = variant.clips.find((entry) => entry.type === 'captions')
+  assert.ok(captions.captions.cues.length > 0)
+  for (const cue of captions.captions.cues) {
+    assert.equal(cue.globalOverrides.aspect, '9:16')
+    assert.deepEqual(cue.globalOverrides.safeArea, { ...SAFE_AREAS['9:16'] })
+  }
+  assert.deepEqual(checkCaptionSafeArea({ cues: captions.captions.cues, width: 1080, height: 1920, aspect: '9:16' }), [])
+})
+
+test('the agent profile reaches the tools: studio_create_variant previews, studio_deliver confirm:true without the token is FORBIDDEN', async (t) => {
+  const { dir } = makePulledProject(t)
+  const deliver = createStudioDeliver({ jobs: createJobRegistry(), getMcpServer: () => ({ lastSnapshot: { project: { path: dir } } }) })
+  const capabilities = createCapabilityTools({ callPrimitive: async () => ({}), getDeliver: () => deliver, getSnapshot: () => ({ project: { path: dir } }) })
+  const parse = (result) => JSON.parse(result.content[0].text)
+  const variant = await capabilities.call('studio_create_variant', { kind: 'short', params: { source: { range: [4, 12] } } })
+  assert.equal(variant.isError, undefined, JSON.stringify(variant))
+  assert.equal(parse(variant).previewOnly, true)
+  assert.equal(parse(variant).expectedDuration, 8)
+  const language = await capabilities.call('studio_create_variant', { kind: 'language', params: { language: 'hi' } })
+  assert.equal(language.isError, true)
+  assert.match(parse(language).error.message, /FILM-2019/)
+  const summary = parse(await capabilities.call('studio_deliver', { presets: ['youtube_16x9'], destination: 'folder', folder: dir }))
+  assert.match(summary.summaryHash, /^[0-9a-f]{64}$/)
+  const refused = await capabilities.call('studio_deliver', { presets: ['youtube_16x9'], destination: 'folder', folder: dir, confirm: true })
+  assert.equal(refused.isError, true)
+  assert.equal(parse(refused).error.code, 'FORBIDDEN')
 })
 
 test('hook variants are added to the project and each exported as its own file', async (t) => {

@@ -150,9 +150,9 @@ const CAPABILITY_TOOLS = Object.freeze([
     name: 'studio_create_variant',
     profiles: ['agent'],
     owner: 'FILM-2017',
-    available: false,
+    available: true,
     annotations: write,
-    description: `A variant timeline: ${VARIANT_KINDS.join(', ')}. Not available until FILM-2017 (language: FILM-2019).`,
+    description: 'A variant timeline beside the master (timeline.studio {kind: variant, variantOf, aspect}). kind short: a 9:16 cut of a range, params {source: {candidateId} | {hook: true} | {range: [start, end]}, preset?: shorts_9x16 | tiktok_9x16 | reels_9x16, language?}; the subject is followed with a smoothed crop (faces, else the primary subject; a clip with neither is centred and flagged), captions are re-placed in the 9:16 safe area, and the duration is checked against the preset\'s limit. kind hook: params {variants: 1-5}, alternative first-five-second openings from the strongest lines, each exported to renders/<version>/hooks/. kind language is FILM-2019. Preview first (previewOnly defaults to true).',
     inputSchema: {
       type: 'object',
       required: ['kind'],
@@ -260,11 +260,18 @@ const CAPABILITY_TOOLS = Object.freeze([
     owner: 'FILM-2017',
     available: true,
     annotations: { ...write, openWorldHint: true },
-    description: 'With confirm false (the default): what would be rendered and sent (episode, presets, languages, duration, last QA, destination), with no side effects. Rendering and uploading (confirm true) needs the Deliver screen\'s confirmation and is FILM-2017\'s.',
+    description: 'With confirm false (the default): a summary per render (preset, language, timeline, frame, estimated size and duration, caption policy, last QA) and the destination, with no side effects, plus its summaryHash. confirm true renders, QA-checks, uploads and calls deliver_edit, and is accepted only with confirmationToken: the one-time token the Deliver screen issues when the user confirms that exact summary. An MCP client cannot obtain one. destination folder (Export to file) writes the files and a QA report to a folder with no sign-in. Returns a jobId; follow it with studio_get_job_status.',
     inputSchema: {
       type: 'object',
       required: ['presets'],
-      properties: { presets: { type: 'array', items: { type: 'string' }, minItems: 1 }, languages: { type: 'array', items: { type: 'string' } }, confirm: { type: 'boolean', default: false } },
+      properties: {
+        presets: { type: 'array', items: { type: 'string' }, minItems: 1 },
+        languages: { type: 'array', items: { type: 'string' } },
+        destination: { type: 'string', enum: ['storybook', 'folder'] },
+        folder: { type: 'string' },
+        confirm: { type: 'boolean', default: false },
+        confirmationToken: { type: 'string' },
+      },
       additionalProperties: false,
     },
   },
@@ -345,6 +352,9 @@ function createCapabilityTools({
   emitPlanProposed = () => {},
   writableTools = null,
   getProjectPath = () => null,
+  // FILM-2017: studioMain.deliver (electron/studio/deliver.js).
+  getDeliver = () => null,
+  getSnapshot = () => null,
   review = null,
   repair = null,
   clock = () => Date.now(),
@@ -619,9 +629,27 @@ function createCapabilityTools({
         return fromRenderer(result) || ok(result)
       }
       case 'studio_deliver': {
-        if (args.confirm === true) return notAvailable(tool, ' Rendering and sending need the Deliver screen\'s one-time confirmation; an MCP client cannot upload on its own.')
-        const result = await renderer('studio_deliver_summary', { presets: args.presets, languages: args.languages || [] })
-        return fromRenderer(result) || ok({ confirm: false, sideEffects: 'none', ...result })
+        const deliver = getDeliver()
+        if (!deliver) {
+          if (args.confirm === true) return notAvailable(tool, ' Rendering and sending need the Deliver screen\'s one-time confirmation; an MCP client cannot upload on its own.')
+          const result = await renderer('studio_deliver_summary', { presets: args.presets, languages: args.languages || [] })
+          return fromRenderer(result) || ok({ confirm: false, sideEffects: 'none', ...result })
+        }
+        try {
+          return ok(await deliver.studioDeliver(args, { snapshot: getSnapshot() }))
+        } catch (error) {
+          return failure(error?.code || 'VALIDATION_FAILED', error?.message || String(error), error?.details)
+        }
+      }
+      case 'studio_create_variant': {
+        const deliver = getDeliver()
+        if (!deliver) return notAvailable(tool)
+        if (args.kind === 'language') return failure('VALIDATION_FAILED', 'studio_create_variant kind language is not available yet: FILM-2019 builds it.', { availableAfter: 'FILM-2019' })
+        try {
+          return ok(await deliver.createVariant({ ...(args.params || {}), kind: args.kind, previewOnly: args.previewOnly }, { snapshot: getSnapshot() }))
+        } catch (error) {
+          return failure(error?.code || 'VALIDATION_FAILED', error?.message || String(error), error?.details)
+        }
       }
       case 'studio_open_episode':
         return cloudCall(tool, 'openEpisode', { episodeId: args.episodeId })

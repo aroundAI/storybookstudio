@@ -219,7 +219,7 @@ The card with `scene: null` is the whole timeline (caption re-timing, beds, mark
 | `studio_edit_audio` | agent | `balance`, `duck`, `normalize`, `fade` over the buses, same preview/apply flow | built: FILM-2016's `intents/audio.js` compiles, FILM-2013 previews and applies; `balance` and `normalize` need measured loudness |
 | `studio_add_captions` | agent | Brand-styled captions inside the aspect's safe area. `{language, style?}` | built over FILM-2016's `intents/captions.js`; styles the cues on the language's captions clip (a StoryBook rough cut has them); with none, transcribe first |
 | `studio_add_graphic` | agent | Brand graphics | not available yet (FILM-2018) |
-| `studio_create_variant` | agent | `short`, `hook`, `language` variants | not available yet (FILM-2017, FILM-2019) |
+| `studio_create_variant` | agent | `short` (a 9:16 cut of a shorts candidate, the strongest line or a range, reframed on the subject, captions in the 9:16 safe area) and `hook` (N five-second openings, each exported) variants | built (FILM-2017); `language` is FILM-2019 |
 | `studio_review` | agent | QA, then the critic | not available yet (FILM-2014) |
 | `studio_repair` | agent | One plan for QA issues | not available yet (FILM-2014) |
 | `studio_render_preview` | agent | Preview render and QA | not available yet (FILM-2014) |
@@ -230,7 +230,7 @@ The card with `scene: null` is the whole timeline (caption re-timing, beds, mark
 | `studio_check_readiness` | agent, expert | Package, policy, target, media present and probed, codecs, captions, coverage, media health, export readiness → pass or issues | built |
 | `studio_create_version` | agent, expert | `{name, prompt?}` | built |
 | `studio_restore_version` | agent, expert | `{versionId, reason?}` | built |
-| `studio_deliver` | agent, expert | `confirm: false` (default): what would be rendered and sent, no side effects. `confirm: true` | summary built; sending is FILM-2017's and needs the Deliver screen's confirmation |
+| `studio_deliver` | agent, expert | `confirm: false` (default): a summary per render and its `summaryHash`, no side effects. `confirm: true` with the Deliver screen's one-time `confirmationToken`: render, QA, upload, `deliver_edit`; returns a `jobId`. `destination: folder` exports files and a QA report with no sign-in | built (FILM-2017); without the token `confirm: true` is `FORBIDDEN` |
 
 A tool another spec builds answers `isError` with `{"error": {"code": "VALIDATION_FAILED", "message": "<tool> is not available yet: <spec> builds it.", "details": {"availableAfter": "<spec>"}}}`, never a partial result. Every error uses `{error: {code, message, details?}}` with `code` one of `VALIDATION_FAILED`, `TARGET_CHANGED`, `NOT_FOUND`, `FORBIDDEN`, `UNAUTHORIZED`. Arguments are checked against the tool's JSON schema first (required keys, unknown keys, types, enums). Every capability tool declares MCP `annotations`.
 
