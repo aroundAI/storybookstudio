@@ -55,7 +55,8 @@ async function previewThroughCapability({ store, api, text, scope }) {
     return { ok: false, code: 'VALIDATION_FAILED' }
   }
   patch({ panelError: null, pending: { instruction: text, planId: null, startedAt: new Date().toISOString() } })
-  const answer = parseCapabilityResult(await api.studio.callCapability('studio_edit', { intent: mapped.intent, scope: scopeArgument(scope), params: mapped.params, previewOnly: true }))
+  // params.instruction: FILM-2013 keeps the user's words as the plan's and the version's prompt.
+  const answer = parseCapabilityResult(await api.studio.callCapability('studio_edit', { intent: mapped.intent, scope: scopeArgument(scope), params: { ...mapped.params, instruction: text }, previewOnly: true }))
   if (!answer.success) {
     patch({ pending: null, panelError: messageOf(answer, 'The plan could not be prepared.') })
     return { ok: false, code: answer.code }
@@ -99,12 +100,25 @@ export function parseCapabilityResult(result) {
 
 // FILM-2013 creates the version and runs the steps in main; the journal
 // around the call is what lets a crash in between offer the version before.
-async function applyThroughCapability({ api, plan, scenes, runner }) {
-  const { tool, intent, scope, params } = plan.capability
-  const args = { ...(tool === 'studio_edit' ? { intent, scope, params } : {}), previewOnly: false, planId: plan.planId, ...(scenes ? { scenes } : {}) }
-  const journal = planJournalEntry({ planId: plan.planId, instruction: plan.instruction, parentVersionId: runner?.currentVersionId?.() ?? null })
+async function applyThroughCapability({ store, api, plan, scenes, runner }) {
+  const { tool } = plan.capability
+  let args = plan.capability.args
+  let planId = plan.planId
+  if (scenes) {
+    // FILM-2013 applies a plan whole: preview it again narrowed to the
+    // scenes, then apply that preview. The bridge folds the scoped preview
+    // into this card rather than showing it as a second plan.
+    if (!plan.capability.scoped) return { success: false, error: 'This plan applies as a whole; use Approve all.' }
+    args = { ...args, scope: { scenes } }
+    store.getState().patch({ sceneApproval: { parentPlanId: plan.planId, childPlanId: null } })
+    const preview = parseCapabilityResult(await api.studio.callCapability(tool, { ...args, previewOnly: true }))
+    if (!preview.success) return preview
+    planId = preview.planId
+    store.getState().patch({ sceneApproval: { parentPlanId: plan.planId, childPlanId: planId } })
+  }
+  const journal = planJournalEntry({ planId, instruction: plan.instruction, parentVersionId: runner?.currentVersionId?.() ?? null })
   await runner?.writeJournal?.(journal)
-  const answer = parseCapabilityResult(await api.studio.callCapability(tool, args))
+  const answer = parseCapabilityResult(await api.studio.callCapability(tool, { ...args, previewOnly: false, planId }))
   if (answer.success) await runner?.writeJournal?.({ ...journal, versionId: answer.versionId, status: 'done' })
   else if (!answer.partial) await runner?.writeJournal?.({ ...journal, status: 'refused' })
   return answer
@@ -118,7 +132,11 @@ export async function approvePlan({ store, api = globalThis.window?.electronAPI,
   let answer
   try {
     if (plan.capability && typeof api?.studio?.callCapability === 'function') {
-      answer = await applyThroughCapability({ api, plan, scenes, runner })
+      try {
+        answer = await applyThroughCapability({ store, api, plan, scenes, runner })
+      } finally {
+        state.patch({ sceneApproval: null })
+      }
     } else if (typeof api?.studio?.applyPlan === 'function') {
       answer = await api.studio.applyPlan({ planId, ...(scenes ? { scenes } : {}) })
     } else {
@@ -156,16 +174,16 @@ export async function rejectPlan({ store, api = globalThis.window?.electronAPI, 
   return { ok: true }
 }
 
-// "Fix with AI" on a QA issue: studio_repair (FILM-2014) proposes a plan on
-// the same studio:plan-proposed event.
+// "Fix with AI" on a QA issue: studio_repair (FILM-2014) previews one plan
+// for the issues; its cards arrive on studio:plan-proposed like any other.
 export async function repairIssues({ store, api = globalThis.window?.electronAPI, issues }) {
   const { patch } = store.getState()
-  if (typeof api?.studio?.repair !== 'function') {
-    patch({ panelError: 'Fix with AI needs studio_repair, which is not available yet (FILM-2014).', aiPanelOpen: true })
+  if (typeof api?.studio?.callCapability !== 'function') {
+    patch({ panelError: 'Fix with AI needs the agent tools, which this window cannot reach.', aiPanelOpen: true })
     return { ok: false, code: 'VALIDATION_FAILED' }
   }
   patch({ panelError: null, aiPanelOpen: true, pending: { instruction: `Fix: ${issues.map((issue) => issue.type).join(', ')}`, planId: null, startedAt: new Date().toISOString() } })
-  const answer = await api.studio.repair({ issues })
-  if (!answer?.success) patch({ pending: null, panelError: messageOf(answer, 'The repair could not be planned.') })
-  return { ok: Boolean(answer?.success) }
+  const answer = parseCapabilityResult(await api.studio.callCapability('studio_repair', { issues, previewOnly: true }))
+  if (!answer.success) patch({ pending: null, panelError: messageOf(answer, 'The repair could not be planned.') })
+  return { ok: answer.success, planId: answer.planId ?? null }
 }

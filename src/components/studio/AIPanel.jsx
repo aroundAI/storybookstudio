@@ -37,7 +37,7 @@ function PlanCard({ plan, card, disabled }) {
         ))}
       </ul>
       {card.touchesUserEdits && <p className="mt-2 flex items-center gap-1 text-[11px] text-sf-warning"><AlertTriangle className="h-3 w-3" aria-hidden />{t('panel.cardTouchesEdits')}</p>}
-      {card.scene !== null && plan.status === 'proposed' && (
+      {card.scene !== null && plan.status === 'proposed' && (plan.capability ? plan.capability.scoped : plan.steps.length > 0) && (
         <div className="mt-2 flex justify-end">
           <StudioButton className="px-2 py-1 text-[11px]" disabled={disabled} onClick={approveScene} data-test="studio-approve-scene">
             {t('panel.approveScene', { scene: card.scene })}

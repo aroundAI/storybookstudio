@@ -28,6 +28,7 @@ export const INITIAL_STUDIO_UI_STATE = Object.freeze({
   qaAnnouncement: '',
   prompt: null,
   recovery: null,
+  sceneApproval: null,
   updates: {},
 })
 

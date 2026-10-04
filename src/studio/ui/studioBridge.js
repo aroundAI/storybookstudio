@@ -46,6 +46,13 @@ export function startStudioUiBridge({ api = globalThis.window?.electronAPI, stor
   stops.push(studio.onPlanProposed((payload) => {
     const plan = normalizePlan(payload, { sceneHeadings: store.getState().sceneHeadings, receivedAt: new Date().toISOString() })
     if (!plan) return
+    // "Approve scene" previews the plan again for one scene and applies that
+    // preview; it belongs to the card the user approved, not a new plan.
+    const { sceneApproval } = store.getState()
+    if (sceneApproval && (plan.planId === sceneApproval.childPlanId || (!sceneApproval.childPlanId && plan.phase === 'proposed'))) {
+      if (!sceneApproval.childPlanId) patch({ sceneApproval: { ...sceneApproval, childPlanId: plan.planId } })
+      return
+    }
     // The cards of the user's own request show the user's words.
     const { pending } = store.getState()
     const mine = pending && plan.phase === 'proposed' && (pending.planId === plan.planId || (!pending.planId && plan.source === 'agent'))

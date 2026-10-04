@@ -6,7 +6,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { createStudioUiStore } from '../../../src/studio/ui/studioStore.js'
 import { startStudioUiBridge } from '../../../src/studio/ui/studioBridge.js'
-import { approvePlan, rejectPlan, proposeInstruction } from '../../../src/studio/ui/planActions.js'
+import { approvePlan, rejectPlan, proposeInstruction, repairIssues } from '../../../src/studio/ui/planActions.js'
 
 const fixture = () => JSON.parse(readFileSync(new URL('../fixtures/ui/plan-90s.json', import.meta.url), 'utf8'))
 
@@ -295,7 +295,7 @@ test('with FILM-2013, the instruction box previews studio_edit and the arriving 
   store.getState().setScope({ scenes: [3], clipIds: ['clip-9'], label: 'Scene 3' })
   const answer = await proposeInstruction({ store, api: harness.api, instruction: 'tighten this' })
   assert.equal(answer.ok, true)
-  assert.deepEqual(calls, [['studio_edit', { intent: 'tighten_pacing', scope: { scenes: [3] }, params: {}, previewOnly: true }]])
+  assert.deepEqual(calls, [['studio_edit', { intent: 'tighten_pacing', scope: { scenes: [3] }, params: { instruction: 'tighten this' }, previewOnly: true }]])
   assert.equal(store.getState().plans[0].instruction, 'tighten this')
   assert.equal(store.getState().pending, null)
 
@@ -327,4 +327,44 @@ test('a FILM-2017 deliver job drives the delivery state, the per-file QA and its
   store.getState().patch({ delivery: { jobId: 'd2', status: 'sending' } })
   emit('studio:job-progress', { id: 'd2', kind: 'deliver', phase: 'upload', status: 'failed', error: 'StoryBook moved on.', failure: { code: 'TARGET_CHANGED' } })
   assert.deepEqual([store.getState().delivery.status, store.getState().delivery.code, store.getState().delivery.error], ['failed', 'TARGET_CHANGED', 'StoryBook moved on.'])
+})
+
+test('Approve scene on a FILM-2013 plan previews that scene alone and applies it, folded into the card', async () => {
+  const calls = []
+  const harness = fakeApi({
+    callCapability: async (name, args) => {
+      calls.push([name, args])
+      if (args.previewOnly) {
+        harness.emit('studio:plan-proposed', { phase: 'proposed', planId: 'cap-scene-2', source: 'in-app', tool: 'studio_edit', intent: args.intent, scope: args.scope, params: args.params, cards: [capabilityPlan().cards[1]] })
+        return mcpResult({ previewOnly: true, planId: 'cap-scene-2' })
+      }
+      harness.emit('studio:plan-proposed', { phase: 'applied', planId: args.planId, source: 'in-app', intent: args.intent, versionId: 'v5', cards: [] })
+      return mcpResult({ success: true, version: { id: 'v5' } })
+    },
+  })
+  const store = createStudioUiStore()
+  startStudioUiBridge({ api: harness.api, store })
+  harness.emit('studio:plan-proposed', capabilityPlan())
+  const result = await approvePlan({ store, api: harness.api, runner: fakeRunner().runner, planId: 'cap-1', scenes: [2] })
+  assert.equal(result.ok, true)
+  assert.deepEqual(calls, [
+    ['studio_edit', { intent: 'hit_duration', scope: { scenes: [2] }, params: { targetSeconds: 90 }, previewOnly: true }],
+    ['studio_edit', { intent: 'hit_duration', scope: { scenes: [2] }, params: { targetSeconds: 90 }, previewOnly: false, planId: 'cap-scene-2' }],
+  ])
+  const { plans } = store.getState()
+  assert.deepEqual(plans.map((plan) => plan.planId), ['cap-1'], 'the scoped preview is not shown as a second plan')
+  assert.equal(plans[0].status, 'applied')
+  assert.deepEqual(plans[0].approvedScenes, [2])
+  assert.equal(plans[0].versionId, 'v5')
+})
+
+test('Fix with AI asks studio_repair for a plan, which arrives as cards', async () => {
+  const calls = []
+  const { api } = fakeApi({ callCapability: async (name, args) => { calls.push([name, args]); return mcpResult({ previewOnly: true, planId: 'r1' }) } })
+  const store = createStudioUiStore()
+  const issue = { type: 'loudness', severity: 0.7, timeRange: null, scene: null, detail: 'Too loud.', repairIntent: 'normalize_loudness' }
+  const answer = await repairIssues({ store, api, issues: [issue] })
+  assert.equal(answer.ok, true)
+  assert.deepEqual(calls, [['studio_repair', { issues: [issue], previewOnly: true }]])
+  assert.equal(store.getState().aiPanelOpen, true)
 })

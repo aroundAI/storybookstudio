@@ -119,7 +119,7 @@ test('a FILM-2013 proposal keeps what apply needs and maps its source', () => {
   const plan = normalizePlan(capabilityProposal)
   assert.equal(plan.source, 'agent')
   assert.equal(plan.instruction, 'Make the episode 90 seconds')
-  assert.deepEqual(plan.capability, { tool: 'studio_edit', intent: 'hit_duration', scope: {}, params: { targetSeconds: 90 } })
+  assert.deepEqual(plan.capability, { tool: 'studio_edit', args: { intent: 'hit_duration', scope: {}, params: { targetSeconds: 90 } }, scoped: true })
   assert.equal(plan.phase, 'proposed')
   assert.equal(plan.totalLabel, '99.0 s → 90.0 s')
   assert.equal(plan.cards[0].changes[0].text, 'Remove S1.4')
@@ -134,7 +134,7 @@ test('without an instruction the intent reads as words; an apply_updates plan is
   assert.equal(plan.instruction, 'Hit duration (target 90 s)')
   const resync = normalizePlan({ ...capabilityProposal, intent: 'apply_updates', instruction: undefined, params: {} })
   assert.equal(resync.source, 'resync')
-  assert.equal(resync.capability.tool, 'studio_apply_updates')
+  assert.deepEqual(resync.capability, { tool: 'studio_apply_updates', args: {}, scoped: false })
   assert.equal(resync.instruction, 'Apply the StoryBook update')
 })
 
@@ -142,4 +142,13 @@ test('an applied event carries the version it created', () => {
   const plan = normalizePlan({ phase: 'applied', planId: capabilityProposal.planId, source: 'mcp', intent: 'hit_duration', versionId: 'v3', cards: capabilityProposal.cards })
   assert.equal(plan.phase, 'applied')
   assert.equal(plan.versionId, 'v3')
+})
+
+test('each capability tool gets back the arguments it previewed with', () => {
+  const base = { phase: 'proposed', planId: 'p', source: 'in-app', cards: [] }
+  assert.deepEqual(normalizePlan({ ...base, tool: 'studio_edit_audio', intent: 'audio:duck', scope: { scenes: [2] }, params: { duckDb: -12 } }).capability, { tool: 'studio_edit_audio', args: { intent: 'duck', scope: { scenes: [2] }, params: { duckDb: -12 } }, scoped: true })
+  assert.deepEqual(normalizePlan({ ...base, tool: 'studio_add_captions', intent: 'captions:add_captions', scope: {}, params: { language: 'en', style: 'bold' } }).capability, { tool: 'studio_add_captions', args: { language: 'en', style: 'bold' }, scoped: false })
+  const issues = [{ type: 'loudness', severity: 0.7 }]
+  assert.deepEqual(normalizePlan({ ...base, tool: 'studio_repair', intent: 'repair', scope: {}, params: { issues } }).capability, { tool: 'studio_repair', args: { issues }, scoped: false })
+  assert.equal(normalizePlan({ ...base, tool: 'studio_repair', intent: 'repair', params: { issues } }).instruction, 'Repair')
 })

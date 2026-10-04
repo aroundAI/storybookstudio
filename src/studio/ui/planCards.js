@@ -77,9 +77,34 @@ const APPLY_UPDATES = 'apply_updates'
 
 const intentWords = (intent, params) => {
   if (intent === APPLY_UPDATES) return 'Apply the StoryBook update'
-  const words = String(intent).replace(/_/g, ' ')
+  const words = String(intent).replace(/^(audio|captions):/, '').replace(/_/g, ' ')
   const target = Number.isFinite(params?.targetSeconds) ? ` (target ${params.targetSeconds} s)` : ''
   return `${words[0].toUpperCase()}${words.slice(1)}${target}`
+}
+
+// FILM-2013 applies a plan when called again with the arguments it was
+// previewed with, plus previewOnly:false and the planId. Its proposal names
+// the tool and its key {intent, scope, params}; each tool's own arguments
+// come back from that key.
+const toolForIntent = (intent) => {
+  if (intent === APPLY_UPDATES) return 'studio_apply_updates'
+  if (intent === 'repair') return 'studio_repair'
+  if (intent.startsWith('audio:')) return 'studio_edit_audio'
+  if (intent.startsWith('captions:')) return 'studio_add_captions'
+  return 'studio_edit'
+}
+
+function capabilityOf(payload, intent) {
+  const tool = typeof payload.tool === 'string' ? payload.tool : toolForIntent(intent)
+  const scope = payload.scope ?? {}
+  const params = payload.params ?? {}
+  const args = tool === 'studio_edit' ? { intent, scope, params }
+    : tool === 'studio_edit_audio' ? { intent: intent.replace(/^audio:/, ''), scope, params }
+      : tool === 'studio_add_captions' ? { language: params.language, ...(params.style ? { style: params.style } : {}) }
+        : tool === 'studio_repair' ? { issues: params.issues || [] }
+          : {}
+  // A scope can be narrowed to one scene for "Approve scene".
+  return { tool, args, scoped: tool === 'studio_edit' || tool === 'studio_edit_audio' }
 }
 
 const normalizeTouch = (entry) => {
@@ -92,9 +117,7 @@ export function normalizePlan(payload, { sceneHeadings = new Map(), receivedAt =
   if (!payload || typeof payload !== 'object' || typeof payload.planId !== 'string' || !payload.planId) return null
   const intent = typeof payload.intent === 'string' && payload.intent ? payload.intent : null
   const source = intent === APPLY_UPDATES ? 'resync' : SOURCES[payload.source] || 'mcp'
-  const capability = intent
-    ? { tool: intent === APPLY_UPDATES ? 'studio_apply_updates' : 'studio_edit', intent, scope: payload.scope ?? {}, params: payload.params ?? {} }
-    : null
+  const capability = intent ? capabilityOf(payload, intent) : null
   const steps = Array.isArray(payload.steps) ? payload.steps : []
   const rawCards = Array.isArray(payload.cards) && payload.cards.length > 0 ? payload.cards : cardsFromSteps(steps, sceneHeadings)
   const touchesUserEdits = (Array.isArray(payload.touchesUserEdits) ? payload.touchesUserEdits : []).map(normalizeTouch).filter(Boolean)
