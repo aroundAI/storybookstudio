@@ -29,6 +29,10 @@ before(() => {
   // far below -14, true peak near 0 dBTP, so +gain to -14 would clip.
   ff(['-f', 'lavfi', '-i', 'anoisesrc=color=pink:amplitude=0.02:r=48000:d=20', '-ac', '2', path.join(work, 'bed.wav')])
   ff(['-f', 'lavfi', '-i', "aevalsrc='0.95*sin(2*PI*330*t)*between(mod(t,4),0,0.6)':s=48000:d=20", '-ac', '2', path.join(work, 'dialogue.wav')])
+  // Broadband speech-like bursts over a near-silent bed: the shape of the
+  // pulled project's mix, whose AAC encode overshot a -1 dBTP mix to -0.4.
+  ff(['-f', 'lavfi', '-i', "anoisesrc=color=pink:amplitude=0.95:r=48000:d=20,volume='between(mod(t,4),0,0.3)':eval=frame", '-ac', '2', path.join(work, 'bursts.wav')])
+  ff(['-f', 'lavfi', '-i', 'anoisesrc=color=pink:amplitude=0.003:r=48000:d=20', '-ac', '2', path.join(work, 'quiet-bed.wav')])
 })
 after(() => rmSync(work, { recursive: true, force: true }))
 
@@ -62,4 +66,19 @@ test('a failed mix names FFmpeg\'s reason in its first line, never a bare colon'
   assert.ok(first.length > 10)
   const reason = ffmpegFailureReason(':\n  Stream #0:0 -> #0:0 (pcm_f32le (native) -> pcm_f32le (native))\nPress [q] to stop, [?] for help\n[Parsed_aresample_1 @ 0x6000] Cannot select channel layout for the link between filters Parsed_aresample_1 and format_out_0_0.\nError reinitializing filters!\nFailed to inject frame into filter network: Invalid argument\nConversion failed!\n')
   assert.match(reason.split('\n')[0], /^Cannot select channel layout/)
+})
+
+test('after the delivery encode (AAC 192 kb/s) the true peak stays under the -1 dBTP QA ceiling', async () => {
+  const outputPath = path.join(work, 'aac', 'mix.wav')
+  const bursts = [
+    { inputPath: path.join(work, 'bursts.wav'), filters: ['asetpts=PTS-STARTPTS'], bus: 'dialogue', language: 'en' },
+    { inputPath: path.join(work, 'quiet-bed.wav'), filters: ['asetpts=PTS-STARTPTS'], bus: 'music' },
+  ]
+  const result = await runStudioBusMix({ ffmpegPath, inputs: bursts, buses: defaultAudioBuses(null), outputPath, totalDuration: 20, loudnessTargetLufs: -14 })
+  assert.equal(result.success, true, result.error)
+  const encoded = path.join(work, 'aac', 'mix.m4a')
+  ff(['-i', outputPath, '-c:a', 'aac', '-b:a', '192k', encoded])
+  const measured = await measureLoudness(ffmpegPath, encoded)
+  assert.ok(measured.truePeakDb <= -1, `encoded true peak ${measured.truePeakDb} dBTP`)
+  assert.ok(Math.abs(measured.integratedLufs - -14) <= 1, `encoded at ${measured.integratedLufs} LUFS`)
 })

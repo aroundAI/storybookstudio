@@ -26,7 +26,11 @@ const KEY_LEVEL = 0.5
 const KEY_LEVEL_DB = 20 * Math.log10(KEY_LEVEL)
 const SIDECHAIN_RATIO = 20
 const DEFAULT_THRESHOLD_DB = -45
-export const LOUDNORM_TRUE_PEAK_DB = -1
+// QA's ceiling is -1 dBTP on the delivered file; the AAC encode adds up to
+// ~2 dB of overshoot on transient material, so the mix stops at -2 dBTP,
+// limited at 4x oversampling (a true-peak limiter) after loudnorm.
+export const LOUDNORM_TRUE_PEAK_DB = -2
+const TRUE_PEAK_OVERSAMPLE = 4
 
 const num = (value, digits = 6) => {
   const fixed = Number(value).toFixed(digits)
@@ -270,7 +274,12 @@ export async function runStudioBusMix({
         loudness = { target: loudnessTargetLufs, input: null, output: null, normalizationType: 'none', reason: 'silent' }
         await fs.copyFile(premix, path.join(work, 'normalized.wav'))
       } else {
-        const filter = `loudnorm=I=${num(loudnessTargetLufs)}:TP=${LOUDNORM_TRUE_PEAK_DB}:LRA=50:measured_I=${first.input_i}:measured_TP=${first.input_tp}:measured_LRA=${first.input_lra}:measured_thresh=${first.input_thresh}:offset=${first.target_offset}:linear=true:print_format=json,aresample=${sampleRate},aformat=sample_rates=${sampleRate}:channel_layouts=${layout}`
+        // Linear mode keeps every peak under TP by construction (and the
+        // stems summing to the mix); dynamic mode's limiter is not true-peak
+        // accurate, so a 4x-oversampled limiter (latency-compensated) follows.
+        const linearFits = Number(first.input_tp) + (loudnessTargetLufs - Number(first.input_i)) <= LOUDNORM_TRUE_PEAK_DB
+        const limiter = linearFits ? '' : `,aformat=channel_layouts=${layout},aresample=${sampleRate * TRUE_PEAK_OVERSAMPLE},aformat=sample_rates=${sampleRate * TRUE_PEAK_OVERSAMPLE}:channel_layouts=${layout},alimiter=limit=${num(dbToGain(LOUDNORM_TRUE_PEAK_DB))}:attack=1:release=50:level=disabled:latency=1`
+        const filter = `loudnorm=I=${num(loudnessTargetLufs)}:TP=${LOUDNORM_TRUE_PEAK_DB}:LRA=50:measured_I=${first.input_i}:measured_TP=${first.input_tp}:measured_LRA=${first.input_lra}:measured_thresh=${first.input_thresh}:offset=${first.target_offset}:linear=true:print_format=json${limiter},aresample=${sampleRate},aformat=sample_rates=${sampleRate}:channel_layouts=${layout}`
         // The layout is pinned on the chain and the output: when one gain
         // would push the true peak past TP, loudnorm turns dynamic, FFmpeg
         // re-initialises the graph mid-stream, and an unpinned output layout
