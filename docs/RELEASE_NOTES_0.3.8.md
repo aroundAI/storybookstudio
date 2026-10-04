@@ -1,4 +1,4 @@
-# Velorn v0.3.8
+# StorybookStudio v0.3.8
 
 ## Highlights
 

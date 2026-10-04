@@ -1,4 +1,4 @@
-# Contributing to Velorn
+# Contributing to StorybookStudio
 
 Thanks for contributing.
 
@@ -10,7 +10,7 @@ Thanks for contributing.
 
 ## Proposing Changes
 
-Velorn currently has one maintainer, so coordination happens before code, not after:
+StorybookStudio currently has one maintainer, so coordination happens before code, not after:
 
 - Non-trivial changes start as an issue. Describe the user problem and, if you have one, your proposed approach — then wait for a maintainer go-ahead before writing code.
 - One pull request per agreed issue, scoped to what was agreed. Follow-up ideas go in new issues, not into the open PR.

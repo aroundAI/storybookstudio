@@ -4,7 +4,7 @@ Last updated: 2026-09-26
 
 ## Issue #131 / v0.3.36 release preparation
 
-The maintainer approved the tested hardware-assisted playback/proxy preparation, bounded background concurrency and clearer progress, then authorized committing, pushing and preparing the next release on 2026-09-26. The isolated sibling checkout `velorn-issue-131`, branch `codex/issue-131-import-cache`, is based on released v0.3.35 (`6d12833`). Version metadata targets v0.3.36. Use the normal PR/CLA/main/tag/build process and keep the release **draft and unpublished** for maintainer review. Other dirty/unique checkouts are untouched.
+The maintainer approved the tested hardware-assisted playback/proxy preparation, bounded background concurrency and clearer progress, then authorized committing, pushing and preparing the next release on 2026-09-26. The isolated sibling checkout `storybookstudio-issue-131`, branch `codex/issue-131-import-cache`, is based on released v0.3.35 (`6d12833`). Version metadata targets v0.3.36. Use the normal PR/CLA/main/tag/build process and keep the release **draft and unpublished** for maintainer review. Other dirty/unique checkouts are untouched.
 
 See `docs/ISSUE_131_MEDIA_PREPARATION.md` for contracts and tests and `docs/RELEASE_NOTES_0.3.36.md` for release copy. Actual Linux RTX 5090 NVENC and CPU fallback checks pass; Windows/macOS actual-device validation remains pending. Check the current PR/regression matrix/release workflow rather than treating this preparation note as proof of completed builds. Keep issue #131 open for reporter confirmation. Historical issue #130 preparation notes below are retained, but v0.3.35 has since been published.
 
@@ -22,7 +22,7 @@ The older sections below retain the historical editing and migration context.
 
 ## Current local editing review
 
-The active review checkout is `/home/jaime/Documents/coding_projects/general/velorn-editing-polish`, branch `codex/editing-workflow-polish`. The accumulated approved editing-polish work is committed in `8d6534a`, based on released v0.3.33 / main `fb7689b`; preserve it. On 2026-09-15 the maintainer authorized preparing v0.3.34 through the normal PR, main-merge, tag and GitHub Actions process, with the release kept **draft and unpublished** for review. Version metadata and `docs/RELEASE_NOTES_0.3.34.md` are prepared for that release. Check GitHub for current PR/build/asset status before continuing; preparation alone is not proof that builds have completed.
+The active review checkout is `/home/jaime/Documents/coding_projects/general/storybookstudio-editing-polish`, branch `codex/editing-workflow-polish`. The accumulated approved editing-polish work is committed in `8d6534a`, based on released v0.3.33 / main `fb7689b`; preserve it. On 2026-09-15 the maintainer authorized preparing v0.3.34 through the normal PR, main-merge, tag and GitHub Actions process, with the release kept **draft and unpublished** for review. Version metadata and `docs/RELEASE_NOTES_0.3.34.md` are prepared for that release. Check GitHub for current PR/build/asset status before continuing; preparation alone is not proof that builds have completed.
 
 PRs #124 and #128 were reviewed separately and are not part of this release. Do not merge them or include the experimental agent-budget work as part of this authorization. The maintainer previously authorized the CLA confirmation for our own contribution; external contributors must confirm their own agreements. Do not publish the draft without separate approval.
 
@@ -34,7 +34,7 @@ The following sections retain the historical August migration record; their rele
 
 ## Merged Migration
 
-- Worktree: `C:\Users\papa\Documents\coding_projects\general\velorn-migration-cleanup`
+- Worktree: `C:\Users\papa\Documents\coding_projects\general\storybookstudio-migration-cleanup`
 - PR: `#99` - merged into `main` on 2026-08-12
 - Merge commit: `c4be213`
 - Latest release remains `v0.3.25`; the recovered changes are on `main` but have not been released yet.
@@ -60,7 +60,7 @@ At migration start it was on local `main` at `6b450ce` (`v0.3.23`), three commit
 
 A safety inventory exists at:
 
-`C:\Users\papa\Documents\coding_projects\general\velorn-migration-backup-2026-08-12`
+`C:\Users\papa\Documents\coding_projects\general\storybookstudio-migration-backup-2026-08-12`
 
 It contains:
 
@@ -81,25 +81,25 @@ Do not reset, pull, delete, or repurpose the old checkout until the maintainer h
 
 Clean, fully superseded worktrees removed on 2026-08-12:
 
-- `comfystudio-license-gplv3`
-- `velorn-long-source-export`
-- `velorn-my-workflows-mcp`
-- `velorn-native-rtx-upscale`
+- `storybookstudio-license-gplv3`
+- `storybookstudio-long-source-export`
+- `storybookstudio-my-workflows-mcp`
+- `storybookstudio-native-rtx-upscale`
 
 Old worktrees retained because they contain uncommitted or unique work:
 
-- `comfystudio-joao-16gb-preview` - modified project loading plus review screenshots and a long detached feature history.
-- `comfystudio-pr49` - one modified Generate file on a detached PR test.
-- `comfystudio-pr49-local-test` - staged and unstaged ASR/music-video test changes.
+- `storybookstudio-joao-16gb-preview` - modified project loading plus review screenshots and a long detached feature history.
+- `storybookstudio-pr49` - one modified Generate file on a detached PR test.
+- `storybookstudio-pr49-local-test` - staged and unstaged ASR/music-video test changes.
 - `comfyui_pr50_merge_check` - staged custom-workflow/media changes, two untracked covers, and two commits not represented in `main`.
-- `velorn-infinite-canvas` - uncommitted canvas UI, schema, store, and test work.
+- `storybookstudio-infinite-canvas` - uncommitted canvas UI, schema, store, and test work.
 
 Do not delete those retained worktrees without a separate review and explicit maintainer approval.
 
 ## Remaining Work
 
 1. On Ubuntu, clone `main` fresh; do not copy `node_modules` or the Windows `.codex` directory.
-2. Run the Ubuntu startup commands below and verify Velorn opens.
+2. Run the Ubuntu startup commands below and verify StorybookStudio opens.
 3. Keep Windows available for Windows packaging, Azure signing behavior, and NVIDIA RTX export testing.
 4. Review retained worktrees individually before any further deletion.
 

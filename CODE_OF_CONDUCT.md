@@ -2,7 +2,7 @@
 
 ## Our Standard
 
-Velorn is committed to a welcoming, respectful, and constructive community.
+StorybookStudio is committed to a welcoming, respectful, and constructive community.
 
 Examples of behavior that help build that environment:
 

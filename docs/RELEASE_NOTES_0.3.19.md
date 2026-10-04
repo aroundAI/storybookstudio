@@ -1,4 +1,4 @@
-# Velorn v0.3.19
+# StorybookStudio v0.3.19
 
 Draw your masks: a pen tool for spline masks.
 
@@ -24,8 +24,8 @@ Draw your masks: a pen tool for spline masks.
 - `Linux AppImage`: portable Linux build
 - `Linux deb`: Debian/Ubuntu package
 
-Ignore the auto-generated source-code archives unless you plan to build Velorn from source.
+Ignore the auto-generated source-code archives unless you plan to build StorybookStudio from source.
 
 ## Notes
 
-- Velorn still depends on a separate local ComfyUI installation for local generation; editing, export, and captions do not require an active ComfyUI connection.
+- StorybookStudio still depends on a separate local ComfyUI installation for local generation; editing, export, and captions do not require an active ComfyUI connection.

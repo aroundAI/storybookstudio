@@ -1,12 +1,12 @@
-# Velorn MCP Guide
+# StorybookStudio MCP Guide
 
-Velorn includes a local Model Context Protocol (MCP) server so AI agents can inspect and operate on the open Velorn project. It is designed for agents such as Codex, Claude Code, Cursor-compatible MCP clients, and other open source MCP clients that can talk to a local HTTP MCP server.
+StorybookStudio includes a local Model Context Protocol (MCP) server so AI agents can inspect and operate on the open StorybookStudio project. It is designed for agents such as Codex, Claude Code, Cursor-compatible MCP clients, and other open source MCP clients that can talk to a local HTTP MCP server.
 
 The MCP server is part of the desktop app. It exposes the current project, active timeline, assets, ComfyUI connection state, generation state, visual frame inspection, safe timeline edit actions, caption actions, export actions, and workflow setup helpers.
 
 ## Quick Start
 
-1. Launch the Velorn desktop app.
+1. Launch the StorybookStudio desktop app.
 2. Open a project. Some setup tools work without a project, but timeline and asset tools need one.
 3. Open `Settings > Agents (MCP)`.
 4. Confirm the server is `Running`.
@@ -54,7 +54,7 @@ The same server and the same bearer serve two tool lists (FILM-2013):
 | Profile | URL | Lists | For |
 | --- | --- | --- | --- |
 | `agent` (default) | `http://127.0.0.1:19790/mcp` or `/mcp?profile=agent` | the 18 `studio_*` capability tools ([below](#the-agent-profile-capability-tools)) | editing a StoryBook episode by intent: plan, preview as cards, apply into a version, explain |
-| `expert` | `http://127.0.0.1:19790/mcp?profile=expert` | Velorn's tools (133 on fork main 438fdb9) plus the 6 `studio_*` lifecycle tools | everything Velorn can do, one primitive at a time |
+| `expert` | `http://127.0.0.1:19790/mcp?profile=expert` | StorybookStudio's tools (133 on fork main 438fdb9) plus the 6 `studio_*` lifecycle tools | everything StorybookStudio can do, one primitive at a time |
 
 The profile can also be sent as an `X-MCP-Profile: agent|expert` header; any other value is a `400`. Each profile refuses the other's tools. The bearer is required on both: a missing or wrong one is a `401` before the profile is read.
 
@@ -66,7 +66,7 @@ claude mcp add --transport http storybookstudio-expert "http://127.0.0.1:19790/m
 
 ## What Agents Can Do
 
-Velorn MCP is useful for five broad workflows:
+StorybookStudio MCP is useful for five broad workflows:
 
 - Review an edit: inspect timelines, clips, visible shots, frame contact sheets, disabled clips, missing media, gaps, markers, transforms, and export readiness.
 - Make safe editorial changes: move, trim, split, delete, enable/disable, label, retime, adjust audio, add transitions, manage tracks, and manage timelines.
@@ -74,7 +74,7 @@ Velorn MCP is useful for five broad workflows:
 - Drive generation: prepare Generate from the current timeline frame, queue approved generation batches, inspect bundled workflows, validate ComfyUI nodes, and place generated assets back into timelines.
 - Deliver: set In/Out ranges, run H.264 delivery exports, run social delivery batches, export FCPXML, and inspect exported files.
 
-The MCP server is not a replacement for the Velorn UI. It is a project-aware control layer for agents. The best results come from asking the agent to inspect first, show a preview plan, then apply only after approval.
+The MCP server is not a replacement for the StorybookStudio UI. It is a project-aware control layer for agents. The best results come from asking the agent to inspect first, show a preview plan, then apply only after approval.
 
 ## Safety Model
 
@@ -104,22 +104,22 @@ Recommended agent behavior:
 3. Use `previewOnly: true` before write actions.
 4. Ask for explicit user approval before applying changes that write files, queue generation, spend credits, start GPU work, change settings, or modify timelines.
 5. Use `create_project_checkpoint` before risky multi-step edits.
-6. Use `run_mcp_action_plan` for approved multi-step work so Velorn can checkpoint first and stop on the first error.
+6. Use `run_mcp_action_plan` for approved multi-step work so StorybookStudio can checkpoint first and stop on the first error.
 
-Undoable timeline changes use Velorn's normal undo stack. Project creation, project duplication, exports, generated assets, and imported media can write files to disk.
+Undoable timeline changes use StorybookStudio's normal undo stack. Project creation, project duplication, exports, generated assets, and imported media can write files to disk.
 
 ## A Good First Agent Prompt
 
 After connecting your client, try:
 
 ```text
-You are connected to Velorn. Call get_mcp_recipes, summarize what review and edit passes are available, then inspect the open project with get_project and get_timeline. Do not make changes yet.
+You are connected to StorybookStudio. Call get_mcp_recipes, summarize what review and edit passes are available, then inspect the open project with get_project and get_timeline. Do not make changes yet.
 ```
 
 For a timeline health pass:
 
 ```text
-Review this Velorn timeline for delivery risks. Use analyze_timeline and check_media_health first. If you want to add markers, show me the add_timeline_markers previewOnly plan before applying anything.
+Review this StorybookStudio timeline for delivery risks. Use analyze_timeline and check_media_health first. If you want to add markers, show me the add_timeline_markers previewOnly plan before applying anything.
 ```
 
 For visual review:
@@ -250,7 +250,7 @@ A tool another spec builds answers `isError` with `{"error": {"code": "VALIDATIO
 | `reorder_scenes` | episode | `order` (every scene once) | `move_clips` per scene block |
 | `recut_around_drops` | episode | | silence cuts within 5 s of each measured drop in `analyticsHints.retention`; none when unmeasured, and it says so |
 
-Bounds come from `storybook/policy.json` (StoryBook's edit policy, else its defaults); no compiler hard-codes a policy bound. A cut is a ripple `extract_range` because Velorn's `trim_clips` does not ripple: a trim alone leaves a gap and slips dialogue off its picture. Cuts run latest first, so each step's times are those of the timeline it was planned on.
+Bounds come from `storybook/policy.json` (StoryBook's edit policy, else its defaults); no compiler hard-codes a policy bound. A cut is a ripple `extract_range` because StorybookStudio's `trim_clips` does not ripple: a trim alone leaves a gap and slips dialogue off its picture. Cuts run latest first, so each step's times are those of the timeline it was planned on.
 
 `autoRepair: true` runs apply → QA → repair up to 3 rounds inside the one version and returns only the final cards; the review and the repair are FILM-2014's `studio_review` and repair intent. A server started without the preview renderer runs one round and says why.
 
@@ -315,7 +315,7 @@ Use this when the user asks for concrete timeline changes:
 Use this to extend, replace, or vary a shot:
 
 1. `inspect_timeline_frame`
-2. `list_velorn_workflows`
+2. `list_storybookstudio_workflows`
 3. `prepare_generation_from_timeline_context` with `previewOnly: true`
 4. Apply the prepare step only after approval.
 5. `queue_prepared_generation` or `queue_timeline_generation_batch` with preview first.
@@ -340,7 +340,7 @@ Downloads are https-only, existing files are never overwritten, and nothing inst
 
 Use this when the user gives a creative brief instead of a timeline source:
 
-1. `list_velorn_workflows`
+1. `list_storybookstudio_workflows`
 2. `create_asset_folder` with preview first.
 3. `queue_prompt_generation_batch` with preview first.
 4. `get_generation_status`
@@ -376,7 +376,7 @@ For interchange, preview `export_fcpxml` before writing a file. Use `format: "fc
 
 ## Tool Catalog
 
-Velorn exposes 133 MCP tools in the `expert` profile (130 upstream, plus `set_audio_buses` from FILM-2016 and two from FILM-2017; `node scripts/capability-matrix.mjs` counts them); the `agent` profile serves the 18 capability tools above instead.
+StorybookStudio exposes 133 MCP tools in the `expert` profile (130 upstream, plus `set_audio_buses` from FILM-2016 and two from FILM-2017; `node scripts/capability-matrix.mjs` counts them); the `agent` profile serves the 18 capability tools above instead.
 
 StorybookStudio's AI editor builds on these tools: [AI_EDITOR_CONTRACT.md](AI_EDITOR_CONTRACT.md) defines what an agent may do, and [CAPABILITY_MATRIX.md](CAPABILITY_MATRIX.md) maps every tool onto it.
 
@@ -388,7 +388,7 @@ StorybookStudio's AI editor builds on these tools: [AI_EDITOR_CONTRACT.md](AI_ED
 | `get_timeline` | Return active timeline tracks, clips, markers, and optionally transitions. |
 | `get_assets` | Return project assets without exposing heavy blobs or preview URLs. |
 | `get_ai_review_passes` | Return practical AI review recipes. |
-| `get_mcp_recipes` | Alias-style recipe entry point for agents asking what Velorn MCP can do. |
+| `get_mcp_recipes` | Alias-style recipe entry point for agents asking what StorybookStudio MCP can do. |
 | `find_timeline_items` | Search clips, tracks, markers, transitions, and assets before targeting changes. |
 | `list_recent_projects` | List recent projects, even when none is open. |
 | `open_project` | Preview or open a project by path or recent project name. |
@@ -443,15 +443,15 @@ These tools use the same persistent Director state as the visible Music Video UI
 
 | Tool | Purpose |
 | --- | --- |
-| `guide_comfyui_setup` | Beginner-friendly setup wizard for connecting Velorn to ComfyUI. |
+| `guide_comfyui_setup` | Beginner-friendly setup wizard for connecting StorybookStudio to ComfyUI. |
 | `diagnose_comfyui_connection` | Diagnose configured localhost port, API health, launcher state, and likely install mode. |
-| `set_comfyui_connection` | Preview or set Velorn's local ComfyUI port. |
+| `set_comfyui_connection` | Preview or set StorybookStudio's local ComfyUI port. |
 | `repair_comfyui_connection` | Probe likely ports and preview/apply a safe port-setting repair. |
-| `control_comfyui_launcher` | Preview/apply start, stop, or restart through Velorn's launcher. |
+| `control_comfyui_launcher` | Preview/apply start, stop, or restart through StorybookStudio's launcher. |
 | `get_comfyui_launcher_logs` | Return recent launcher logs with common issue summaries. |
 | `validate_comfyui_nodes` | Check if ComfyUI node class names are available from `/object_info`. |
-| `list_velorn_workflows` | List bundled workflows on the machine. |
-| `inspect_velorn_workflow` | Inspect workflow JSON, extract required classes, and validate nodes. |
+| `list_storybookstudio_workflows` | List bundled workflows on the machine. |
+| `inspect_storybookstudio_workflow` | Inspect workflow JSON, extract required classes, and validate nodes. |
 | `list_comfyui_templates` | Search official ComfyUI workflow templates. |
 | `queue_timeline_template_generation` | Preview or queue an official ComfyUI template — or an imported community workflow via `importedWorkflowId` — from a timeline source clip. |
 | `import_comfyui_workflow` | Preview or import a community ComfyUI workflow (comfy.org share URL, local .json, or inline JSON) as a runnable imported template with a dependency report. |
@@ -462,8 +462,8 @@ These tools use the same persistent Director state as the visible Music Video UI
 
 | Tool | Purpose |
 | --- | --- |
-| `undo` | Undo latest Velorn timeline or project-structure edit. |
-| `redo` | Redo latest Velorn timeline or project-structure edit. |
+| `undo` | Undo latest StorybookStudio timeline or project-structure edit. |
+| `redo` | Redo latest StorybookStudio timeline or project-structure edit. |
 | `set_playhead` | Move the playhead by seconds, timecode, or frame. |
 | `select_clips` | Select clips by ID, filter, track, time, type, label, or search. |
 | `select_assets` | Select/preview project assets by ID, name, type, folder, status, or latest match. |
@@ -514,7 +514,7 @@ These tools use the same persistent Director state as the visible Music Video UI
 
 | Tool | Purpose |
 | --- | --- |
-| `search_stock_media` | Search Pexels photos/videos and open the same results in Velorn's Stock tab. |
+| `search_stock_media` | Search Pexels photos/videos and open the same results in StorybookStudio's Stock tab. |
 | `import_stock_media` | Preview/bulk-import selected Pexels IDs or the first N non-duplicate results into a project folder. |
 | `import_asset_from_path` | Preview/import a local media file into the active project. |
 | `relink_asset` | Preview/relink an existing asset record to a local file path. |
@@ -572,7 +572,7 @@ Search Pexels photos for "ocean drone shots" with search_stock_media. Show me th
 
 | Tool | Purpose |
 | --- | --- |
-| `export_timeline` | Preview/start a timeline export through Velorn's export worker. |
+| `export_timeline` | Preview/start a timeline export through StorybookStudio's export worker. |
 | `export_delivery_batch` | Preview/run several delivery exports such as 16:9, 1:1, and 9:16. |
 | `export_fcpxml` | Preview/export modern FCPXML for Resolve/Final Cut or XMEML v5 for Adobe Premiere Pro. |
 
@@ -683,15 +683,15 @@ Preview a delivery export:
 
 ### The MCP client cannot connect
 
-- Make sure the Velorn desktop app is running.
+- Make sure the StorybookStudio desktop app is running.
 - Check `Settings > Agents (MCP)` for `Running`.
 - Confirm the endpoint is `http://127.0.0.1:19790/mcp`.
 - If the port is unavailable, another local process may already be using `19790`.
-- Restart Velorn after changing development branches or rebuilding Electron code.
+- Restart StorybookStudio after changing development branches or rebuilding Electron code.
 
 ### The agent says no project is open
 
-Open a project in Velorn, then try again. The agent can call `list_recent_projects` and `open_project`, but most timeline and asset tools need an active project snapshot.
+Open a project in StorybookStudio, then try again. The agent can call `list_recent_projects` and `open_project`, but most timeline and asset tools need an active project snapshot.
 
 ### A write tool previews but does not apply
 
@@ -708,7 +708,7 @@ Ask the agent to use:
 1. `diagnose_comfyui_connection`
 2. `get_comfyui_launcher_logs`
 3. `validate_comfyui_nodes`
-4. `inspect_velorn_workflow`
+4. `inspect_storybookstudio_workflow`
 
 These tools can distinguish port issues, missing custom nodes, missing models, launcher problems, and workflow compatibility issues.
 
@@ -728,7 +728,7 @@ For square or vertical exports, make sure the agent previews `deliveryFraming` s
 - Use `tools/list` to discover schemas at runtime. The catalog can grow over time.
 - Tool results are returned as MCP content blocks, usually text containing JSON.
 - Frame and contact-sheet inspection tools may include image content when requested and when size limits allow.
-- Keep the MCP client connected to the local machine running Velorn. This is not a cloud API.
+- Keep the MCP client connected to the local machine running StorybookStudio. This is not a cloud API.
 - Do not assume a write tool changed the project unless the returned result says it applied successfully.
 - Favor explicit IDs from read tools over natural-language targeting for write tools.
 - Queueing generation and running exports can take time. Poll status tools such as `get_generation_status`, `get_caption_status`, or inspect output files after completion.
