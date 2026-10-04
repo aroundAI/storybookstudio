@@ -11,6 +11,18 @@ const registry = {
   masterAnalyser: null,
   trackAnalysers: new Map(), // trackId -> AnalyserNode
   insertMeters: new Map(), // trackId | 'master' -> [{ id, type, getReductionDb }]
+  // FILM-2016: the StorybookStudio bus graph (src/studio/audio/busGraph.js)
+  // bussed tracks route through, for bus meters and the duck readout.
+  studioBusGraph: null,
+}
+
+export function registerStudioBusGraph(context, graph) {
+  if (context && registry.context && registry.context !== context) return
+  registry.studioBusGraph = graph || null
+}
+
+export function getStudioBusGraph() {
+  return registry.studioBusGraph
 }
 
 export function registerMixerGraph({ context, masterAnalyser }) {
@@ -26,6 +38,7 @@ export function unregisterMixerGraph(context) {
   registry.masterAnalyser = null
   registry.trackAnalysers.clear()
   registry.insertMeters.clear()
+  registry.studioBusGraph = null
 }
 
 /**
