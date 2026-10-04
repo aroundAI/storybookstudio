@@ -34,7 +34,7 @@ const { detectClipSamples } = require('./subjectDetect')
 const PROJECT_FILE = 'project.comfystudio'
 const TOKEN_TTL_MS = 10 * 60 * 1000
 const MAX_PUT_ATTEMPTS = 3
-const STATE_FILE = 'delivery-state.json'
+const STATE_FILE = '.delivery-state.json'
 const QA_REPORT_FILE = 'qa-report.json'
 
 const studioModule = (relative) => import(pathToFileURL(path.join(__dirname, '..', '..', 'src', 'studio', relative)).href)
