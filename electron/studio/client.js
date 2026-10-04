@@ -128,7 +128,10 @@ function createStoryBookClient({ apiOrigin, auth, fetchFn = fetch, sleep = defau
           )
         }
         connection = null
-        throw new StudioClientError('NETWORK', `StoryBook could not be reached: ${error?.message || error}`, { retryable: true, tool })
+        // An HTTP error's message carries the whole response body (a dev
+        // server's 500 page is kilobytes of HTML): keep the first line, short.
+        const reason = String(error?.message || error).split('\n')[0].replace(/<[^>]*>/g, ' ').slice(0, 200)
+        throw new StudioClientError('NETWORK', `StoryBook could not be reached: ${reason}`, { retryable: true, tool })
       }
 
       if (!result?.isError) return result?.structuredContent ?? { text: result?.content?.find((c) => c.type === 'text')?.text ?? null }
