@@ -83,7 +83,11 @@ test('no tracked file is named for, or mentions, the upstream editor', () => {
     const full = path.join(ROOT, file)
     if (!existsSync(full) || !statSync(full).isFile()) continue
     const buffer = readFileSync(full)
-    if (isBinary(buffer)) continue
+    if (isBinary(buffer)) {
+      // Media metadata can carry the names too (a ComfyUI prompt in an mp4).
+      if (NAMES.test(buffer.toString('latin1'))) problems.push(`${file}: binary content`)
+      continue
+    }
     for (const hit of hitsIn(buffer.toString('utf8'))) problems.push(`${file}:${hit.line}: ${hit.text}`)
   }
   assert.deepEqual(problems.slice(0, 80), [], `${problems.length} hits`)
@@ -102,7 +106,10 @@ test('the built renderer bundle says StorybookStudio only', (t) => {
     const rel = path.relative(ROOT, full)
     if (NAMES.test(rel)) problems.push(`${rel}: the path`)
     const buffer = readFileSync(full)
-    if (isBinary(buffer)) continue
+    if (isBinary(buffer)) {
+      if (NAMES.test(buffer.toString('latin1'))) problems.push(`${rel}: binary content`)
+      continue
+    }
     let text = buffer.toString('utf8')
     for (const value of allowed) {
       text = text.split(JSON.stringify(value)).join('""').split(`'${value}'`).join("''")
