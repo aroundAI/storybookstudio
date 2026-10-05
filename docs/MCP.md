@@ -16,6 +16,8 @@ The MCP server is part of the desktop app. It exposes the current project, activ
 http://127.0.0.1:19790/mcp
 ```
 
+That is the default port. A second StorybookStudio on the same machine, such as a development build beside the installed app, takes the next free port instead; see [Port](#port). `Settings > Agents (MCP)` always shows the URL this instance is serving, and its commands name it.
+
 Every request needs `Authorization: Bearer <secret>`. The app generates a 32-byte secret on first run into `mcp-secret` in its user-data folder (macOS: `~/Library/Application Support/<app>/mcp-secret`). `Settings > Agents (MCP)` shows the ready-made commands with the secret masked; `Show` reveals them and `Copy` copies the real command.
 
 For Claude Code:
@@ -45,7 +47,17 @@ For clients that use an `.mcp.json` file:
 }
 ```
 
-The repository root keeps this config for development; export `STORYBOOKSTUDIO_MCP_TOKEN` before starting the client.
+The repository root keeps this config for development; export `STORYBOOKSTUDIO_MCP_TOKEN` before starting the client. It names `19790`; when your build is on another port, use the URL from Settings or `mcp-endpoint.json`.
+
+### Port
+
+The server listens on `127.0.0.1`, on the first free port of `19790`–`19799`. Each user-data folder remembers the port it got in `mcp-endpoint.json` (beside `mcp-secret`):
+
+```json
+{ "port": 19791, "url": "http://127.0.0.1:19791/mcp" }
+```
+
+On the next launch that port is tried first, so a connected client keeps working across restarts unless something else has taken the port meanwhile; then the next free one is used and the file is rewritten. Two instances run side by side only with different user-data folders (the single-instance lock is per folder, so a development run beside the installed app sets `STUDIO_USER_DATA_DIR`), so each has its own port, file and secret. When all ten ports are taken the server does not start: the app says so in a dialog and `Settings > Agents (MCP)` shows the error.
 
 ### Two profiles: `agent` (the default) and `expert`
 
@@ -81,12 +93,12 @@ The MCP server is not a replacement for the StorybookStudio UI. It is a project-
 The server runs only on loopback:
 
 ```text
-127.0.0.1:19790
+127.0.0.1:19790   (or the port in mcp-endpoint.json)
 ```
 
 Do not proxy or expose this port to a network. The server answers:
 
-- `403` when the `Host` header, or an `Origin` header if present, is not loopback (`127.0.0.1`, `localhost`, `[::1]`, any port). This stops web pages and DNS-rebinding attacks from driving the editor.
+- `403` when the `Host` header, or an `Origin` header if present, is not loopback (`127.0.0.1`, `localhost`, `[::1]`; an `Origin` on any port), or when the `Host` names a port other than the one this instance listens on. This stops web pages and DNS-rebinding attacks from driving the editor.
 - `401` when the `Authorization: Bearer <secret>` header is missing or wrong.
 
 A local process that can read the user-data folder can still read the secret; the bearer keeps out everything that cannot.
@@ -139,14 +151,14 @@ Use the selected clip or playhead frame as an image-to-video source. Preview the
 Protocol:
 
 - MCP over local HTTP.
-- JSON-RPC endpoint: `POST http://127.0.0.1:19790/mcp`
+- JSON-RPC endpoint: `POST http://127.0.0.1:19790/mcp` (or the [port](#port) this instance got)
 - Server-sent-event probe: `GET http://127.0.0.1:19790/mcp`
 - Authentication: `Authorization: Bearer <secret>` on every request (see Quick Start)
 - Server name: `StorybookStudio`
 - Profiles: `?profile=agent` (default) or `?profile=expert`, or the `X-MCP-Profile` header
 - Default protocol version: `2024-11-05`
 
-The server starts with the desktop app. If the port is not available, check `Settings > Agents (MCP)` for the current status/error.
+The server starts with the desktop app. If `19790` is taken it uses the next free port up to `19799` ([Port](#port)); `Settings > Agents (MCP)` shows the URL and any error.
 
 Tools that can work without an open project include:
 
@@ -703,8 +715,9 @@ Preview a delivery export:
 
 - Make sure the StorybookStudio desktop app is running.
 - Check `Settings > Agents (MCP)` for `Running`.
-- Confirm the endpoint is `http://127.0.0.1:19790/mcp`.
-- If the port is unavailable, another local process may already be using `19790`.
+- Confirm the client uses the endpoint `Settings > Agents (MCP)` shows (also in `mcp-endpoint.json` in the user-data folder). It is `http://127.0.0.1:19790/mcp` unless another StorybookStudio or another program held that port when this one started.
+- A `403` with "Host names another port." means the client is pointed at another instance's port.
+- If ports `19790`–`19799` are all taken, the app shows a dialog at launch and does not serve MCP; free one and restart.
 - Restart StorybookStudio after changing development branches or rebuilding Electron code.
 
 ### The agent says no project is open
