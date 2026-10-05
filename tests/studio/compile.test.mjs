@@ -22,7 +22,7 @@ test('every tool a compiler may emit is in MCP_ACTION_PLAN_WRITABLE_TOOLS (G3: s
   assert.deepEqual(COMPILER_TOOLS.filter((tool) => !writable.has(tool)), [])
   for (const tool of ['split_clip', 'extract_range', 'set_clip_speed', 'set_clip_audio', 'update_caption_cues']) assert.ok(writable.has(tool), tool)
   assert.ok(!writable.has('studio_deliver'), 'studio_deliver stays a separate confirmed step')
-  assert.deepEqual(STUDIO_EDIT_INTENTS, ['hit_duration', 'tighten_pacing', 'remove_dead_air', 'open_with_strongest_line', 'keep_music_under_dialogue', 'add_broll', 'emphasize', 'add_cta', 'match_brand', 'reorder_scenes', 'recut_around_drops'])
+  assert.deepEqual(STUDIO_EDIT_INTENTS, ['hit_duration', 'tighten_pacing', 'remove_dead_air', 'open_with_strongest_line', 'keep_music_under_dialogue', 'add_broll', 'emphasize', 'add_cta', 'match_brand', 'reorder_scenes', 'recut_around_drops', 'punch_in', 'ken_burns', 'speed_ramp', 'freeze_frame', 'color_grade'])
 })
 
 test('tighten_pacing(scene 3, 12 s): get_audio_analysis on its dialogue, ripple cuts of the silences only, captions, beds and markers re-timed, and the card says why 12 s is not reached', () => {

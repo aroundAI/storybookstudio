@@ -23,6 +23,8 @@ const path = require('path')
 const STUDIO_EDIT_INTENTS = Object.freeze([
   'hit_duration', 'tighten_pacing', 'remove_dead_air', 'open_with_strongest_line', 'keep_music_under_dialogue',
   'add_broll', 'emphasize', 'add_cta', 'match_brand', 'reorder_scenes', 'recut_around_drops',
+  // FILM-2018's semantic effects.
+  'punch_in', 'ken_burns', 'speed_ramp', 'freeze_frame', 'color_grade',
 ])
 const AUDIO_INTENTS = Object.freeze(['balance', 'duck', 'normalize', 'fade'])
 const VARIANT_KINDS = Object.freeze(['short', 'language', 'hook'])
@@ -95,7 +97,7 @@ const CAPABILITY_TOOLS = Object.freeze([
         scope: scopeSchema,
         params: {
           type: 'object',
-          description: 'Intent parameters: targetSeconds (hit_duration, tighten_pacing), minSilenceSeconds, keepPauseSeconds, allowJumpCuts, includeUserEdits (touch clips you edited by hand; the card lists them), order (reorder_scenes), lineId or sequenceNumber (open_with_strongest_line, emphasize), clipId, zoomPercent, text (emphasize, add_cta), query, perScene, durationSeconds (add_broll), instruction (the user\'s words, used as the version prompt), versionName.',
+          description: 'Intent parameters: targetSeconds (hit_duration, tighten_pacing), minSilenceSeconds, keepPauseSeconds, allowJumpCuts, includeUserEdits (touch clips you edited by hand; the card lists them), order (reorder_scenes), lineId or sequenceNumber (open_with_strongest_line, emphasize), clipId, zoomPercent, text (emphasize, add_cta), query, perScene, durationSeconds (add_broll), atSeconds, holdSeconds (punch_in, speed_ramp, freeze_frame: the moment, else the strongest line in scope), direction in|out and pan left|right|up|down|none (ken_burns), speed 0.05-0.99, rampSeconds, resync (speed_ramp), look kodak2395|agfa1978|polaroid|bw and blend (color_grade), instruction (the user\'s words, used as the version prompt), versionName.',
         },
         previewOnly: previewOnlySchema,
         planId: { type: 'string', description: 'From the preview. Required to apply.' },
@@ -129,6 +131,27 @@ const CAPABILITY_TOOLS = Object.freeze([
       type: 'object',
       required: ['language'],
       properties: { language: { type: 'string' }, style: { type: 'string' }, previewOnly: previewOnlySchema, planId: { type: 'string' } },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'studio_choose_visual_representation',
+    profiles: ['agent'],
+    owner: 'FILM-2018',
+    available: true,
+    annotations: read,
+    description: 'For a scene or a point in the script, ranks how to show it: generated_video, stock_video, archival_image, chart, map, diagram, timeline, text_graphic, with a one-line reason each and the tool to act with (studio_add_graphic for a drawn graphic, studio_edit add_broll for library footage). It reads the words (numbers, places, years, process words) and the project (the scene\'s shots, the library); it changes nothing and decides nothing: you pick.',
+    inputSchema: {
+      type: 'object',
+      required: ['sceneOrPoint'],
+      properties: {
+        sceneOrPoint: {
+          type: 'object',
+          description: 'One of {scene}, {lineId}, {sequenceNumber}, {atSeconds}, or {text} (the point in your words, optionally with its scene).',
+          properties: { scene: { type: 'integer', minimum: 1 }, lineId: { type: 'string' }, sequenceNumber: { type: 'integer' }, atSeconds: { type: 'number', minimum: 0 }, text: { type: 'string' } },
+          additionalProperties: false,
+        },
+      },
       additionalProperties: false,
     },
   },
@@ -658,6 +681,10 @@ function createCapabilityTools({
       }
       case 'studio_search_assets': {
         const result = await renderer('studio_search_assets', args)
+        return fromRenderer(result) || ok(result)
+      }
+      case 'studio_choose_visual_representation': {
+        const result = await renderer('studio_choose_visual', { sceneOrPoint: args.sceneOrPoint })
         return fromRenderer(result) || ok(result)
       }
       case 'studio_edit':
