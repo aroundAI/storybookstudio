@@ -7313,7 +7313,7 @@ function createToolDefinitions() {
     },
     {
       name: 'get_audio_analysis',
-      description: 'Analyze the audio of a project asset (audio or video) or a timeline clip: beat grid + BPM estimate with confidence, raw onset times, loudness (peak dBFS, RMS, approximate integrated LUFS, downsampled loudness curve), and silence spans. Use it to cut to the beat of a song (pair with generate_music, then add_timeline_markers at the beats), place clips at silences, or judge levels before delivery. When clipId is given, analysis covers the clip\'s trimmed range and (for forward constant-speed clips) beatsTimeline/silencesTimeline are absolute timeline seconds. Read-only; decoding happens in-app and takes a few seconds for long files.',
+      description: 'Analyze the audio of a project asset (audio or video) or a timeline clip: beat grid + BPM estimate with confidence, raw onset times, loudness (peak dBFS, RMS, approximate integrated LUFS, downsampled loudness curve), and silence spans. Use it to cut to the beat of a song (pair with generate_music, then add_timeline_markers at the beats), place clips at silences, or judge levels before delivery. When clipId is given, analysis covers the clip\'s trimmed range and (for forward constant-speed clips) beatsTimeline/silencesTimeline are absolute timeline seconds. Read-only; the app decodes with ffmpeg in its main process, covers at most 30 minutes of audio per call, and takes a few seconds for long files.',
       inputSchema: {
         type: 'object',
         properties: {

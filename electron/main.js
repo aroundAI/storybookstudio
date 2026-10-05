@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog, protocol, net, shell, screen, session, safeStorage } = require('electron')
+const { app, BrowserWindow, Menu, ipcMain, dialog, protocol, net, shell, screen, session, safeStorage, utilityProcess } = require('electron')
 const crypto = require('crypto')
 const path = require('path')
 const os = require('os')
@@ -120,6 +120,8 @@ const studioMain = createStudioMain({
   // app menu adds Open-source licenses.
   iconPath,
   Menu,
+  // KB-190: get_audio_analysis runs in a utility process.
+  utilityProcess,
 })
 let downloadSaveDialogHandlerInstalled = false
 let downloadCounter = 0
@@ -4529,6 +4531,19 @@ ipcMain.handle('media:getAudioWaveform', async (event, mediaInput, options = {})
       }
     })
   })
+})
+
+// KB-190: get_audio_analysis and the timeline's beat markers. ffmpeg decodes
+// and the DSP runs in a utility process, so the renderer never calls
+// decodeAudioData and a long file does not block this process.
+ipcMain.handle('media:analyzeAudio', async (event, mediaInput, options = {}) => {
+  const filePath = resolveMediaInputPath(mediaInput)
+  if (!filePath) return { success: false, error: 'Invalid audio input path.' }
+  try {
+    return await studioMain.audioReads.analyzeFile(filePath, options || {})
+  } catch (error) {
+    return { success: false, error: error?.message || String(error) }
+  }
 })
 
 ipcMain.handle('media:trimAudioSegment', async (event, options = {}) => {

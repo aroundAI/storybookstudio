@@ -2608,8 +2608,15 @@ async function handleGetAudioAnalysis(payload = {}) {
     throw new Error(`Asset "${asset.name}" is a ${asset.type || 'non-media'} asset — audio analysis needs an audio or video source.`)
   }
 
+  // A project-relative asset path is resolved against the project folder: the
+  // main process (KB-190) reads the file, not the renderer's URL.
+  const projectPath = useProjectStore.getState().currentProjectHandle
+  const storedPath = asset.absolutePath || asset.path || ''
+  const absolutePath = storedPath && !isAbsoluteMcpFilePath(storedPath) && typeof projectPath === 'string' && typeof window !== 'undefined' && typeof window.electronAPI?.pathJoin === 'function'
+    ? await window.electronAPI.pathJoin(projectPath, storedPath)
+    : storedPath
   const analysis = await analyzeAudioSource(
-    { url: asset.url || '', absolutePath: asset.absolutePath || asset.path || '' },
+    { url: asset.url || '', absolutePath },
     {
       ...range,
       silenceThresholdDb: payload.silenceThresholdDb,
