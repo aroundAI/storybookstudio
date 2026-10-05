@@ -10,6 +10,7 @@ import {
   normalizePlan,
   planAnnouncement,
   stepsForScenes,
+  planButtons,
 } from '../../../src/studio/ui/planCards.js'
 
 const fixture = JSON.parse(readFileSync(new URL('../fixtures/ui/plan-90s.json', import.meta.url), 'utf8'))
@@ -151,4 +152,37 @@ test('each capability tool gets back the arguments it previewed with', () => {
   const issues = [{ type: 'loudness', severity: 0.7 }]
   assert.deepEqual(normalizePlan({ ...base, tool: 'studio_repair', intent: 'repair', scope: {}, params: { issues } }).capability, { tool: 'studio_repair', args: { issues }, scoped: false })
   assert.equal(normalizePlan({ ...base, tool: 'studio_repair', intent: 'repair', params: { issues } }).instruction, 'Repair')
+})
+
+// Task #45: a hit_duration "ask" plan whose first preview changes nothing and
+// only proposes dialogue drops for the creator's OK.
+const askPlan = (overrides = {}) => ({
+  phase: 'proposed', planId: 'ask-1', source: 'in-app', tool: 'studio_edit', intent: 'hit_duration', scope: {}, params: { targetSeconds: 60 },
+  instruction: 'make it 60 seconds', expected: { durationBefore: 99, durationAfter: 99 },
+  cards: [{ scene: null, heading: null, durationBefore: 99, durationAfter: 99, changes: [] }],
+  proposals: [{ kind: 'dialogue_drops', title: 'Needs your OK: drops 6 lines', why: 'Silence cuts alone cannot reach 60 s.', durationAfter: 60.4, lines: [{ lineId: 'l1', sequenceNumber: 3, scene: 1, character: 'MAYA', text: 'Did you hear that?', reason: 'Repeats line 2', seconds: 1.6 }], approveWith: { tool: 'studio_edit', arguments: { intent: 'hit_duration', params: { targetSeconds: 60, approveDialogueDrops: true }, previewOnly: true } } }],
+  ...overrides,
+})
+
+test('a plan that changes nothing but proposes drops offers only the drop group, as the primary action', () => {
+  const plan = normalizePlan(askPlan())
+  assert.equal(plan.hasChanges, false)
+  assert.deepEqual(planButtons(plan), { approveAll: false, approveScene: false, primaryProposal: 'dialogue_drops', nothingToChange: false })
+})
+
+test('a plan with changes keeps Approve all and Approve scene; its drop group is secondary', () => {
+  const plan = normalizePlan(askPlan({ cards: [{ scene: 1, durationBefore: 19, durationAfter: 18.1, changes: [{ text: 'Cut 0.9 s of silence', reason: 'dead air' }] }] }))
+  assert.equal(plan.hasChanges, true)
+  assert.deepEqual(planButtons(plan), { approveAll: true, approveScene: true, primaryProposal: null, nothingToChange: false })
+})
+
+test('a plan that changes nothing and proposes nothing says so', () => {
+  const plan = normalizePlan(askPlan({ proposals: [] }))
+  assert.deepEqual(planButtons(plan), { approveAll: false, approveScene: false, primaryProposal: null, nothingToChange: true })
+})
+
+test('a re-sync plan with steps but no cards still offers approval', () => {
+  const plan = normalizePlan({ source: 'resync', planId: 'r', summary: '1 changed shot', steps: [{ tool: 'delete_clips', arguments: { clipIds: ['c'], studioMeta: { scene: 2 } }, reason: 'gone' }] })
+  assert.equal(plan.hasChanges, true)
+  assert.equal(planButtons(plan).approveAll, true)
 })

@@ -190,6 +190,8 @@ export function normalizePlan(payload, { sceneHeadings = new Map(), receivedAt =
     cards,
     touchesUserEdits,
     proposals: (Array.isArray(payload.proposals) ? payload.proposals : []).map(normalizeProposal).filter(Boolean),
+    // A card change is one step (FILM-2013 compile.js); step-only plans (re-sync) count their steps.
+    hasChanges: cards.some((card) => card.changes.length > 0) || steps.length > 0,
     steps,
     unresolved: (Array.isArray(payload.unresolved) ? payload.unresolved : []).map((entry) => String(entry?.reason || entry)),
     report: payload.report ?? null,
@@ -218,4 +220,14 @@ export function stepsForScenes(plan, scenes) {
       args.studioMeta = { ...(args.studioMeta || {}), reason: args.studioMeta?.reason ?? step.reason ?? null, scene: args.studioMeta?.scene ?? stepScene(step), by: 'ai' }
       return { tool: step.tool, arguments: args }
     })
+}
+
+// Task #45: which approval controls a plan offers. A plan that changes
+// nothing (a hit_duration "ask" preview whose cuts all need the creator's OK)
+// has nothing for Approve all to apply: its "Needs your OK" group is the
+// action instead, or, with no group either, the panel says nothing changes.
+export function planButtons(plan) {
+  const proposals = plan?.proposals || []
+  if (plan?.hasChanges) return { approveAll: true, approveScene: true, primaryProposal: null, nothingToChange: false }
+  return { approveAll: false, approveScene: false, primaryProposal: proposals[0]?.kind ?? null, nothingToChange: proposals.length === 0 }
 }

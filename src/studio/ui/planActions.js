@@ -147,6 +147,10 @@ export async function approvePlan({ store, api = globalThis.window?.electronAPI,
   const state = store.getState()
   const plan = state.planById(planId)
   if (!plan || plan.status !== 'proposed') return { ok: false }
+  if (plan.hasChanges === false) {
+    state.updatePlan(planId, { error: 'This plan changes nothing yet.' })
+    return { ok: false, code: 'VALIDATION_FAILED' }
+  }
   state.updatePlan(planId, { status: 'applying', error: null })
   let answer
   try {

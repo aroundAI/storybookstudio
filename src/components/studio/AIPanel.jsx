@@ -8,6 +8,7 @@ import { useState } from 'react'
 import { AlertTriangle, ChevronRight, Loader2, Send, Sparkles, X } from 'lucide-react'
 import { studioUiStore } from '../../studio/ui/studioStore'
 import { approvePlan, askWithProposal, proposeInstruction, rejectPlan } from '../../studio/ui/planActions'
+import { planButtons } from '../../studio/ui/planCards'
 import { clearPlanJournal, createLocalPlanRunner, loadReview, returnToVersion } from '../../studio/ui/studioRuntime'
 import ReportView from './ReportView'
 import { Chip, StudioButton } from './StudioDialog'
@@ -37,7 +38,7 @@ function PlanCard({ plan, card, disabled }) {
         ))}
       </ul>
       {card.touchesUserEdits && <p className="mt-2 flex items-center gap-1 text-[11px] text-sf-warning"><AlertTriangle className="h-3 w-3" aria-hidden />{t('panel.cardTouchesEdits')}</p>}
-      {card.scene !== null && plan.status === 'proposed' && (plan.capability ? plan.capability.scoped : plan.steps.length > 0) && (
+      {card.scene !== null && plan.status === 'proposed' && planButtons(plan).approveScene && (plan.capability ? plan.capability.scoped : plan.steps.length > 0) && (
         <div className="mt-2 flex justify-end">
           <StudioButton className="px-2 py-1 text-[11px]" disabled={disabled} onClick={approveScene} data-test="studio-approve-scene">
             {t('panel.approveScene', { scene: card.scene })}
@@ -51,7 +52,7 @@ function PlanCard({ plan, card, disabled }) {
 
 // A tier the plan does not apply: what it would drop and why. Asking for it
 // is a new preview with the drops included, approved like any plan.
-function ProposalGroup({ plan, proposal, disabled }) {
+function ProposalGroup({ plan, proposal, disabled, primary = false }) {
   const t = useStudioText()
   return (
     <section className="rounded-md border border-sf-warning/50 bg-sf-warning/10 p-2" aria-label={proposal.title} data-test="studio-needs-ok" data-kind={proposal.kind}>
@@ -69,7 +70,7 @@ function ProposalGroup({ plan, proposal, disabled }) {
       {plan.status === 'proposed' && (
         <div className="mt-2 flex items-center justify-between gap-2">
           {proposal.durationAfter !== null && <span className="text-[11px] tabular-nums text-sf-text-secondary">{t('panel.needsOkTotal', { seconds: proposal.durationAfter.toFixed(1) })}</span>}
-          <StudioButton className="px-2 py-1 text-[11px]" disabled={disabled} onClick={() => askWithProposal({ store: studioUiStore, plan, proposal })} data-test="studio-ask-with-drops">
+          <StudioButton tone={primary ? 'primary' : 'secondary'} className="px-2 py-1 text-[11px]" disabled={disabled} onClick={() => askWithProposal({ store: studioUiStore, plan, proposal })} data-test="studio-ask-with-drops">
             {t('panel.needsOkAsk')}
           </StudioButton>
         </div>
@@ -82,6 +83,7 @@ function Plan({ plan }) {
   const t = useStudioText()
   const [report, setReport] = useState({ open: false, data: plan.report ?? null, error: null })
   const busy = plan.status === 'applying'
+  const buttons = planButtons(plan)
   const toggleReport = async () => {
     if (report.open) return setReport((current) => ({ ...current, open: false }))
     if (report.data || plan.reportText || !plan.versionId) return setReport((current) => ({ ...current, open: true }))
@@ -116,7 +118,7 @@ function Plan({ plan }) {
         {plan.cards.map((card) => <PlanCard key={card.key} plan={plan} card={card} disabled={busy} />)}
       </ul>
 
-      {(plan.proposals || []).map((proposal) => <ProposalGroup key={proposal.kind} plan={plan} proposal={proposal} disabled={busy} />)}
+      {(plan.proposals || []).map((proposal) => <ProposalGroup key={proposal.kind} plan={plan} proposal={proposal} disabled={busy} primary={proposal.kind === buttons.primaryProposal} />)}
 
       {plan.unresolved.length > 0 && (
         <details className="text-[11px] text-sf-text-secondary">
@@ -128,10 +130,14 @@ function Plan({ plan }) {
       {plan.error && <p role="alert" className="text-xs text-sf-error" data-test="studio-plan-error">{plan.error}</p>}
 
       {plan.status === 'proposed' || plan.status === 'applying' ? (
-        <div className="flex gap-2">
-          <StudioButton tone="primary" className="flex-1" disabled={busy} onClick={() => approvePlan({ store: studioUiStore, runner: createLocalPlanRunner(), planId: plan.planId })} data-test="studio-approve-all">
-            {busy ? <Loader2 className="mr-1 inline h-3 w-3 animate-spin" aria-hidden /> : null}{busy ? t('panel.applying') : t('panel.approveAll')}
-          </StudioButton>
+        <div className="flex items-center gap-2">
+          {buttons.approveAll && (
+            <StudioButton tone="primary" className="flex-1" disabled={busy} onClick={() => approvePlan({ store: studioUiStore, runner: createLocalPlanRunner(), planId: plan.planId })} data-test="studio-approve-all">
+              {busy ? <Loader2 className="mr-1 inline h-3 w-3 animate-spin" aria-hidden /> : null}{busy ? t('panel.applying') : t('panel.approveAll')}
+            </StudioButton>
+          )}
+          {buttons.nothingToChange && <p className="flex-1 text-xs text-sf-text-secondary" data-test="studio-nothing-to-change">{t('panel.nothingToChange')}</p>}
+          {!buttons.approveAll && !buttons.nothingToChange && <span className="flex-1" />}
           <StudioButton tone="danger" disabled={busy} onClick={() => rejectPlan({ store: studioUiStore, planId: plan.planId })} data-test="studio-reject">
             {t('panel.reject')}
           </StudioButton>
