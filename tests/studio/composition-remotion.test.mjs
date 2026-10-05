@@ -177,6 +177,8 @@ test('a refit German lower third is drawn as measured: on the two lines the refi
   fitted.forEach((width, index) => {
     assert.ok(width <= slot.width, `line ${index + 1} is inside its slot (${width} of ${slot.width} px)`)
     // The model measures a little wide, so what it says fits is not clipped, and not by much.
-    assert.ok(width <= measured[index] && width >= measured[index] * 0.85, `line ${index + 1}: drawn ${width} px, measured ${measured[index]} px`)
+    // How much depends on the platform's system-ui: Linux's fallback draws 2-13% under the
+    // model, macOS's San Francisco about 15% under (CI: 448 of 529 px, 469 of 550 px).
+    assert.ok(width <= measured[index] && width >= measured[index] * 0.8, `line ${index + 1}: drawn ${width} px, measured ${measured[index]} px`)
   })
 })
