@@ -42,7 +42,8 @@ export function safeRectPx(safeArea, width, height) {
 // average glyph, so a block that fits here fits when drawn.
 export const approximateMeasure = (text, size) => String(text).length * size * 0.6
 
-export const normalizeWord = (word) => String(word).toLocaleLowerCase().replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu, '')
+// Vowel signs and nasal marks (\p{M}) are part of a Devanagari word: "हमें" is not "हम" (FILM-2019).
+export const normalizeWord = (word) => String(word).toLocaleLowerCase().replace(/^[^\p{L}\p{M}\p{N}]+|[^\p{L}\p{M}\p{N}]+$/gu, '')
 
 export const EMPHASIS_SCALE = 1.15
 const MIN_FONT_SIZE = 12

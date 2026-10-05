@@ -25,6 +25,7 @@ import { EDITGRAPH_SCHEMA, roleForStoryBookSource } from './contracts/editgraph.
 import { PROJECT_VERSION_STUDIO } from './projectVersion.js'
 import { quantizeTimeToFrame, roundDurationToFrame } from '../utils/timelineFrames.js'
 import { MIN_AUDIO_CLIP_GAIN_DB, normalizeAudioClipGainDb } from '../utils/audioClipGain.js'
+import { dubSlots, fitDubbedLine } from './localization/fit.js'
 import { AUDIO_BUSES, DEFAULT_DUCK_DB, DUCK_ATTACK_MS, DUCK_RELEASE_MS, defaultAudioBuses } from './audio/buses.js'
 
 export const MASTER_TIMELINE_ID = 'tl-master'
@@ -369,11 +370,10 @@ export function buildProject({ package: input, probedAssets = new Map(), brand: 
   // Dialogue: one track per language, each line at its own start (else its
   // shot's start). Dubbed lines sit where the line they dub sits.
   const languages = [...new Set([episode.language, ...episode.languages])]
+  const plannedStart = (line) => line.timelineStartSeconds ?? (line.shotId ? placedShots.get(line.shotId)?.startTime : null) ?? 0
   const dialogueStart = (line) => {
-    if (line.timelineStartSeconds != null) return line.timelineStartSeconds
-    const shotClip = line.shotId ? placedShots.get(line.shotId) : null
-    warn('dialogue_start_from_shot', { source: 'dialogue.timelineStartSeconds', ref: line.id, shotId: line.shotId ?? null })
-    return shotClip ? shotClip.startTime : 0
+    if (line.timelineStartSeconds == null) warn('dialogue_start_from_shot', { source: 'dialogue.timelineStartSeconds', ref: line.id, shotId: line.shotId ?? null })
+    return plannedStart(line)
   }
   const addDialogue = ({ id, line, language, text, media, source, ref, speed, sourceSeconds }) => {
     const role = roleForStoryBookSource('dialogue_line')
@@ -421,6 +421,8 @@ export function buildProject({ package: input, probedAssets = new Map(), brand: 
     })
   }
   const linesById = new Map(pkg.dialogue.map((line) => [line.id, line]))
+  // A dub plays in the slot of the line it dubs, speed-fitted (localization/fit.js).
+  const slots = dubSlots(pkg.dialogue.map((line) => ({ id: line.id, start: atFrame(plannedStart(line)) })), cursor)
   for (const dub of pkg.dubbed) {
     for (const dubbed of dub.lines) {
       const line = linesById.get(dubbed.dialogueId)
@@ -428,10 +430,12 @@ export function buildProject({ package: input, probedAssets = new Map(), brand: 
         warn('dub_without_line', { source: 'dubbed.lines', ref: dubbed.id, dialogueId: dubbed.dialogueId })
         continue
       }
-      // timingAdjustment is the speed the dub was fitted with: play it at that speed.
+      const sourceSeconds = probes.get(dubbed.audio.key)?.duration ?? dubbed.durationSeconds ?? line.estimatedDurationSeconds
+      const fit = sourceSeconds > 0 ? fitDubbedLine({ sourceSeconds, timingAdjustment: dubbed.timingAdjustment, slotSeconds: slots.get(line.id) }) : { speed: dubbed.timingAdjustment, overrunSeconds: 0 }
+      if (fit.overrunSeconds > 0) warn('dub_overruns_slot', { source: 'dubbed.lines', ref: dubbed.id, dialogueId: line.id, language: dub.language, speed: fit.speed, overrunSeconds: fit.overrunSeconds })
       addDialogue({
         id: `sb-dub-${dub.language}-${dubbed.id}`, line, language: dub.language, text: dubbed.translatedText, media: dubbed.audio,
-        source: 'dubbed.audio', ref: dubbed.id, speed: dubbed.timingAdjustment,
+        source: 'dubbed.audio', ref: dubbed.id, speed: fit.speed,
         sourceSeconds: dubbed.durationSeconds ?? line.estimatedDurationSeconds,
       })
     }

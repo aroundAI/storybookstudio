@@ -30,6 +30,7 @@ const { pathToFileURL } = require('url')
 const { renderDelivery } = require('./deliveryRender')
 const { checkDeliveredFile, combineQa } = require('./deliveryQa')
 const { detectClipSamples } = require('./subjectDetect')
+const { resolveBinaries } = require('./ffmpegTools')
 
 const { PROJECT_FILE, projectFilePath, removeLegacyProjectFile } = require('./projectFile')
 const TOKEN_TTL_MS = 10 * 60 * 1000
@@ -58,7 +59,7 @@ const DELIVER_INPUT_SCHEMA = {
 const CREATE_VARIANT_INPUT_SCHEMA = {
   type: 'object',
   properties: {
-    kind: { type: 'string', enum: ['short', 'hook'], description: 'short: a 9:16 variant of a range; hook: N alternative first-five-second openings.' },
+    kind: { type: 'string', enum: ['short', 'hook', 'language'], description: 'short: a 9:16 variant of a range; hook: N alternative first-five-second openings; language: the episode\'s dub in `language` as a lane on the master (FILM-2019).' },
     source: {
       type: 'object',
       description: 'For a short: {candidateId} (a StoryBook shorts candidate), {hook: true} (the strongest sound bite) or {range: [start, end]} in seconds.',
@@ -66,8 +67,9 @@ const CREATE_VARIANT_INPUT_SCHEMA = {
     },
     preset: { type: 'string', enum: ['shorts_9x16', 'tiktok_9x16', 'reels_9x16'], description: 'The vertical preset the short is for (duration limit). Defaults to shorts_9x16.' },
     variants: { type: 'integer', minimum: 1, maximum: 5, description: 'For kind hook: how many openings. Defaults to 3.' },
-    language: { type: 'string', description: 'Dialogue language the variant follows.' },
-    exportFiles: { type: 'boolean', description: 'For kind hook: also render each opening to renders/<version>/hooks/. Defaults to true when applied.' },
+    language: { type: 'string', description: 'Dialogue language the variant follows. For kind language: the dub to lay in (a tag such as hi or es).' },
+    presets: { type: 'array', items: { type: 'string', enum: ['youtube_16x9', 'shorts_9x16', 'tiktok_9x16', 'reels_9x16', 'square_1x1', 'master'] }, maxItems: 6, description: 'For kind language: the presets rendered in that language and QA-checked when applied (exportFiles). Defaults to youtube_16x9.' },
+    exportFiles: { type: 'boolean', description: 'For kind hook: also render each opening to renders/<version>/hooks/; for kind language: render and QA each preset into renders/<version>/languages/. Defaults to true when applied.' },
     previewOnly: { type: 'boolean', description: 'When true (default), returns what would be built and changes nothing.' },
   },
   required: ['kind'],
@@ -152,6 +154,8 @@ function createStudioDeliver({
   getFfprobePath = () => null,
   render = renderDelivery,
   qa = checkDeliveredFile,
+  // FILM-2019 AC5: whisper's spoken-language check (languageCheck.js), for the qa.
+  detectLanguage = null,
   prepare = null,
   put = putFile,
   now = () => new Date(),
@@ -328,7 +332,7 @@ function createStudioDeliver({
     job.update({ phase: `render ${item.preset}-${item.language}` })
     const rendered = await render({ project: document, projectDir, timelineId: item.timelineId, preset, language: item.language, outputPath, ffmpegPath: getFfmpegPath(), onProgress: () => {} })
     job.update({ phase: `qa ${item.preset}-${item.language}` })
-    const checked = await qa({ file: outputPath, preset, expectedDuration: rendered.durationSeconds, warnings: timeline.studio?.reframeWarnings || [], ffmpegPath: getFfmpegPath(), ffprobePath: getFfprobePath(), project: document, timelineId: item.timelineId, language: item.language })
+    const checked = await qa({ file: outputPath, preset, expectedDuration: rendered.durationSeconds, warnings: timeline.studio?.reframeWarnings || [], ffmpegPath: getFfmpegPath(), ffprobePath: getFfprobePath(), project: document, timelineId: item.timelineId, language: item.language, detectLanguage })
     return { rendered, checked, preset }
   }
 
@@ -405,7 +409,7 @@ function createStudioDeliver({
         continue
       }
       const { rendered, checked, preset } = await renderAndCheck({ job, item, projectDir, document, outputPath, presetsModule, policy: plan.context.policy })
-      const entry = { preset: item.preset, language: item.language, aspect: preset.aspect, file: outputPath, captionsFile: rendered.captionsPath, thumbnailFile: rendered.thumbnailPath, durationSeconds: rendered.durationSeconds, qa: checked.qa, probe: checked.probe, checker: checked.checker }
+      const entry = { preset: item.preset, language: item.language, aspect: preset.aspect, file: outputPath, captionsFile: rendered.captionsPath, thumbnailFile: rendered.thumbnailPath, durationSeconds: rendered.durationSeconds, qa: checked.qa, probe: checked.probe, checker: checked.checker, languageCheck: checked.languageCheck ?? null }
       if (toStoryBook && open?.events) await open.events.push({ type: 'qa_run', data: { versionId, pass: checked.qa.pass, issues: checked.qa.issues.length, tier: 'delivery' } })
       if (!checked.qa.pass) {
         state.items[key] = entry
@@ -425,7 +429,7 @@ function createStudioDeliver({
     const deliveryQa = combineQa(results.map((entry) => entry.qa))
 
     if (!toStoryBook) {
-      const report = { createdAt: now().toISOString(), projectDir, versionId, qa: deliveryQa, files: results.map(({ preset, language, file, captionsFile, durationSeconds, qa: fileQa, probe, checker }) => ({ preset, language, file: path.basename(file), captions: captionsFile ? path.basename(captionsFile) : null, durationSeconds, qa: fileQa, probe, checker })) }
+      const report = { createdAt: now().toISOString(), projectDir, versionId, qa: deliveryQa, files: results.map(({ preset, language, file, captionsFile, durationSeconds, qa: fileQa, probe, checker, languageCheck }) => ({ preset, language, file: path.basename(file), captions: captionsFile ? path.basename(captionsFile) : null, durationSeconds, qa: fileQa, probe, checker, languageCheck })) }
       await writeJson(path.join(destination.folder, QA_REPORT_FILE), report)
       return { destination: 'folder', folder: destination.folder, files: report.files, qa: deliveryQa, qaReport: path.join(destination.folder, QA_REPORT_FILE) }
     }
@@ -627,7 +631,104 @@ function createStudioDeliver({
       }
       return { kind: 'hook', previewOnly, signal: built.signal, requested: built.requested, variants: summary, cards, files }
     }
-    throw fail('VALIDATION_FAILED', 'kind is short or hook (language variants are FILM-2019).')
+    if (args.kind === 'language') return createLanguageVariant(args, { previewOnly, projectDir, document, context })
+    throw fail('VALIDATION_FAILED', 'kind is short, hook or language.')
+  }
+
+  // FILM-2019 AC3: kind language. The dubbed lines in the pulled package
+  // (re-sync, FILM-2011, brings them in) become a Dialogue (<lang>) lane and
+  // a Captions (<lang>) track on the master (localization/lanes.js); applied,
+  // each preset is rendered in that language and QA-checked, including the
+  // spoken-language check (AC5), into renders/<version>/languages/.
+  async function dubProbes(pkg, language, projectDir) {
+    const { planDownloads } = require('./pull')
+    const { createProbe } = require('./probe')
+    const pulled = (await readJson(path.join(projectDir, 'storybook', 'probed-assets.json'))) || {}
+    const keys = new Set((pkg.dubbed || []).filter((entry) => entry.language === language).flatMap((entry) => entry.lines.map((line) => line.audio?.key).filter(Boolean)))
+    const probe = createProbe(resolveBinaries({ ffmpegPath: getFfmpegPath(), ffprobePath: getFfprobePath() }).ffprobePath)
+    const probes = new Map()
+    for (const item of planDownloads(pkg).filter((entry) => keys.has(entry.key))) {
+      const known = pulled[item.key]
+      if (known?.path && known.duration != null) {
+        probes.set(item.key, known)
+        continue
+      }
+      const absolute = path.join(projectDir, item.relativePath)
+      if (!fs.existsSync(absolute)) continue
+      try {
+        const result = await probe(absolute)
+        probes.set(item.key, { path: item.relativePath, absolutePath: absolute, duration: result.duration, hasAudio: result.hasAudio, codecs: { video: null, audio: result.audioCodec } })
+      } catch (error) {
+        log(`[studio] language variant: ffprobe failed for ${item.relativePath}: ${error?.message || error}`)
+      }
+    }
+    return probes
+  }
+
+  async function createLanguageVariant(args, { previewOnly, projectDir, document, context }) {
+    const lanes = await studioModule('localization/lanes.js')
+    const pkg = await readJson(path.join(projectDir, 'storybook', 'package.json'))
+    if (!pkg?.episode) throw fail('NOT_FOUND', 'This project was not pulled from StoryBook: a language variant needs the dubbed lines of its package.')
+    const language = String(args.language || '')
+    const lane = lanes.buildLanguageLane({ document, pkg, language, probes: await dubProbes(pkg, language, projectDir), brand: context.brand, policy: context.policy })
+    const presetNames = [...new Set(Array.isArray(args.presets) && args.presets.length ? args.presets : ['youtube_16x9'])]
+    const presetsModule = await studioModule('delivery/presets.js')
+    for (const name of presetNames) presetsModule.presetFor(name)
+    const card = {
+      scene: null,
+      heading: `${language} language lane from StoryBook's dub`,
+      durationBefore: null,
+      durationAfter: null,
+      targetDuration: null,
+      changes: [
+        { text: `Dialogue (${language}): ${lane.lines.placed} dubbed lines at their lines' starts${lane.lines.fitted ? `, ${lane.lines.fitted} speed-fitted to their slot` : ''}`, reason: 'One master timeline: a render in this language plays this lane; the others stay muted', tool: 'studio_apply_language_lane', step: 0 },
+        ...(lane.captions ? [{ text: `Captions (${language}): ${lane.captions.cueCount} cues from the dubbed text`, reason: `Brand caption style inside the ${lane.aspect} safe area`, tool: 'studio_apply_language_lane', step: 0 }] : []),
+        ...(lane.removeTrackIds.length ? [{ text: `Replaces the ${language} lane already on the master (${lane.removeClipIds.length} clips)`, reason: 'Re-running a language variant rebuilds its lane', tool: 'studio_apply_language_lane', step: 0 }] : []),
+      ],
+      touchesYourEdits: [],
+      notes: [
+        ...lane.overruns.slice(0, 5).map((entry) => `A dubbed line runs ${entry.overrunSeconds} s past its slot at ${entry.speed}x; it is placed whole, not trimmed.`),
+        ...(lane.lines.offline ? [`${lane.lines.offline} dubbed line(s) are not downloaded and are placed offline.`] : []),
+        'Graphics are not refit for this language: compositions (FILM-2018) are not in this build.',
+      ],
+    }
+    const response = {
+      kind: 'language',
+      previewOnly,
+      language,
+      timelineId: lane.timelineId,
+      dubbedVersionId: lane.dubbedVersionId,
+      lines: lane.lines,
+      captions: lane.captions,
+      overruns: lane.overruns,
+      tracks: lane.tracks.map(({ id, name, type, role, language: trackLanguage }) => ({ id, name, type, role: role ?? null, language: trackLanguage })),
+      presets: presetNames,
+      cards: [card],
+    }
+    if (previewOnly) return response
+    let applied = document
+    if (server()?.performAction) {
+      await performAction('studio_apply_language_lane', { lane, previewOnly: false, studioMeta: { reason: `Language lane: ${language}` } })
+      applied = await loadDocument(projectDir)
+    } else {
+      applied = { ...document, timelines: document.timelines.map((timeline) => (timeline.id === lane.timelineId ? lanes.applyLanguageLane(timeline, lane) : timeline)), assets: lanes.mergeLaneAssets(document.assets, lane.assets) }
+      await writeJson(path.join(projectDir, PROJECT_FILE), applied)
+      await removeLegacyProjectFile(projectDir)
+    }
+    if (args.exportFiles === false) return { ...response, applied: true, renders: [] }
+    const contracts = await studioModule('contracts/render-presets.mjs')
+    const master = applied.timelines.find((timeline) => timeline.id === lane.timelineId)
+    const versionId = master?.studio?.currentVersion || applied.studio?.currentVersion || 'latest'
+    const renders = []
+    for (const name of presetNames) {
+      const { timeline } = timelineForPreset(applied, { ...presetsModule.presetFor(name), name, aspect: contracts.RENDER_PRESETS[name].aspect ?? null })
+      const preset = presetsModule.resolvePreset(name, { timeline, policy: context.policy })
+      const outputPath = path.join(projectDir, 'renders', String(versionId), 'languages', presetsModule.deliveryFileName(name, language))
+      const rendered = await render({ project: applied, projectDir, timelineId: timeline.id, preset, language, outputPath, ffmpegPath: getFfmpegPath() })
+      const checked = await qa({ file: outputPath, preset, expectedDuration: rendered.durationSeconds, warnings: timeline.studio?.reframeWarnings || [], ffmpegPath: getFfmpegPath(), ffprobePath: getFfprobePath(), project: applied, timelineId: timeline.id, language, detectLanguage })
+      renders.push({ preset: name, language, timelineId: timeline.id, file: outputPath, captionsFile: rendered.captionsPath ?? null, durationSeconds: rendered.durationSeconds, captionCues: rendered.captionCues ?? null, qa: checked.qa, languageCheck: checked.languageCheck ?? null })
+    }
+    return { ...response, applied: true, renders, qa: combineQa(renders.map((entry) => entry.qa)) }
   }
 
   // Expert tools on the active timeline (snapshot.currentTimeline).

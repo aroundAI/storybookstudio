@@ -29,12 +29,6 @@ const clipStart = (clip) => num(clip.startTime)
 const clipEnd = (clip) => clipStart(clip) + num(clip.duration)
 const PICTURE_TYPES = new Set(['video', 'image'])
 const CAPTION_TYPES = new Set(['captions', 'caption'])
-// FILM-2016's safe areas (captions/layout.js), as margins for libass.
-const SAFE_AREAS = {
-  '9:16': { left: 0.05, right: 0.15, top: 0.08, bottom: 0.25 },
-  '16:9': { left: 0.05, right: 0.05, top: 0.05, bottom: 0.08 },
-  '1:1': { left: 0.05, right: 0.05, top: 0.05, bottom: 0.1 },
-}
 
 function runFfmpeg(binary, args, { signal, timeoutMs = 30 * 60 * 1000 } = {}) {
   return new Promise((resolve, reject) => {
@@ -65,6 +59,8 @@ function runFfmpeg(binary, args, { signal, timeoutMs = 30 * 60 * 1000 } = {}) {
   })
 }
 
+const loadSelection = () => import('../../src/studio/localization/selection.js')
+const loadLayout = () => import('../../src/studio/captions/layout.js')
 const timelineOf = (project, timelineId) => (project.timelines || []).find((timeline) => timeline.id === timelineId) || null
 const trackLanguage = (track) => track?.language ?? null
 const clipLanguage = (clip, track) => clip.metadata?.language ?? trackLanguage(track)
@@ -273,21 +269,36 @@ function captionCues(timeline, language, duration) {
 }
 
 const toVtt = (cues) => `WEBVTT\n\n${cues.map((cue, i) => `${i + 1}\n${vttTime(cue.start)} --> ${vttTime(cue.end)}\n${cue.text}\n`).join('\n')}`
-const toSrt = (cues) => cues.map((cue, i) => `${i + 1}\n${vttTime(cue.start).replace('.', ',')} --> ${vttTime(cue.end).replace('.', ',')}\n${cue.text}\n`).join('\n')
 
-// libass sizes and margins are in its default 384x288 script space.
-function burnStyle(aspect, height) {
-  const safe = SAFE_AREAS[aspect] || SAFE_AREAS['16:9']
+// libass sizes and margins are in a 384x288 script space. The burn goes
+// through the ass filter with complex shaping (FILM-2019): the subtitles
+// filter shapes simply, which draws Devanagari with its vowel signs out of
+// order and its conjuncts broken.
+// safeAreas: FILM-2016's (captions/layout.js SAFE_AREAS), as libass margins.
+function toAss(cues, aspect, safeAreas) {
+  const safe = safeAreas[aspect] || safeAreas['16:9']
   const fontSize = aspect === '9:16' ? 11 : aspect === '1:1' ? 14 : 16
-  void height
-  return `Fontname=Arial,Fontsize=${fontSize},PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=1.2,Shadow=0,Alignment=2,MarginV=${Math.round(288 * safe.bottom) + 4},MarginL=${Math.round(384 * safe.left)},MarginR=${Math.round(384 * safe.right)}`
+  const time = (seconds) => vttTime(seconds).slice(1, -1)
+  const text = (value) => String(value).replace(/[{]/g, '(').replace(/[}]/g, ')').replace(/\r?\n/g, '\\N')
+  return [
+    '[Script Info]', 'ScriptType: v4.00+', 'PlayResX: 384', 'PlayResY: 288', 'ScaledBorderAndShadow: yes', '',
+    '[V4+ Styles]',
+    'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
+    `Style: Default,Arial,${fontSize},&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,1.2,0,2,${Math.round(384 * safe.left)},${Math.round(384 * safe.right)},${Math.round(288 * safe.bottom) + 4},1`,
+    '', '[Events]', 'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
+    ...cues.map((cue) => `Dialogue: 0,${time(cue.start)},${time(cue.end)},Default,,0,0,0,,${text(cue.text)}`),
+    '',
+  ].join('\n')
 }
 
 const escapeFilterPath = (file) => file.replace(/\\/g, '/').replace(/:/g, '\\:').replace(/'/g, "\\'")
 
 async function renderDelivery({ project, projectDir, timelineId, preset, language = null, outputPath, ffmpegPath, signal = null, onProgress = () => {}, workDir = null }) {
-  const timeline = timelineOf(project, timelineId)
-  if (!timeline) throw Object.assign(new Error(`Timeline ${timelineId} is not in the project.`), { code: 'NOT_FOUND' })
+  const stored = timelineOf(project, timelineId)
+  if (!stored) throw Object.assign(new Error(`Timeline ${timelineId} is not in the project.`), { code: 'NOT_FOUND' })
+  // FILM-2019: the render's language lane plays even though the editor mutes it.
+  const { selectLanguage } = await loadSelection()
+  const timeline = selectLanguage(stored, language)
   const fps = num(preset.fps, num(timeline.fps, 24))
   const { segments, duration } = pictureSegments(timeline, project, projectDir)
   if (!(duration > 0)) throw Object.assign(new Error('The timeline is empty.'), { code: 'VALIDATION_FAILED' })
@@ -315,9 +326,10 @@ async function renderDelivery({ project, projectDir, timelineId, preset, languag
     let captionsPath = null
     const videoFilters = []
     if (cues.length && preset.captionPolicy === 'burn') {
-      const srt = path.join(temp, 'captions.srt')
-      await fsp.writeFile(srt, toSrt(cues))
-      videoFilters.push(`subtitles='${escapeFilterPath(srt)}':force_style='${burnStyle(preset.aspect, preset.height)}'`)
+      const ass = path.join(temp, 'captions.ass')
+      const { SAFE_AREAS: layoutSafeAreas } = await loadLayout()
+      await fsp.writeFile(ass, toAss(cues, preset.aspect, layoutSafeAreas))
+      videoFilters.push(`ass='${escapeFilterPath(ass)}':shaping=complex`)
     } else if (cues.length && preset.captionPolicy === 'sidecar') {
       captionsPath = outputPath.replace(/\.mp4$/i, '.vtt')
       await fsp.writeFile(captionsPath, toVtt(cues))
@@ -348,4 +360,4 @@ async function renderDelivery({ project, projectDir, timelineId, preset, languag
   }
 }
 
-module.exports = { renderDelivery, pictureSegments, programDuration, propertyAt, propertyExpression, captionCues, toVtt, audioClipsFor, runFfmpeg }
+module.exports = { renderDelivery, pictureSegments, programDuration, propertyAt, propertyExpression, captionCues, toVtt, toAss, audioClipsFor, runFfmpeg }

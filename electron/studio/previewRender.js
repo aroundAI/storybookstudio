@@ -108,10 +108,14 @@ function createPreviewRenderer(options = {}) {
       const segment = plan.segmentAt(segments, time)
       const file = path.join(dir, `kf-${String(Math.round(time * 1000)).padStart(7, '0')}.jpg`)
       const active = cues.filter((entry) => entry.start <= time && entry.end > time)
+      const complex = active.filter((entry) => graph.needsComplexShaping(entry.text))
+      const script = complex.length ? file.replace(/\.jpg$/, '.ass') : null
+      if (script) await fsp.writeFile(script, graph.captionAssScript(complex, size, { enableByTime: false }))
       const drawtext = active.length
-        ? graph.captionDrawtextFilters(active, size, { fontFile, textFileFor, enableByTime: false }).join(',')
+        ? [...graph.captionDrawtextFilters(active, size, { fontFile, textFileFor, enableByTime: false }), ...(script ? [graph.assFilter(script)] : [])].join(',') || null
         : null
       await runFfmpegOrThrow(ffmpegPath, ['-loglevel', 'error', ...graph.keyframeArgs(segment, time, file, size, { drawtext })], { signal, timeoutMs: 30000 })
+      if (script) await fsp.rm(script, { force: true }).catch(() => {})
       return {
         time,
         reason,
@@ -223,13 +227,24 @@ function createPreviewRenderer(options = {}) {
       let cues = captions && fontFile ? plan.captionCues(project, { timelineId, language }).filter((entry) => entry.end > from && entry.start < to) : []
       if (captionsSafeArea && cues.length) {
         const { safeAreaFor } = await loadCaptionMargins()
-        cues = cues.map((entry) => (entry.cue.globalOverrides?.safeArea ? entry : { ...entry, cue: { ...entry.cue, globalOverrides: { ...(entry.cue.globalOverrides || {}), safeArea: safeAreaFor(captionsSafeArea), aspect: captionsSafeArea } } }))
+        // A cue placed for another aspect (a 16:9 master boxed into a 9:16 render) is placed again for this one.
+        cues = cues.map((entry) => (entry.cue.globalOverrides?.safeArea && (entry.cue.globalOverrides.aspect ?? captionsSafeArea) === captionsSafeArea ? entry : { ...entry, cue: { ...entry.cue, globalOverrides: { ...(entry.cue.globalOverrides || {}), safeArea: safeAreaFor(captionsSafeArea), aspect: captionsSafeArea } } }))
       }
       if (cues.length) {
         const textFileFor = await writeCueTexts(workDir, cues, layout, size)
         const draw = graph.captionDrawtextFilters(cues, size, { fontFile, textFileFor, from, to, timeOffset: from })
-        chains.push(`[${videoOut}]${draw.join(',')}[vcap]`)
-        videoOut = 'vcap'
+        if (draw.length) {
+          chains.push(`[${videoOut}]${draw.join(',')}[vcap]`)
+          videoOut = 'vcap'
+        }
+        // FILM-2019: Devanagari and other complex scripts through libass.
+        const complex = cues.filter((entry) => graph.needsComplexShaping(entry.text))
+        if (complex.length) {
+          const script = path.join(workDir, 'captions.ass')
+          await fsp.writeFile(script, graph.captionAssScript(complex, size, { from, to, timeOffset: from }))
+          chains.push(`[${videoOut}]${graph.assFilter(script)}[vass]`)
+          videoOut = 'vass'
+        }
       }
       const inputs = [...video.inputs]
       let audioOut = null

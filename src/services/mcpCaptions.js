@@ -333,8 +333,16 @@ function applyCueEditsToList(baseCues, payload, fallbackDuration) {
   return nextCues
 }
 
-function findLiveCaptionsClip(clipId) {
-  const clips = useTimelineStore.getState().clips || []
+// A caption language as a tag (hi, pt-BR); an ASR name such as Hindi is not one.
+const captionLanguageTag = (value) => (/^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})?$/.test(String(value || '')) ? String(value) : null)
+
+// FILM-2019: with a language, that language's live captions clip only.
+function findLiveCaptionsClip(clipId, language = null) {
+  const { clips: allClips = [], tracks = [] } = useTimelineStore.getState()
+  const trackLanguage = new Map(tracks.map((track) => [track.id, track.language ?? null]))
+  const clips = language && !clipId
+    ? allClips.filter((c) => (c.metadata?.language ?? trackLanguage.get(c.trackId)) === language)
+    : allClips
   if (clipId) {
     const clip = clips.find((c) => c.id === clipId)
     if (!clip) throw new Error(`No clip found with id "${clipId}".`)
@@ -434,6 +442,7 @@ export function handleUpdateCaptionCues(payload = {}) {
   const replacingAll = Array.isArray(payload.cues)
   const explicitClipId = String(payload.clipId || '').trim() || null
   const requested = typeof payload.target === 'string' ? payload.target.trim().toLowerCase() : null
+  const language = captionLanguageTag(payload.language)
 
   // Target resolution: an explicit ask wins; then the transcription draft
   // (the transcribe → update → generate flow, unchanged); then a placed live
@@ -443,14 +452,14 @@ export function handleUpdateCaptionCues(payload = {}) {
   else if (requested === 'draft') target = 'draft'
   else if (explicitClipId) target = 'clip'
   else if (captionDraft) target = 'draft'
-  else if (findLiveCaptionsClip(null)) target = 'clip'
+  else if (findLiveCaptionsClip(null, language)) target = 'clip'
   else if (replacingAll) target = 'draft'
   else {
     throw new Error('No caption draft and no live captions clip found. Run transcribe_captions first, generate captions, or pass a full "cues" array to create a draft manually.')
   }
 
   if (target === 'clip') {
-    const clip = findLiveCaptionsClip(explicitClipId)
+    const clip = findLiveCaptionsClip(explicitClipId, language)
     if (!clip) {
       throw new Error('No live captions clip on the timeline. generate_captions (timeline scope) places one, or use target "draft".')
     }
@@ -638,6 +647,7 @@ async function runGenerateCaptionJob(job, ctx) {
         cues: renderCues,
         preset: renderPreset,
         duration: ctx.duration,
+        language: ctx.language || null,
         workspace: {
           version: 1,
           presetId: preset.id,
@@ -853,6 +863,7 @@ export function handleGenerateCaptions(payload = {}) {
     fps: settings.fps,
     duration,
     placeOnTimeline: payload.placeOnTimeline !== false,
+    language: captionLanguageTag(payload.language),
   }
 
   const running = getRunningCaptionJob()

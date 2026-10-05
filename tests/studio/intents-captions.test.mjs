@@ -80,15 +80,20 @@ test('captions on a 9:16 variant stay inside the safe rectangle (QA check passes
   assert.equal(checkCaptionSafeArea({ cues: wide, width: 1080, height: 1920 }).length, 3)
 })
 
-test('no clip for the language: generate_captions places one, then the cues are styled; another language present is refused', () => {
+test('no clip for the language: generate_captions places one on its language\'s track, then the cues are styled; another language present is left alone', () => {
   const { timeline } = roughCut()
   const bare = { ...timeline, tracks: timeline.tracks.filter((track) => track.role !== 'captions'), clips: timeline.clips.filter((clip) => clip.type !== 'captions') }
   const plan = compileCaptionsAfterTranscription({ cues: draft, params: { language: 'en' }, context: { timeline: bare }, brand })
   assert.deepEqual(plan.steps.map((entry) => entry.tool), ['generate_captions', 'update_caption_cues'])
   assert.equal(plan.steps[0].arguments.presetId, 'kinetic-traditional')
   assert.equal(plan.steps[1].arguments.target, 'clip')
-  const refused = compileCaptionsAfterTranscription({ cues: draft, params: { language: 'fr' }, context: { timeline }, brand })
-  assert.match(refused.refused.reason, /no captions clip for fr/)
+  // FILM-2019: a second language gets its own clip; the English one is not a target.
+  const second = compileCaptionsAfterTranscription({ cues: draft, params: { language: 'fr' }, context: { timeline }, brand })
+  assert.equal(second.refused, undefined)
+  assert.deepEqual(second.steps.map((entry) => entry.tool), ['generate_captions', 'update_caption_cues'])
+  assert.equal(second.steps[0].arguments.language, 'fr')
+  assert.equal(second.steps[1].arguments.language, 'fr')
+  assert.equal(second.steps[1].arguments.clipId, undefined)
   assert.equal(compileCaptionsAfterTranscription({ cues: [], params: { language: 'en' }, context: { timeline } }).refused.code, 'VALIDATION_FAILED')
 })
 
@@ -150,7 +155,8 @@ test('two caption languages: styling one never touches the other (no generate_ca
     assert.equal(plan.steps[0].arguments.clipId, clip.id, `${language} targets its own clip by id`)
     assert.equal(plan.steps.some((entry) => entry.arguments.target === 'clip'), false, 'never "the first captions clip"')
   }
-  // a third language with no clip is refused rather than placed over the others
-  assert.match(compileCaptionsPlacement({ timeline, brand }, draft, { language: 'fr' }).refused.reason, /no captions clip for fr/)
+  // a third language with no clip gets its own (FILM-2019: placeLiveCaptions keeps the others)
+  const fr = compileCaptionsPlacement({ timeline, brand }, draft, { language: 'fr' })
+  assert.deepEqual(fr.steps.map((entry) => [entry.tool, entry.arguments.language]), [['generate_captions', 'fr'], ['update_caption_cues', 'fr']])
   assert.equal(compileCaptions({ timeline, brand }, 'episode', { language: 'hi' }).steps[0].arguments.language, 'Hindi')
 })

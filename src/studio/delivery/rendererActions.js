@@ -10,12 +10,14 @@
 //   neither a save nor an op-log line (it is sent with previewOnly: true);
 // - studio_prepare_delivery: creates the "Delivered" version and returns the
 //   explain-why report and the version_created data. It does not save or
-//   switch timelines: the delivery renders the document the user confirmed.
+//   switch timelines: the delivery renders the document the user confirmed;
+// - studio_apply_language_lane (FILM-2019): a language lane on the master.
 import { useProjectStore } from '../../stores/projectStore'
 import { useTimelineStore } from '../../stores/timelineStore'
 import { useAssetsStore } from '../../stores/assetsStore'
 import { createStudioVersion, getStudioEditLog, timelineDocument } from '../editLogRuntime.js'
 import { buildDeliveryReport, versionCreatedData } from './deliveryReport.js'
+import { applyLanguageLane, mergeLaneAssets } from '../localization/lanes.js'
 
 const invalid = (message) => Object.assign(new Error(message), { code: 'VALIDATION_FAILED' })
 
@@ -35,6 +37,45 @@ export async function insertStudioTimeline(payload = {}) {
   }))
   const switched = payload.activate === true ? await useProjectStore.getState().switchTimeline(timeline.id) : false
   return { inserted: true, switched: Boolean(switched), timelineId: timeline.id }
+}
+
+// FILM-2019: studio_apply_language_lane puts a language lane built by the
+// main process (localization/lanes.js) on the master: one undo step when the
+// master is the open timeline, the lane's dub files added to the library.
+export async function applyStudioLanguageLane(payload = {}) {
+  const lane = payload.lane
+  if (!lane || typeof lane !== 'object' || !lane.language || !Array.isArray(lane.clips) || !Array.isArray(lane.tracks)) throw invalid('Provide lane (studio_create_variant kind language builds it).')
+  const state = useProjectStore.getState()
+  if (!state.currentProject) throw invalid('Open a project first.')
+  const target = (state.currentProject.timelines || []).find((timeline) => timeline.id === lane.timelineId)
+  if (!target) throw invalid(`Timeline ${lane.timelineId} is not in the open project.`)
+  if (payload.previewOnly !== false) {
+    return { previewOnly: true, action: 'studio_apply_language_lane', language: lane.language, timelineId: lane.timelineId, tracks: lane.tracks.length, clips: lane.clips.length, replaces: { tracks: lane.removeTrackIds.length, clips: lane.removeClipIds.length } }
+  }
+  const { getAbsoluteFileUrl, getProjectFileUrl, isElectron } = await import('../../services/fileSystem')
+  const handle = state.currentProjectHandle
+  const hydrated = await Promise.all((lane.assets || []).map(async (asset) => {
+    if (!asset.path || asset.offline) return { ...asset, url: null }
+    try {
+      const url = isElectron() && asset.absolutePath ? await getAbsoluteFileUrl(asset.absolutePath) : await getProjectFileUrl(handle, asset.path)
+      return { ...asset, url }
+    } catch {
+      return { ...asset, url: null }
+    }
+  }))
+  useAssetsStore.setState((current) => ({ assets: mergeLaneAssets(current.assets || [], hydrated) }))
+  if (state.currentTimelineId === lane.timelineId) {
+    const timeline = useTimelineStore.getState()
+    timeline.saveToHistory()
+    const applied = applyLanguageLane({ tracks: timeline.tracks, clips: timeline.clips, clipCounter: timeline.clipCounter, duration: timeline.duration }, lane)
+    useTimelineStore.setState({ tracks: applied.tracks, clips: applied.clips, clipCounter: applied.clipCounter, duration: applied.duration })
+  } else {
+    state.saveTimelineStructureToHistory?.()
+    useProjectStore.setState((current) => ({
+      currentProject: { ...current.currentProject, timelines: current.currentProject.timelines.map((timeline) => (timeline.id === lane.timelineId ? applyLanguageLane(timeline, lane) : timeline)) },
+    }))
+  }
+  return { applied: true, language: lane.language, timelineId: lane.timelineId, tracks: lane.tracks.map((track) => track.id), clips: lane.clips.length, assets: hydrated.length }
 }
 
 export function studioDeliveryDocument() {

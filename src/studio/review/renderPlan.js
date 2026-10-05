@@ -4,6 +4,8 @@
 // when a caption cue shows. Pure; src/studio/package.json makes it an ES
 // module for the main process (Electron 28, Node 18) as well as `node --test`.
 
+import { inLanguage, selectLanguage } from '../localization/selection.js'
+
 export const EPS = 1e-6
 export const KEYFRAME_INTERVAL_SECONDS = 2
 export const KEYFRAME_WIDTH = 640
@@ -172,18 +174,16 @@ export function busOfClip(clip, track) {
 }
 
 // A clip sounds in a render of `language` when it, or its track, has no
-// language or that one (a dubbed lane plays only in its own render).
-export const inLanguage = (clip, track, language) => {
-  if (!language) return true
-  const own = clip?.metadata?.language ?? track?.language ?? null
-  return own === null || own === language
-}
+// language or that one (a dubbed lane plays only in its own render); the
+// language's own tracks are selected by it (FILM-2019, localization/selection.js).
+export { inLanguage }
+const languageTracks = (timeline, language) => trackMap(selectLanguage(timeline, language))
 
 // Every audible audio clip with what the mix needs: file, timing, gains, fades, bus.
 export function audioClips(project, { timelineId = null, projectDir = null, language = null } = {}) {
   const timeline = activeTimeline(project, timelineId)
   if (!timeline) return []
-  const tracks = trackMap(timeline)
+  const tracks = languageTracks(timeline, language)
   const assets = assetIndex(project)
   const soloed = (timeline.tracks || []).some((track) => track.type === 'audio' && track.solo)
   return (timeline.clips || [])
@@ -225,7 +225,7 @@ export const masterGainDb = (timeline) => volumeToDb(timeline?.masterAudioVolume
 export function captionCues(project, { timelineId = null, language = null } = {}) {
   const timeline = activeTimeline(project, timelineId)
   if (!timeline) return []
-  const tracks = trackMap(timeline)
+  const tracks = languageTracks(timeline, language)
   const out = []
   for (const clip of timeline.clips || []) {
     const track = tracks.get(clip.trackId)
