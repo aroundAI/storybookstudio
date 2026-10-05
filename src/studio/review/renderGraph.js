@@ -45,7 +45,7 @@ export function keyframeArgs(segment, time, outFile, size, { drawtext = null } =
 export function captionDrawtextFilters(cues, size, { fontFile, textFileFor, from = 0, to = Infinity, timeOffset = 0, enableByTime = true } = {}) {
   if (!fontFile) return []
   return cues
-    .filter((entry) => entry.end > from + EPS && entry.start < to - EPS)
+    .filter((entry) => entry.end > from + EPS && entry.start < to - EPS && !needsComplexShaping(entry.text))
     .map((entry) => {
       const rect = cueRect(entry.cue, entry.clip, size)
       const lineHeight = Math.round(rect.fontSize * (rect.traditional ? 1.3 : 1.15))
@@ -65,6 +65,64 @@ export function captionDrawtextFilters(cues, size, { fontFile, textFileFor, from
       return `drawtext=${parts.join(':')}`
     })
 }
+
+// FILM-2019: scripts drawtext cannot draw. The bundled FFmpeg's drawtext has
+// no text shaping (no HarfBuzz) and one font file with no fallback, so
+// Devanagari and the other complex scripts would come out as missing glyphs
+// with vowel signs out of order. libass in the same build shapes them
+// (shaping=complex) and falls back to an installed font that has the glyphs,
+// so those cues are drawn by the ass filter at the same rectangle, size and
+// box; every other cue keeps drawtext.
+const COMPLEX_SCRIPT = /[\u0590-\u08FF\u0900-\u0DFF\u0E00-\u0FFF\u1000-\u109F\u1780-\u17FF\uA8E0-\uA8FF]/u
+export const needsComplexShaping = (text) => COMPLEX_SCRIPT.test(String(text || ''))
+
+const assTime = (seconds) => {
+  const cs = Math.max(0, Math.round(seconds * 100))
+  const h = Math.floor(cs / 360000)
+  const m = Math.floor((cs % 360000) / 6000)
+  const s = Math.floor((cs % 6000) / 100)
+  return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(cs % 100).padStart(2, '0')}`
+}
+// Braces open override tags in ASS; a caption's own are shown as parentheses.
+const assText = (line) => String(line).replace(/[{]/g, '(').replace(/[}]/g, ')').replace(/\\/g, '/')
+
+// An ASS script (PlayRes = the frame, so positions are pixels) drawing
+// `cues` as captionDrawtextFilters would: white text, a black@0.6 box, at
+// captionLayout's rectangle. The caller runs it through
+// `ass=<file>:shaping=complex`.
+export function captionAssScript(cues, size, { from = 0, to = Infinity, timeOffset = 0, enableByTime = true, fontName = 'Arial' } = {}) {
+  const events = cues
+    .filter((entry) => entry.end > from + EPS && entry.start < to - EPS)
+    .map((entry) => {
+      const rect = cueRect(entry.cue, entry.clip, size)
+      const pad = Math.max(2, Math.round(rect.fontSize * 0.3))
+      const x = Math.max(0, rect.px.x + Math.round(rect.fontSize * 0.3))
+      const y = Math.max(0, rect.px.y + Math.round(rect.fontSize * 0.3))
+      const start = enableByTime ? assTime(entry.start - timeOffset) : assTime(0)
+      const end = enableByTime ? assTime(entry.end - timeOffset) : assTime(36000)
+      return `Dialogue: 0,${start},${end},Caption,,0,0,0,,{\\an7\\pos(${x},${y})\\fs${rect.fontSize}\\bord${pad}}${rect.lines.map(assText).join('\\N')}`
+    })
+  return [
+    '[Script Info]',
+    'ScriptType: v4.00+',
+    `PlayResX: ${size.width}`,
+    `PlayResY: ${size.height}`,
+    'WrapStyle: 2',
+    'ScaledBorderAndShadow: yes',
+    '',
+    '[V4+ Styles]',
+    'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
+    `Style: Caption,${fontName},32,&H00FFFFFF,&H00FFFFFF,&H66000000,&H66000000,0,0,0,0,100,100,0,0,3,4,0,7,0,0,0,1`,
+    '',
+    '[Events]',
+    'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text',
+    ...events,
+    '',
+  ].join('\n')
+}
+
+// The ass filter for a script file, with complex shaping on.
+export const assFilter = (file) => `ass='${escapeFilterValue(file)}':shaping=complex`
 
 // The video of [from, to) as one concat graph: each segment trimmed from its
 // source, fitted to `size`, at `fps`; gaps and offline media are black.

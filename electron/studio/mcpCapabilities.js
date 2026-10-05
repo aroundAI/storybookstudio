@@ -181,7 +181,7 @@ const CAPABILITY_TOOLS = Object.freeze([
     owner: 'FILM-2017',
     available: true,
     annotations: write,
-    description: 'A variant timeline beside the master (timeline.studio {kind: variant, variantOf, aspect}). kind short: a 9:16 cut of a range, params {source: {candidateId} | {hook: true} | {range: [start, end]}, preset?: shorts_9x16 | tiktok_9x16 | reels_9x16, language?}; the subject is followed with a smoothed crop (faces, else the primary subject; a clip with neither is centred and flagged), captions are re-placed in the 9:16 safe area, and the duration is checked against the preset\'s limit. kind hook: params {variants: 1-5}, alternative first-five-second openings from the strongest lines, each exported to renders/<version>/hooks/. kind language is FILM-2019. Preview first (previewOnly defaults to true).',
+    description: 'A variant timeline beside the master (timeline.studio {kind: variant, variantOf, aspect}). kind short: a 9:16 cut of a range, params {source: {candidateId} | {hook: true} | {range: [start, end]}, preset?: shorts_9x16 | tiktok_9x16 | reels_9x16, language?}; the subject is followed with a smoothed crop (faces, else the primary subject; a clip with neither is centred and flagged), captions are re-placed in the 9:16 safe area, and the duration is checked against the preset\'s limit. kind hook: params {variants: 1-5}, alternative first-five-second openings from the strongest lines, each exported to renders/<version>/hooks/. kind language (FILM-2019): params {language, presets?}, the dubbed lines StoryBook produced (pulled by re-sync) become a Dialogue (<language>) lane and Captions (<language>) track on the master, placed at each line\'s start and speed-fitted (0.9 to 1.25, never trimmed); applied, each preset is rendered in that language and QA-checked, including whisper\'s spoken-language check. Preview first (previewOnly defaults to true).',
     inputSchema: {
       type: 'object',
       required: ['kind'],
@@ -773,7 +773,6 @@ function createCapabilityTools({
       case 'studio_create_variant': {
         const deliver = getDeliver()
         if (!deliver) return notAvailable(tool)
-        if (args.kind === 'language') return failure('VALIDATION_FAILED', 'studio_create_variant kind language is not available yet: FILM-2019 builds it.', { availableAfter: 'FILM-2019' })
         try {
           return ok(await deliver.createVariant({ ...(args.params || {}), kind: args.kind, previewOnly: args.previewOnly }, { snapshot: getSnapshot() }))
         } catch (error) {

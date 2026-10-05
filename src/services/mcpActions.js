@@ -68,7 +68,7 @@ import { runMcpActionWithEditLog } from '../studio/editLogRuntime.js'
 import { handleSetAudioBuses } from '../studio/audio/busActions.js'
 import { studioAudioExportOptions } from '../studio/audio/exportOptions.js'
 import { handleStudioAction, isStudioRendererAction, publishSnapshotNow } from '../studio/capabilityRuntime.js'
-import { insertStudioTimeline, prepareStudioDelivery, studioDeliveryDocument } from '../studio/delivery/rendererActions.js'
+import { applyStudioLanguageLane, insertStudioTimeline, prepareStudioDelivery, studioDeliveryDocument } from '../studio/delivery/rendererActions.js'
 
 export const MCP_ACTION_BRIDGE_VERSION = 7
 
@@ -8958,6 +8958,8 @@ async function handleMcpAction(request = {}) {
     // FILM-2017: delivery and variants (src/studio/delivery/rendererActions.js).
     case 'studio_insert_timeline':
       return insertStudioTimeline(request.payload || {})
+    case 'studio_apply_language_lane':
+      return applyStudioLanguageLane(request.payload || {})
     case 'studio_prepare_delivery':
       return prepareStudioDelivery(request.payload || {})
     case 'studio_delivery_document':

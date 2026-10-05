@@ -1366,25 +1366,40 @@ export const useTimelineStore = create(
    * render fresh every frame in preview and export — no baked overlay video.
    * Reuses the dedicated role:'captions' track exactly like baked overlays.
    */
-  placeLiveCaptions: ({ cues, preset, duration, workspace = null, name = 'Captions' } = {}) => {
+  placeLiveCaptions: ({ cues, preset, duration, workspace = null, name = 'Captions', language = null } = {}) => {
     const safeCues = Array.isArray(cues) ? cues : []
     if (safeCues.length === 0) return null
     get().saveToHistory()
 
-    let captionsTrack = get().tracks.find((t) => t.role === 'captions')
+    // FILM-2019: one captions clip per language. With a language, its own
+    // captions track (made when missing); without one, the first captions
+    // track. Another language's captions track and clip are never touched.
+    const languageOf = (track) => track?.language ?? null
+    let captionsTrack = language
+      ? get().tracks.find((t) => t.role === 'captions' && languageOf(t) === language)
+      : get().tracks.find((t) => t.role === 'captions')
     if (!captionsTrack) {
-      captionsTrack = get().addTrack('video', { role: 'captions', name: 'Captions' })
+      captionsTrack = get().addTrack('video', { role: 'captions', name: language ? `Captions (${language})` : 'Captions' })
+      if (captionsTrack && language) {
+        const trackId = captionsTrack.id
+        set((state) => ({ tracks: state.tracks.map((track) => (track.id === trackId ? { ...track, language } : track)) }))
+        captionsTrack = get().tracks.find((track) => track.id === trackId)
+      }
     }
     if (!captionsTrack) return null
+    const trackLanguage = languageOf(captionsTrack)
+    const tracksById = new Map(get().tracks.map((track) => [track.id, track]))
+    const sameLanguage = (clip) => (clip.metadata?.language ?? languageOf(tracksById.get(clip.trackId))) === trackLanguage
 
-    // One captions clip per timeline. An existing live clip survives as the
+    // One captions clip per language. An existing live clip survives as the
     // carrier — its transform, grade, masks, matte, bypass and keyframes ride
-    // through a regenerate — while baked leftovers and strays clear out.
+    // through a regenerate — while baked leftovers and strays of the same
+    // language clear out.
     const before = get().clips
     const carrier = before.find((clip) => clip.type === 'captions' && clip.trackId === captionsTrack.id)
-      || before.find((clip) => clip.type === 'captions')
+      || before.find((clip) => clip.type === 'captions' && sameLanguage(clip))
     before
-      .filter((clip) => (clip.trackId === captionsTrack.id || clip.type === 'captions') && clip.id !== carrier?.id)
+      .filter((clip) => (clip.trackId === captionsTrack.id || (clip.type === 'captions' && sameLanguage(clip))) && clip.id !== carrier?.id)
       .forEach((clip) => get().removeClip(clip.id))
 
     const safeDuration = Math.max(
@@ -1439,6 +1454,7 @@ export const useTimelineStore = create(
       url: null,
       thumbnail: null,
       captions: captionsPayload,
+      ...(trackLanguage ? { metadata: { languageDependency: 'language', language: trackLanguage } } : {}),
       transform: {
         positionX: 0,
         positionY: 0,

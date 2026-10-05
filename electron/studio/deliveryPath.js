@@ -12,7 +12,8 @@
 // qa: electron/studio/qa.js on the delivered file against the preset (format,
 //   duration, loudness, true peak, clipping, black, frozen, silence), plus
 //   the delivery-only checks: the platform's longest file and StoryBook's
-//   500 MB limit, and the reframe warnings the variant timeline carries.
+//   500 MB limit, the reframe warnings the variant timeline carries, and for
+//   a language render the spoken-language check (FILM-2019, languageCheck.js).
 //
 // Imports nothing from Electron; runs under `node --test`.
 const fs = require('fs')
@@ -22,12 +23,13 @@ const { createPreviewRenderer, loadPlan } = require('./previewRender')
 const { createQa } = require('./qa')
 const { resolveBinaries, runFfmpegOrThrow } = require('./ffmpegTools')
 const { captionCues: vttCues, toVtt } = require('./deliveryRender')
+const { checkSpokenLanguage } = require('./languageCheck')
 
 const MAX_RENDER_BYTES = 500 * 1024 * 1024 // contracts/delivery-package.schema.mjs MAX_RENDER_BYTES
 
 // Binary paths are read when a delivery runs (main.js resolves them after
 // createStudioMain), through getFfmpegPath/getFfprobePath or the fixed values.
-function createDeliveryPath({ ffmpegPath = null, ffprobePath = null, getFfmpegPath: readFfmpeg = () => ffmpegPath, getFfprobePath: readFfprobe = () => ffprobePath, getMediaPreparation = () => null, renderer = null, qa = null, owner = 'studio-delivery' } = {}) {
+function createDeliveryPath({ ffmpegPath = null, ffprobePath = null, getFfmpegPath: readFfmpeg = () => ffmpegPath, getFfprobePath: readFfprobe = () => ffprobePath, getMediaPreparation = () => null, renderer = null, qa = null, detectLanguage = null, owner = 'studio-delivery' } = {}) {
   // Unset paths fall back to the bundled ffmpeg-static / ffprobe-static.
   const getFfmpegPath = () => resolveBinaries({ ffmpegPath: readFfmpeg(), ffprobePath: readFfprobe() }).ffmpegPath
   const getFfprobePath = () => resolveBinaries({ ffmpegPath: readFfmpeg(), ffprobePath: readFfprobe() }).ffprobePath
@@ -104,8 +106,9 @@ function createDeliveryPath({ ffmpegPath = null, ffprobePath = null, getFfmpegPa
     }
   }
 
-  // FILM-2017's qa signature: ({file, preset, expectedDuration, warnings}) → {qa, probe, checker}.
-  async function check({ file, preset, expectedDuration = null, warnings = [] }) {
+  // FILM-2017's qa signature: ({file, preset, expectedDuration, warnings}) → {qa, probe, checker};
+  // with `language`, FILM-2019's spoken-language check too (languageCheck).
+  async function check({ file, preset, expectedDuration = null, warnings = [], project = null, timelineId = null, language = null, detectLanguage: detectFor = null }) {
     const target = { name: preset.name, width: preset.width, height: preset.height, fps: preset.fps, videoCodec: preset.codec || 'h264', audioCodec: preset.audioCodec || 'aac', audioLufs: preset.audioLufs }
     const { qa: result, measurement } = await checker().runQa({ file, preset: target, expectedDuration, documentChecks: false })
     const issues = [...result.issues]
@@ -118,12 +121,15 @@ function createDeliveryPath({ ffmpegPath = null, ffprobePath = null, getFfmpegPa
       issues.push({ type: 'file_size', severity: 1, timeRange: null, scene: null, detail: `${(bytes / 1048576).toFixed(0)} MB is over StoryBook's 500 MB render limit.` })
     }
     for (const warning of warnings) issues.push({ ...warning })
+    const spoken = await checkSpokenLanguage({ file, language, detect: detectFor || detectLanguage, project, timelineId })
+    if (spoken.issue) issues.push(spoken.issue)
     const video = measurement.probe.video || {}
     const audio = measurement.probe.audio || {}
     return {
       qa: { pass: issues.every((entry) => entry.severity < 0.5), issues: issues.slice(0, 500) },
       probe: { durationSeconds: seconds, videoCodec: video.codec ?? null, audioCodec: audio.codec ?? null, width: video.width ?? null, height: video.height ?? null, fps: video.fps ?? null, bytes, integratedLufs: measurement.loudness?.integratedLufs ?? null, truePeakDbtp: measurement.loudness?.truePeakDbtp ?? null },
       checker: 'FILM-2014 qa.js',
+      languageCheck: spoken.check,
     }
   }
 

@@ -8,10 +8,21 @@ const secrets = require('./secrets')
 const { createStudioCloud } = require('./cloud')
 const { createStudioDeliver } = require('./deliver')
 const { createDeliveryPath } = require('./deliveryPath')
+const { createLanguageDetector } = require('./languageCheck')
+const { createCaptionWhisperService } = require('../captionWhisper')
 const { createAudioReads, utilityProcessAnalysis } = require('./audioReads')
 const { createStudioUiMain } = require('./studioUi')
 const { applyAppBranding, APP_NAME } = require('./appBranding')
 const { readLicenses, buildAppMenuTemplate } = require('./licenses')
+
+// The caption engine (whisper.cpp) the spoken-language check uses: its
+// binary and the most accurate installed model.
+const DETECTION_MODEL_ORDER = ['large-v3-turbo', 'small', 'base', 'tiny']
+function languageEngine(app) {
+  const status = createCaptionWhisperService({ app, ffmpegPath: null, getMainWindow: () => null }).getStatus()
+  const model = DETECTION_MODEL_ORDER.map((id) => status.models.find((entry) => entry.id === id)).find(Boolean)
+  return status.binaryPath && model ? { binaryPath: status.binaryPath, modelPath: model.path } : null
+}
 
 // The upstream editor's own temp working directories; Electron has no "cache" path name.
 const CACHE_DIR_NAMES = ['storybookstudio-shot-audio', 'storybookstudio-caption-audio']
@@ -76,6 +87,8 @@ function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, get
       const delivery = createDeliveryPath({ getFfmpegPath, getFfprobePath, getMediaPreparation })
       return { render: delivery.render, qa: delivery.check }
     })(),
+    // FILM-2019: the spoken-language check runs on the local caption engine.
+    detectLanguage: createLanguageDetector({ getEngine: () => languageEngine(app), getFfmpegPath }),
     log: (line) => console.warn(line),
   })
   const deliverGuard = (handler) => async (event, args = {}) => {

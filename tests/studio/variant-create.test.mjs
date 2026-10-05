@@ -88,9 +88,11 @@ test('the agent profile reaches the tools: studio_create_variant previews, studi
   const [card] = parse(variant).cards
   assert.deepEqual(Object.keys(card).sort(), ['changes', 'durationAfter', 'durationBefore', 'heading', 'notes', 'scene', 'targetDuration', 'touchesYourEdits'])
   assert.deepEqual(card.changes.map((change) => change.tool), ['studio_insert_timeline', 'set_clip_keyframes', 'update_caption_cues'])
+  // FILM-2019: kind language is built; this package has no Hindi dub, so it says where one comes from.
   const language = await capabilities.call('studio_create_variant', { kind: 'language', params: { language: 'hi' } })
   assert.equal(language.isError, true)
-  assert.match(parse(language).error.message, /FILM-2019/)
+  assert.equal(parse(language).error.code, 'NOT_FOUND')
+  assert.match(parse(language).error.message, /no hi dub.*localize_episode.*studio_check_updates/)
   const summary = parse(await capabilities.call('studio_deliver', { presets: ['youtube_16x9'], destination: 'folder', folder: dir }))
   assert.match(summary.summaryHash, /^[0-9a-f]{64}$/)
   const refused = await capabilities.call('studio_deliver', { presets: ['youtube_16x9'], destination: 'folder', folder: dir, confirm: true })

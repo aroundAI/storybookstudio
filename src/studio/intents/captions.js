@@ -88,10 +88,10 @@ export function compileCaptionsAfterTranscription({ cues, params = {}, context =
   const reasons = []
   let clip = captionsClipFor(context, language)
   if (!clip) {
-    const others = (context?.timeline?.clips || []).filter((entry) => entry.type === 'captions')
-    if (others.length) return refuse(`There is no captions clip for ${language}, and one for another language exists; add a ${language} captions track first (FILM-2019 language lanes).`)
+    // FILM-2019: placed on its own Captions (<language>) track; another
+    // language's captions are left as they are.
     const reason = `Place a live captions clip for ${language} from the transcription draft.`
-    steps.push(step('generate_captions', { scope: 'timeline', presetId: STUDIO_CAPTION_PRESET_ID }, reason))
+    steps.push(step('generate_captions', { scope: 'timeline', presetId: STUDIO_CAPTION_PRESET_ID, language }, reason))
     reasons.push(reason)
   }
   const width = context?.timeline?.width || context?.width
@@ -101,7 +101,7 @@ export function compileCaptionsAfterTranscription({ cues, params = {}, context =
     `inside the ${aspect} safe area`,
     emphasized.length ? `${emphasized.reduce((sum, entry) => sum + entry.words.length, 0)} emphasis word(s) in ${emphasized.length} cue(s)` : null,
   ].filter(Boolean).join(', ') + '.'
-  steps.push(step('update_caption_cues', { ...(clip ? { clipId: clip.id } : { target: 'clip' }), cues: styled, preset }, reason))
+  steps.push(step('update_caption_cues', { ...(clip ? { clipId: clip.id } : { target: 'clip', language }), cues: styled, preset }, reason))
   reasons.push(reason)
   const issues = width && height ? checkCaptionSafeArea({ cues: styled, width, height, aspect }) : []
   return {

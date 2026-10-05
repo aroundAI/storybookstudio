@@ -9,6 +9,7 @@
 const fs = require('fs')
 const { runFfmpeg } = require('./deliveryRender')
 const { createProbe } = require('./probe')
+const { checkSpokenLanguage } = require('./languageCheck')
 
 const LOUDNESS_TOLERANCE_LU = 1
 const TRUE_PEAK_MAX_DBTP = -1
@@ -30,7 +31,7 @@ const issue = (type, severity, detail, extra = {}) => ({ type, severity, timeRan
 // preset: the resolved preset (width, height, audioLufs, maxDuration, name).
 // expectedDuration: the timeline's program length. warnings: QaIssue-shaped
 // entries carried by the timeline (reframe).
-async function checkDeliveredFile({ file, preset, expectedDuration = null, warnings = [], ffmpegPath, ffprobePath }) {
+async function checkDeliveredFile({ file, preset, expectedDuration = null, warnings = [], ffmpegPath, ffprobePath, project = null, timelineId = null, language = null, detectLanguage = null }) {
   const issues = []
   const bytes = fs.statSync(file).size
   const probed = await createProbe(ffprobePath)(file)
@@ -58,7 +59,9 @@ async function checkDeliveredFile({ file, preset, expectedDuration = null, warni
     }
   }
   for (const warning of warnings) issues.push({ ...warning })
-  return { qa: { pass: issues.every((entry) => entry.severity < FAIL_SEVERITY), issues }, probe, checker: 'inline (FILM-2017; FILM-2014 qa.js pending)' }
+  const spoken = await checkSpokenLanguage({ file, language, detect: detectLanguage, project, timelineId })
+  if (spoken.issue) issues.push(spoken.issue)
+  return { qa: { pass: issues.every((entry) => entry.severity < FAIL_SEVERITY), issues }, probe, checker: 'inline (FILM-2017; FILM-2014 qa.js pending)', languageCheck: spoken.check }
 }
 
 // One QaResult for a whole delivery: pass when every file passes.

@@ -460,8 +460,13 @@ function computeFontSize(wordCount, canvasWidth, canvasHeight) {
 // Layout: position words centered in frame
 // ---------------------------------------------------------------------------
 
+// FILM-2019: a brand font with no Devanagari falls back, glyph by glyph, to
+// a named Devanagari face (macOS, Windows, Noto) rather than to whatever the
+// platform happens to pick. Latin text never reaches these.
+export const SCRIPT_FALLBACK_FONTS = '"Kohinoor Devanagari", "Devanagari Sangam MN", "Nirmala UI", "Noto Sans Devanagari"'
+
 function setFont(ctx, size, family, weight) {
-  ctx.font = `${weight} ${Math.round(size)}px ${quoteCssFontFamily(family)}, "Helvetica Neue", Arial, sans-serif`
+  ctx.font = `${weight} ${Math.round(size)}px ${quoteCssFontFamily(family)}, "Helvetica Neue", Arial, ${SCRIPT_FALLBACK_FONTS}, sans-serif`
 }
 
 function layoutMicroCue(ctx, microCue, fontSize, style, canvasWidth, canvasHeight) {
