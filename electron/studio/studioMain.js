@@ -8,7 +8,7 @@ const secrets = require('./secrets')
 const { createStudioCloud } = require('./cloud')
 const { createStudioDeliver } = require('./deliver')
 const { createDeliveryPath } = require('./deliveryPath')
-const { createAudioReads } = require('./audioReads')
+const { createAudioReads, utilityProcessAnalysis } = require('./audioReads')
 const { createStudioUiMain } = require('./studioUi')
 const { applyAppBranding, APP_NAME } = require('./appBranding')
 const { readLicenses, buildAppMenuTemplate } = require('./licenses')
@@ -16,7 +16,7 @@ const { readLicenses, buildAppMenuTemplate } = require('./licenses')
 // The upstream editor's own temp working directories; Electron has no "cache" path name.
 const CACHE_DIR_NAMES = ['storybookstudio-shot-audio', 'storybookstudio-caption-audio']
 
-function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, getMcpServer, getFfprobePath = () => null, getFfmpegPath = () => null, getMediaPreparation = () => null, dialog = null, iconPath = null, Menu = null }) {
+function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, getMcpServer, getFfprobePath = () => null, getFfmpegPath = () => null, getMediaPreparation = () => null, dialog = null, iconPath = null, Menu = null, utilityProcess = null }) {
   // A separate profile (and so a separate single-instance lock) for a
   // development run beside an installed StorybookStudio.
   if (process.env.STUDIO_USER_DATA_DIR) app.setPath('userData', process.env.STUDIO_USER_DATA_DIR)
@@ -119,7 +119,8 @@ function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, get
   })
 
   // FILM-2013: the intent compilers' audio reads, with ffmpeg in this process.
-  const audioReads = createAudioReads({ getFfmpegPath })
+  // KB-190: get_audio_analysis decodes and analyses in a utility process.
+  const audioReads = createAudioReads({ getFfmpegPath, runAnalysis: utilityProcess ? utilityProcessAnalysis(utilityProcess) : null })
 
   // FILM-2015: the quit prompt when a plan or a delivery is in flight.
   createStudioUiMain({ app, ipcMain, getMainWindow, isMainWindowSender })

@@ -467,6 +467,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getAudioWaveform: (mediaInput, options = {}) => ipcRenderer.invoke('media:getAudioWaveform', mediaInput, options),
 
   /**
+   * Analyse audio in the main process (KB-190): ffmpeg decodes the range, the
+   * renderer never does. Beats, onsets, loudness, curve and silences.
+   * @param {string} mediaInput - file:// URL, storybookstudio-file:// URL, or absolute path
+   * @param {object} options - { startSeconds?, endSeconds?, silenceThresholdDb?, minSilenceSeconds?, includeLoudnessCurve?, maxCurvePoints? }
+   * @returns {Promise<{success: boolean, analysis?: object, error?: string}>}
+   */
+  analyzeAudioFile: (mediaInput, options = {}) => ipcRenderer.invoke('media:analyzeAudio', mediaInput, options),
+
+  /**
    * Trim a short audio segment with FFmpeg and return a temporary WAV path.
    * @param {object} options - { inputPath, startSeconds, durationSeconds, outputName?, timeoutMs? }
    * @returns {Promise<{success: boolean, outputPath?: string, duration?: number, error?: string}>}
