@@ -71,6 +71,8 @@ jobs:
             --vulkan-sdk "$MOLTENVK_SDK_ROOT" --clean --replace
           node scripts/runtime-package-gate.cjs staged --platform darwin --arch arm64
       - run: npm run build
+      # FILM-2018: the Remotion bundle and Chrome Headless Shell the packaged app carries.
+      - run: npm run build:compositions
       # Unsigned and not notarized: this proves the app packs and carries its identity.
       - run: npx electron-builder --mac --arm64 --dir
         env:
