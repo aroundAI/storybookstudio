@@ -1,0 +1,31 @@
+# Tells StoryBook that main moved, so its studio-pin workflow opens or
+# refreshes the pull request that moves the storybookstudio pin here
+# (StoryBook's .github/workflows/studio-pin.yml, which also runs daily in
+# case this notice is lost). Needs STORYBOOK_DISPATCH_TOKEN: a token that may
+# send repository dispatches to aroundAI/storybook (fine-grained: Contents
+# read and write on that repository). Without it the job says so and StoryBook
+# catches up on its daily run.
+name: Notify StoryBook
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    name: Notify StoryBook of a new main
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send storybookstudio-main
+        env:
+          GH_TOKEN: ${{ secrets.STORYBOOK_DISPATCH_TOKEN }}
+          SHA: ${{ github.sha }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "::notice::STORYBOOK_DISPATCH_TOKEN is not set; StoryBook moves its pin on its daily run instead."
+            exit 0
+          fi
+          gh api repos/aroundAI/storybook/dispatches -f event_type=storybookstudio-main -F "client_payload[sha]=$SHA"
