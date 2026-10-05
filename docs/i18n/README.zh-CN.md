@@ -8,7 +8,6 @@
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue)](../../LICENSE)
 [![Platforms](https://img.shields.io/badge/Platforms-Windows%20%C2%B7%20macOS%20%C2%B7%20Linux-444444)](https://github.com/aroundAI/storybookstudio/releases/latest)
 
-[![Join our Discord](https://img.shields.io/badge/Discord-加入社区-5865F2?logo=discord&logoColor=white)](https://discord.gg/QWZUuUChVK)
 
 [![Download for Windows](https://img.shields.io/badge/Windows-下载-0078D4?style=for-the-badge)](https://github.com/aroundAI/storybookstudio/releases/latest)
 [![Download for macOS](https://img.shields.io/badge/macOS-下载-1a1a1a?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/aroundAI/storybookstudio/releases/latest)
