@@ -26,10 +26,10 @@ const hit = (context, params = {}) => compileIntent({ intent: 'hit_duration', co
 const after = (context, plan) => simulatePlan(context.timeline, plan.steps, { fps: context.fps }).timeline
 const cutsOf = (plan) => plan.steps.filter((step) => step.tool === 'extract_range').map((step) => [step.arguments.startSeconds, step.arguments.endSeconds])
 
-test('the policy flag defaults to ask and is read from the policy, else the brand payload', () => {
+test('the policy flag defaults to ask and is read from the typed policy', () => {
   assert.equal(contextWith().policy.allowDialogueCuts, 'ask')
   assert.equal(contextWith({ allowDialogueCuts: 'never' }).policy.allowDialogueCuts, 'never')
-  assert.equal(contextWith({}, { allowDialogueCuts: 'allow' }).policy.allowDialogueCuts, 'allow')
+  assert.equal(contextWith({ allowDialogueCuts: 'allow' }).policy.allowDialogueCuts, 'allow')
   assert.equal(contextWith({ allowDialogueCuts: 'sometimes' }).policy.allowDialogueCuts, 'ask')
 })
 

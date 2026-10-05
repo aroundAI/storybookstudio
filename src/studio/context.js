@@ -128,12 +128,6 @@ export function buildStudioContext({
   const timeline = currentTimeline(document)
   const rawPolicy = storybook.policy ?? storybook.package?.editPolicy
   const policy = parseOr(EditPolicySchema, rawPolicy)
-  // allowDialogueCuts ('never' | 'ask' | 'allow', default 'ask') is not in
-  // EditPolicySchema yet (a StoryBook follow-up); read it from the policy or
-  // brand payload when present. The schema parse strips unknown keys.
-  const dialogueCuts = [rawPolicy?.allowDialogueCuts, storybook.brand?.allowDialogueCuts, storybook.package?.brand?.allowDialogueCuts]
-    .find((value) => ['never', 'ask', 'allow'].includes(value)) ?? 'ask'
-  policy.value = { ...policy.value, allowDialogueCuts: policy.value.allowDialogueCuts ?? dialogueCuts }
   const brand = parseOr(BrandSchema, storybook.brand ?? storybook.package?.brand)
   const pkg = storybook.package ?? null
   const targetSeconds = policy.value.targetDurationSeconds ?? pkg?.episode?.targetDurationSeconds ?? null

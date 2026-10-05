@@ -46,6 +46,8 @@ export const CaptionStyleSchema = z.object({
     maxCharsPerLine: z.number().int().min(10).max(80).default(32),
     background: z.enum(CAPTION_BACKGROUNDS).default('box'),
     emphasis: z.enum(CAPTION_EMPHASES).default('none'),
+    /** Words the kinetic captions emphasise, whatever the line they sit in. */
+    emphasisWords: z.array(z.string().trim().min(1).max(40)).max(50).default([]),
 });
 export const BrandLogoSchema = z.object({
     /** An `assets.id` of the project; null = no logo. */

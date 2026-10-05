@@ -7,6 +7,7 @@
 // renderer draws, against the same rectangle. Pure: no stores, no DOM.
 import { BrandSchema } from '../contracts/brand.schema.mjs'
 import { EditPolicySchema } from '../contracts/edit-policy.schema.mjs'
+import { emphasisWordsOf } from '../policyFields.js'
 import { approximateMeasure, aspectOf, blockInsideSafeRect, layoutCue, normalizeWord, safeAreaFor } from './layout.js'
 
 export { SAFE_AREAS, safeAreaFor, safeRectPx, aspectOf, layoutSubtitleBlock, layoutCue, blockInsideSafeRect, isInsideSafeArea } from './layout.js'
@@ -22,12 +23,11 @@ const BACKGROUND_TO_TEXT_STYLE = { box: 'background', outline: 'outline', none: 
 const hexAlphaPercent = (hex) => (/^#[0-9a-fA-F]{8}$/.test(hex) ? Math.round((parseInt(hex.slice(7, 9), 16) / 255) * 100) : null)
 const hex6 = (hex) => String(hex).slice(0, 7)
 
-// Emphasis words: BrandSchema has the emphasis *style* (none | color |
-// scale) but no word list yet, so the words come from the call (the
-// studio_add_captions style) or an unparsed brand's captionStyle.emphasisWords.
+// Emphasis words: the brand's captionStyle.emphasisWords (BrandSchema) plus
+// the call's (the studio_add_captions style).
 export function emphasisWordsFrom({ brand = null, style = null } = {}) {
   const fromStyle = Array.isArray(style?.emphasisWords) ? style.emphasisWords : []
-  const fromBrand = Array.isArray(brand?.captionStyle?.emphasisWords) ? brand.captionStyle.emphasisWords : []
+  const fromBrand = emphasisWordsOf(brand)
   return [...new Set([...fromStyle, ...fromBrand].map((word) => String(word).trim()).filter(Boolean))]
 }
 

@@ -7,6 +7,7 @@
 // repairIntent (REPAIR_INTENTS, FILM-2003's contract).
 import { QaResultSchema } from '../contracts/qa-result.schema.mjs'
 import { checkCaptionSafeArea } from '../captions/style.js'
+import { DEFAULT_MAX_SILENCE_SECONDS, maxSilenceSecondsOf } from '../policyFields.js'
 import { activeTimeline, captionCues, isAbsolutePath, joinPath, pictureClips, pictureSegments, programDuration, round3, sceneOfRange, timelineFrame, trackMap } from './renderPlan.js'
 
 export const QA_DEFAULTS = Object.freeze({
@@ -15,9 +16,8 @@ export const QA_DEFAULTS = Object.freeze({
   freezeMinSeconds: 2,
   freezeNoiseDb: -60,
   silenceNoiseDb: -50,
-  // EditPolicySchema (FILM-2004) has no silence bound yet; a policy that
-  // carries `maxSilenceSeconds` wins over this.
-  maxSilenceSeconds: 1.5,
+  // The policy's maxSilenceSeconds (FILM-2004) wins over this default.
+  maxSilenceSeconds: DEFAULT_MAX_SILENCE_SECONDS,
   clipPeakDbfs: -0.1,
   clipFlatFactor: 1,
   clipOverDbfs: 0.5,
@@ -228,7 +228,7 @@ export function freezeIssues(ranges, blackRanges, ctx, { minSeconds = QA_DEFAULT
 }
 
 export function maxSilenceFor(policy) {
-  return Number.isFinite(policy?.maxSilenceSeconds) ? policy.maxSilenceSeconds : QA_DEFAULTS.maxSilenceSeconds
+  return maxSilenceSecondsOf(policy)
 }
 
 export function silenceIssues(ranges, ctx, { maxSeconds = QA_DEFAULTS.maxSilenceSeconds } = {}) {
