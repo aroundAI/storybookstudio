@@ -90,24 +90,28 @@ function createReviewTools({ getReviewContext, ffmpegPath, ffprobePath, env = pr
   // studio_review {scope, versionId?}: QA (V1) on a fresh preview of the
   // scope, then the critic (V2). Top-level pass/issues merge both, which is
   // what FILM-2013's autoRepair loop reads.
-  async function review(args = {}) {
+  // onPhase (FILM-2013's autoRepair job): 'keyframes' (the renders), 'qa', 'critic'.
+  async function review(args = {}, { onPhase = () => {} } = {}) {
     const started = Date.now()
     const ctx = await context({ versionId: args.versionId || null, timeline: args.scope?.timelineId })
     const { project, projectPath, timelineId, policy = {}, pkg = null, opLog = [] } = ctx
     const [from, to] = await rangeOfScope(project, args.scope || {}, timelineId)
     const [pacing, audio, visual, checks] = await loadCritic()
 
+    onPhase('keyframes')
     const [keyframes, video, mix] = await Promise.all([
       previews.renderKeyframes({ project, projectDir: projectPath, timelineId, range: [from, to] }),
       previews.renderScenePreview({ project, projectDir: projectPath, timelineId, range: [from, to], policy }),
       previews.renderAudioMix({ project, projectDir: projectPath, timelineId, range: [from, to], stems: true, policy }),
     ])
+    onPhase('qa')
     const qaRun = await checker.runQa({
       file: video.file, project, projectDir: projectPath, timelineId, policy, pkg, opLog,
       timeOffset: from, expectedDuration: video.duration, formatChecks: false,
     })
     const levels = await checker.measureMixLevels({ file: mix.file, stems: mix.stems, from })
 
+    onPhase('critic')
     const client = visionClient || createVisionClient({ env, getSecret })
     const visualResult = await visual.analyseVisual({ project, pkg, frames: keyframes.frames, client, timelineId })
     const inScope = (issue) => !issue.timeRange || (issue.timeRange.end > from - 1e-6 && issue.timeRange.start < to + 1e-6)

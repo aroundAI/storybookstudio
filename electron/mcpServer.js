@@ -10860,6 +10860,26 @@ class StorybookStudioMcpServer {
       return
     }
 
+    // A tools/call with _meta.progressToken asked to follow its progress: the
+    // answer is an event stream of notifications/progress (an autoRepair edit
+    // job's phases, each naming the job) ending with the response.
+    const progressToken = payload?.method === 'tools/call' ? payload.params?._meta?.progressToken : undefined
+    if ((typeof progressToken === 'string' || typeof progressToken === 'number') && payload.id != null && String(req.headers.accept || '').includes('text/event-stream')) {
+      res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' })
+      const send = (message) => {
+        if (!res.writableEnded && !res.destroyed) res.write(`event: message\ndata: ${JSON.stringify(message)}\n\n`)
+      }
+      let last = -1
+      const onProgress = (job) => {
+        if (!(job.done > last)) return
+        last = job.done
+        send({ jsonrpc: '2.0', method: 'notifications/progress', params: { progressToken, progress: job.done, total: job.total, message: `${job.message || job.phase} (job ${job.id}, version ${job.versionId})` } })
+      }
+      send(await this.handleJsonRpc(payload, { profile, onProgress }))
+      res.end()
+      return
+    }
+
     const response = await this.handleJsonRpc(payload, { profile })
     if (!response) {
       res.writeHead(202)
@@ -10869,7 +10889,7 @@ class StorybookStudioMcpServer {
     this.writeJson(res, 200, response)
   }
 
-  async handleJsonRpc(message, { profile = DEFAULT_MCP_PROFILE } = {}) {
+  async handleJsonRpc(message, { profile = DEFAULT_MCP_PROFILE, onProgress = null } = {}) {
     if (!message || typeof message !== 'object') {
       return {
         jsonrpc: '2.0',
@@ -10909,7 +10929,7 @@ class StorybookStudioMcpServer {
           result = { tools: this.toolsForProfile(profile) }
           break
         case 'tools/call':
-          result = await this.callToolInProfile(profile, params?.name, params?.arguments || {})
+          result = await this.callToolInProfile(profile, params?.name, params?.arguments || {}, { onProgress })
           break
         case 'resources/list':
           result = { resources: [] }
@@ -10934,8 +10954,8 @@ class StorybookStudioMcpServer {
     }
   }
 
-  async callToolInProfile(profile, name, args = {}) {
-    if (this.capabilities.inProfile(name, profile)) return this.capabilities.call(name, args, { source: 'mcp' })
+  async callToolInProfile(profile, name, args = {}, { onProgress = null } = {}) {
+    if (this.capabilities.inProfile(name, profile)) return this.capabilities.call(name, args, { source: 'mcp', onProgress })
     if (profile === 'agent') {
       return errorResult(`${name} is not in the agent profile. Use the studio_* capability tools, or connect with ?profile=expert for StorybookStudio's tools.`)
     }

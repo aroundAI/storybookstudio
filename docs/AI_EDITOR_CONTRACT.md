@@ -94,7 +94,7 @@ Perception never changes the document. Every perception verb is callable at any 
 
 ### P8 Job status
 - **In:** `studio_get_job_status({jobId})`.
-- **Out:** `{phase, done, total, bytes, error?}` for pull, render and deliver jobs.
+- **Out:** `{status, phase, done, total, bytes, error?}` for pull, render, deliver and autoRepair edit jobs. An edit job adds `round`, `message` and `versionId`, and when done its `result` is the finished apply (V4).
 - **Guarantees:** Long jobs run in the main process, never over the renderer bridge (60 s timeout).
 - **Built by:** FILM-2013 over FILM-2011.
 
@@ -203,7 +203,8 @@ Every intent compiles to an action plan (A1) and reads its bounds from the polic
 
 ### V4 Auto-repair loop
 - **In:** `studio_edit({..., autoRepair: true})`.
-- **Guarantees:** Apply, keyframes, QA and repair run at most 3 rounds inside one draft version. Only the final cards are shown. Intermediate ops stay in the log. Issues left after round 3 become cards for the user.
+- **Out:** at once, `{jobId, status: 'running', versionId}`; P8 follows the job, whose `result` holds the final cards and report. A call with `_meta.progressToken` gets `notifications/progress` per phase and the finished result instead.
+- **Guarantees:** Apply, keyframes, QA and repair run at most 3 rounds inside one draft version. Only the final cards are shown. Intermediate ops stay in the log. Issues left after round 3 become cards for the user. No request waits on the loop, so no client's 60 s timeout ends it.
 - **Built by:** FILM-2013 with FILM-2014.
 
 ## 7. Lifecycle

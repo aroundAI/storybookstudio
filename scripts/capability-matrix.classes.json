@@ -170,7 +170,7 @@
   "build": [
     { "name": "studio_get_context", "verbs": ["P1", "P2"], "spec": "FILM-2013", "note": "Built: agent profile (electron/studio/mcpCapabilities.js, src/studio/context.js). Script, scene map, policy, brand, timeline summary, versions, user edits, last QA in one call." },
     { "name": "studio_search_assets", "verbs": ["P3"], "spec": "FILM-2013", "note": "Built: ranks by name, transcript, then semantic fields." },
-    { "name": "studio_get_job_status", "verbs": ["P8"], "spec": "FILM-2013", "note": "Built over FILM-2011's job registry (studioMain.cloud.getJobStatus); jobs run in main." },
+    { "name": "studio_get_job_status", "verbs": ["P8"], "spec": "FILM-2013", "note": "Built: autoRepair edit jobs (electron/studio/jobs.js in mcpCapabilities.js, phase and round per QA and repair) and FILM-2011's pull and deliver jobs (studioMain.cloud.getJobStatus); jobs run in main." },
     { "name": "studio_review", "verbs": ["P7", "V2"], "spec": "FILM-2014", "note": "electron/studio/reviewTools.js review: renders the scope's keyframes, a 720p preview and the bus mix with stems, runs QA then the critic; returns {pass, issues, qa, critic, skipped}." },
     { "name": "electron/studio/qa.js checks", "verbs": ["V1"], "spec": "FILM-2014", "note": "ebur128 loudness and true peak, astats clipping, blackdetect, freezedetect, silencedetect, caption safe areas, script coverage. No upstream tool does these at QA grade." },
     { "name": "src/studio/critic/{pacing,audio,visual}.js", "verbs": ["V2"], "spec": "FILM-2014", "note": "Analysers return issues in the QA shape." },
