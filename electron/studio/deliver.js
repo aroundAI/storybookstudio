@@ -689,7 +689,7 @@ function createStudioDeliver({
       notes: [
         ...lane.overruns.slice(0, 5).map((entry) => `A dubbed line runs ${entry.overrunSeconds} s past its slot at ${entry.speed}x; it is placed whole, not trimmed.`),
         ...(lane.lines.offline ? [`${lane.lines.offline} dubbed line(s) are not downloaded and are placed offline.`] : []),
-        'Graphics are not refit for this language: compositions (FILM-2018) are not in this build.',
+        'Graphics are not refit for this language: composition clips (FILM-2018) keep the master\'s text; re-rendering them per language is not built yet.',
       ],
     }
     const response = {

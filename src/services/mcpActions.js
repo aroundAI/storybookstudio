@@ -34,6 +34,9 @@ import {
 } from './workflowInstallJobs'
 import { saveLocalComfyConnectionPort } from './localComfyConnection'
 import { getAbsoluteFileUrl, importAsset, isElectron, writeGeneratedOverlayToProject } from './fileSystem'
+import { getComposition } from '../studio/compositions/catalogue.js'
+import { buildCompositionFields } from '../studio/compositions/clip.js'
+import { POP_DURATION_SECONDS, POP_FILE, popWavBytes } from '../studio/compositions/sfx.js'
 import { canImportImageSequences, importImageSequenceAsAsset } from './imageSequenceImport'
 import { canImportGifMedia, importGifAsset, isGifFilename } from './gifImport'
 import { detectImageSequences, parseSequenceFileName } from '../utils/imageSequenceDetection'
@@ -6160,6 +6163,79 @@ function handleAddTextClip(payload = {}) {
   }
 }
 
+// FILM-2018: a composition clip (a catalogue graphic, rendered to an alpha
+// WebM by the composition renderer) on a video track. studio_add_graphic's
+// plans use it; previewOnly checks the props and changes nothing.
+function handleAddCompositionClip(payload = {}) {
+  const state = useTimelineStore.getState()
+  const track = findDefaultTextTrack(state, payload.trackId)
+  const fields = buildCompositionFields({ engine: payload.engine || 'remotion', compositionId: payload.compositionId, props: payload.props || {}, languageDependency: payload.languageDependency || 'none' })
+  const primitive = getComposition(fields.compositionId)
+  const startSeconds = Number(payload.startSeconds ?? payload.startTime)
+  const startTime = Number.isFinite(startSeconds) ? Math.max(0, startSeconds) : Number(state.playheadPosition) || 0
+  const duration = clampNumber(payload.durationSeconds ?? payload.duration, primitive.defaultDurationSeconds, 1 / (Number(state.timelineFps) || 24), 3600)
+  const plan = { track: summarizeTrack(track), compositionId: fields.compositionId, engine: fields.engine, props: fields.props, languageDependency: fields.languageDependency, startSeconds: startTime, durationSeconds: duration }
+  if (payload.previewOnly !== false) {
+    return { previewOnly: true, action: 'add_composition_clip', message: `Composition clip plan only: a ${primitive.title} on ${track.name || track.id}. No timeline change was made.`, ...plan }
+  }
+  const clip = state.addCompositionClip(track.id, { ...fields, duration, name: payload.name ? String(payload.name).slice(0, 80) : undefined }, startTime)
+  if (!clip) throw new Error('Could not create the composition clip.')
+  return { success: true, action: 'add_composition_clip', message: `Added a ${primitive.title} composition clip; it renders in the background.`, clip: summarizeClip(clip), ...plan }
+}
+
+// FILM-2018: StorybookStudio's built-in pop (studio/compositions/sfx.js) on
+// an audio track. The first apply writes the WAV into the project and adds
+// it to the library; later ones reuse that asset.
+async function handleAddSfxClip(payload = {}) {
+  if (payload.sfx !== 'pop') throw new Error('add_sfx_clip has one built-in sound: sfx "pop".')
+  const state = useTimelineStore.getState()
+  const track = (state.tracks || []).find((candidate) => candidate.id === payload.trackId)
+  if (!track || track.type !== 'audio') throw new Error(`Track ${payload.trackId} is not an audio track.`)
+  if (track.locked) throw new Error(`Track ${payload.trackId} is locked.`)
+  const startSeconds = Math.max(0, Number(payload.startSeconds) || 0)
+  const existing = useAssetsStore.getState().assets.find((asset) => asset.settings?.studioSfx === 'pop' && !asset.offline)
+  if (payload.previewOnly !== false) {
+    return {
+      previewOnly: true,
+      action: 'add_sfx_clip',
+      message: existing ? `Pop plan only: "${existing.name}" at ${startSeconds.toFixed(3)}s on ${track.name || track.id}.` : `Pop plan only: writes ${POP_FILE} into the project, then places it at ${startSeconds.toFixed(3)}s on ${track.name || track.id}.`,
+      track: summarizeTrack(track),
+      startSeconds,
+      durationSeconds: POP_DURATION_SECONDS,
+      asset: existing ? summarizeAsset(existing) : null,
+    }
+  }
+  const asset = existing || await writeBuiltInPop()
+  const placed = handleAddAssetToTimeline({ assetId: asset.id, trackId: track.id, startSeconds, durationSeconds: POP_DURATION_SECONDS, resolveOverlaps: false, selectAfterAdd: false, previewOnly: false })
+  return { ...placed, action: 'add_sfx_clip', message: `Added the pop at ${startSeconds.toFixed(3)}s.`, asset: summarizeAsset(asset), wroteFile: !existing }
+}
+
+async function writeBuiltInPop() {
+  const projectDir = useProjectStore.getState().currentProjectHandle
+  const api = typeof window !== 'undefined' ? window.electronAPI : null
+  if (typeof projectDir !== 'string' || !api?.writeFileFromArrayBuffer) throw new Error('Open a saved StorybookStudio project before adding a pop.')
+  const folder = await api.pathJoin(projectDir, ...POP_FILE.split('/').slice(0, -1))
+  await api.createDirectory?.(folder)
+  const absolutePath = await api.pathJoin(projectDir, ...POP_FILE.split('/'))
+  const bytes = popWavBytes()
+  const written = await api.writeFileFromArrayBuffer(absolutePath, bytes.buffer)
+  if (!written?.success) throw new Error(written?.error || 'Could not write the pop.')
+  return useAssetsStore.getState().addAsset({
+    name: 'Pop',
+    type: 'audio',
+    path: POP_FILE,
+    absolutePath,
+    url: (await api.getFileUrlDirect?.(absolutePath)) || null,
+    size: bytes.byteLength,
+    mimeType: 'audio/wav',
+    duration: POP_DURATION_SECONDS,
+    role: 'sfx',
+    semantic: { scene: null, shotId: null, characters: [], purpose: 'sfx', emotion: null, prompt: null, continuationFrom: null, tags: ['pop'] },
+    settings: { duration: POP_DURATION_SECONDS, studioSfx: 'pop' },
+    sourceTool: 'add_sfx_clip',
+  })
+}
+
 function handleUpdateTextClip(payload = {}) {
   const state = useTimelineStore.getState()
   const currentClip = getTextClipById(state, payload.clipId)
@@ -8925,6 +9001,10 @@ async function handleMcpAction(request = {}) {
       return handleAddTextClip(request.payload || {})
     case 'update_text_clip':
       return handleUpdateTextClip(request.payload || {})
+    case 'add_composition_clip':
+      return handleAddCompositionClip(request.payload || {})
+    case 'add_sfx_clip':
+      return handleAddSfxClip(request.payload || {})
     case 'transcribe_captions':
       return handleTranscribeCaptions(request.payload || {})
     case 'get_caption_status':

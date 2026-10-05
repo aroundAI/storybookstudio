@@ -19,9 +19,9 @@
 //
 // writing a WebM with an alpha channel (VP9, yuva420p) to outputPath. This
 // module writes to a temporary name and renames it into place, so a file at
-// compositions/<id>-<hash>.webm is always a finished render. Which engine
-// draws the primitives is an owner decision (FILM-2018 notes); until then
-// the only engine is the test card (compositionEngines/testcard.js).
+// compositions/<id>-<hash>.webm is always a finished render. The app's
+// engine is Remotion (compositionEngines/remotion.js, Chrome Headless Shell);
+// the tests also pass a test-card engine (tests/studio/helpers/testcard-engine.mjs).
 //
 // Imports nothing from Electron; runs under `node --test`.
 const fs = require('fs')

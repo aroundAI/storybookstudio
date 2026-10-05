@@ -117,6 +117,6 @@ export function chooseVisualRepresentation(context, sceneOrPoint = {}) {
     signals: { numbers, years, places, timeWords: times, processWords: process, archiveWords: archive, sceneShots: shots.length, brollMatches: broll.length, archivalMatches: archival.length },
     ranked,
     decidedBy: 'agent',
-    note: 'A ranking, not a decision: pick one and act with the tool its entry names. studio_add_graphic places a drawn graphic once FILM-2018\'s compositions land; until then it answers not available yet.',
+    note: 'A ranking, not a decision: pick one and act with the tool its entry names. studio_add_graphic previews then places a drawn graphic from the catalogue in studio_get_context (diagram has no primitive; its entry names the nearest).',
   }
 }

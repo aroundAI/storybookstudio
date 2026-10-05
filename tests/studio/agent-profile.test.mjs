@@ -91,7 +91,6 @@ test('every other capability tool: same result from both clients (the stubs refu
     studio_choose_visual_representation: { sceneOrPoint: { scene: 2 } },
     studio_check_readiness: {},
     studio_deliver: { presets: ['youtube_16x9'] },
-    studio_add_graphic: { kind: 'lower_third', text: 'Maya', at: 1, duration: 2 },
     studio_create_variant: { kind: 'short' },
     studio_review: {},
     studio_render_preview: {},
@@ -103,8 +102,8 @@ test('every other capability tool: same result from both clients (the stubs refu
   for (const [name, args] of Object.entries(calls)) {
     assert.deepEqual(stable(await viaAgent(name, args)), stable(await viaSdk(name, args)), name)
   }
-  // FILM-2016's tools and FILM-2014's repair return plan cards when their compilers are in the build.
-  for (const [name, args] of [['studio_edit_audio', { intent: 'fade' }], ['studio_add_captions', { language: 'en' }], ['studio_repair', { issues: [] }]]) {
+  // FILM-2016's tools and FILM-2014's repair return plan cards when their compilers are in the build; FILM-2018's graphic always does.
+  for (const [name, args] of [['studio_edit_audio', { intent: 'fade' }], ['studio_add_captions', { language: 'en' }], ['studio_repair', { issues: [] }], ['studio_add_graphic', { kind: 'lower_third', text: 'Maya', at: 1, duration: 2 }]]) {
     const sdk = await viaSdk(name, args)
     const agent = await viaAgent(name, args)
     if (sdk.isError) assert.deepEqual(stable(agent), stable(sdk), name)
@@ -116,8 +115,8 @@ test('every other capability tool: same result from both clients (the stubs refu
   assert.deepEqual(Object.keys(agentVersion.version).sort(), Object.keys(sdkVersion.version).sort())
   const restored = await viaAgent('studio_restore_version', { versionId: agentVersion.version.id })
   assert.equal(restored.version.id, agentVersion.version.id)
-  // + studio_edit, studio_restore_version, studio_create_version, studio_edit_audio, studio_add_captions, studio_repair
-  assert.equal(Object.keys(calls).length + 6, capabilities.definitionsFor('agent').length)
+  // + studio_edit, studio_restore_version, studio_create_version, studio_edit_audio, studio_add_captions, studio_repair, studio_add_graphic
+  assert.equal(Object.keys(calls).length + 7, capabilities.definitionsFor('agent').length)
 })
 
 test('the in-app agent applies a plan the same way: one logged line per step with the preview\'s reasons', async () => {

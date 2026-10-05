@@ -13,7 +13,8 @@
 import { brandTokensFor, resolveCompositionProps } from './catalogue.js'
 
 export const COMPOSITIONS_DIR = 'compositions'
-export const COMPOSITION_KEY_VERSION = 1
+// 2: each primitive draws inside its safe-area footprint (remotion/layout.js).
+export const COMPOSITION_KEY_VERSION = 2
 
 const round3 = (value) => Math.round(Number(value) * 1000) / 1000
 

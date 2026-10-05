@@ -22,6 +22,7 @@ import * as matchBrand from './intents/match_brand.js'
 import * as reorderScenes from './intents/reorder_scenes.js'
 import * as recutAroundDrops from './intents/recut_around_drops.js'
 import { EFFECT_COMPILERS } from './intents/effects.js'
+import * as addGraphic from './intents/add_graphic.js'
 
 const BUILT_IN = [hitDuration, tightenPacing, removeDeadAir, openWithStrongestLine, keepMusicUnderDialogue, addBroll, emphasize, addCta, matchBrand, reorderScenes, recutAroundDrops]
 
@@ -29,6 +30,8 @@ const compilers = new Map([
   ...BUILT_IN.map((module) => [module.INTENT, { reads: module.reads, compile: module.compile, owner: 'FILM-2013' }]),
   // FILM-2018's semantic effects (src/studio/intents/effects.js).
   ...EFFECT_COMPILERS.map((module) => [module.INTENT, { reads: module.reads, compile: module.compile, owner: 'FILM-2018' }]),
+  // FILM-2018's studio_add_graphic compiles here; it is not a studio_edit intent.
+  [addGraphic.INTENT, { reads: addGraphic.reads, compile: addGraphic.compile, owner: 'FILM-2018' }],
 ])
 
 export const STUDIO_EDIT_INTENTS = Object.freeze([...BUILT_IN, ...EFFECT_COMPILERS].map((module) => module.INTENT))
@@ -48,7 +51,7 @@ export const COMPILER_TOOLS = Object.freeze([
   'extract_range', 'trim_clips', 'delete_clips', 'move_clips', 'split_clip', 'set_clip_speed', 'set_clip_audio',
   'update_transition', 'add_transition', 'remove_transitions', 'add_dip_to_black', 'set_clip_keyframes',
   'update_caption_cues', 'set_timeline_marker_properties', 'add_track', 'add_text_clip', 'add_asset_to_timeline',
-  'add_glsl_effect',
+  'add_glsl_effect', 'add_composition_clip', 'add_sfx_clip',
 ])
 
 export class CompileError extends Error {
@@ -173,6 +176,7 @@ export function buildDraftReport(plan, context, { prompt = null, createdAt = '19
 export function describeInstruction(intent, scope = {}, params = {}) {
   const where = scope?.scene != null ? `scene ${scope.scene}` : Array.isArray(scope?.scenes) && scope.scenes.length ? `scenes ${scope.scenes.join(', ')}` : 'the episode'
   const target = params?.targetSeconds != null ? ` to ${params.targetSeconds} s` : ''
+  if (intent === addGraphic.INTENT && !params?.instruction) return `${params.kind} "${String(params.text ?? '').slice(0, 40)}" at ${Number(params.at)} s`
   return params?.instruction ? String(params.instruction) : `${intent.replace(/[_:]/g, ' ')} in ${where}${target}`
 }
 

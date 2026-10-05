@@ -5,7 +5,8 @@
 //   ffprobe           duration against policy.targetDurationSeconds (±5%),
 //                     codec, frame rate and resolution against the preset
 //   the document      caption cues against the preset's safe rectangle and for
-//                     overlaps, check_media_health (offline/missing media), and
+//                     overlaps, graphics (composition clips) clear of the
+//                     captions, check_media_health (offline/missing media), and
 //                     script coverage (every scene has a clip; every dialogue
 //                     line is placed or was cut in the op log)
 //
@@ -93,6 +94,7 @@ function createQa(options = {}) {
     if (project && documentChecks) {
       issues.push(
         ...checks.captionIssues(project, { timelineId, targets }),
+        ...checks.graphicIssues(project, { timelineId, targets }),
         ...checks.mediaHealthIssues(project, { timelineId, projectDir, fileExists }),
         ...checks.scriptCoverageIssues(project, pkg, opLog, { timelineId }),
       )

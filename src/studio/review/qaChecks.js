@@ -7,6 +7,7 @@
 // repairIntent (REPAIR_INTENTS, FILM-2003's contract).
 import { QaResultSchema } from '../contracts/qa-result.schema.mjs'
 import { checkCaptionSafeArea } from '../captions/style.js'
+import { captionBlocks, graphicFootprint, rectsOverlap } from '../compositions/placement.js'
 import { DEFAULT_MAX_SILENCE_SECONDS, maxSilenceSecondsOf } from '../policyFields.js'
 import { activeTimeline, captionCues, isAbsolutePath, joinPath, pictureClips, pictureSegments, programDuration, round3, sceneOfRange, timelineFrame, trackMap } from './renderPlan.js'
 
@@ -319,6 +320,38 @@ export function captionIssues(project, { timelineId = null, targets } = {}) {
     }
     for (const entry of found.filter((item) => item.type === 'caption_overlap')) {
       issues.push(issue({ ...entry, scene: sceneOfRange(project, entry.timeRange.start, entry.timeRange.end, { timelineId }), detail: `${entry.detail} on ${clip.id}; two captions are on screen at once.` }))
+    }
+  }
+  return issues
+}
+
+// FILM-2018: composition clips (graphics) against the captions on screen
+// with them, on the footprint the graphic draws in at the render's size
+// (compositions/remotion/layout.js) and the caption block the check above
+// measures. The footprint is inside the safe area by construction (tests/
+// studio/compositions-primitives.test.mjs), so only the overlap is checked.
+// A graphic is placed by its props, not by a caption fix, so the issue names
+// no repairIntent: studio_add_graphic with another anchor moves it.
+export function graphicIssues(project, { timelineId = null, targets } = {}) {
+  const issues = []
+  const timeline = activeTimeline(project, timelineId)
+  const frame = timelineFrame(project, timelineId)
+  const width = targets?.width || frame.width
+  const height = targets?.height || frame.height
+  const aspect = targets?.aspect || frame.aspect || null
+  const view = { width, height, ...(aspect ? { aspect } : {}) }
+  const tracks = trackMap(timeline)
+  for (const clip of timeline?.clips || []) {
+    if (clip.type !== 'composition' || clip.enabled === false || tracks.get(clip.trackId)?.visible === false) continue
+    const { compositionId, props } = clip.composition || {}
+    const start = round3(clip.startTime || 0)
+    const end = round3(start + (clip.duration || 0))
+    const box = graphicFootprint(compositionId, props || {}, view)
+    const covered = captionBlocks(timeline, { start, end, ...view }).filter((block) => rectsOverlap(box, block.box))
+    if (covered.length) {
+      const from = Math.max(start, Math.min(...covered.map((block) => block.start)))
+      const to = Math.min(end, Math.max(...covered.map((block) => block.end)))
+      issues.push(issue({ type: 'graphic_caption_overlap', severity: 0.6, timeRange: range(from, to), scene: sceneOfRange(project, from, to, { timelineId }), detail: `The ${compositionId} graphic ${clip.id} covers ${covered.length} caption cue${covered.length === 1 ? '' : 's'} (first: "${covered[0].text.slice(0, 60)}" at ${fmt(covered[0].start)}); give it another anchor.` }))
     }
   }
   return issues

@@ -225,13 +225,13 @@ The card with `scene: null` is the whole timeline (caption re-timing, beds, mark
 
 | Tool | Profiles | Does | Status |
 | --- | --- | --- | --- |
-| `studio_get_context` | agent | Script, scene map, policy, brand, timeline summary, versions, user edits, last QA. `{scope?}` | built |
+| `studio_get_context` | agent | Script, scene map, policy, brand, timeline summary, versions, user edits, last QA, and `compositions`: the graphics catalogue `studio_add_graphic` draws from (id, kinds, description, props in one line each, text props, brand tokens, default length). `{scope?}` | built |
 | `studio_search_assets` | agent | Ranks assets by name, transcript and semantic fields. `{query, role?, scene?, durationRange?, limit?}` | built |
 | `studio_edit` | agent | Intent → plan cards → apply into a version. `{intent, scope?, params?, previewOnly?, planId?, autoRepair?}` | built |
 | `studio_edit_audio` | agent | `balance`, `duck`, `normalize`, `fade` over the buses, same preview/apply flow | built: FILM-2016's `intents/audio.js` compiles, FILM-2013 previews and applies; `balance` and `normalize` need measured loudness |
 | `studio_add_captions` | agent | Brand-styled captions inside the aspect's safe area. `{language, style?}` | built over FILM-2016's `intents/captions.js`; styles the cues on the language's captions clip (a StoryBook rough cut has them); with none, transcribe first |
 | `studio_choose_visual_representation` | agent | Ranks how to show a scene or point: generated_video, stock_video, archival_image, chart, map, diagram, timeline, text_graphic, each with a one-line reason and the tool to act with. Read-only; the agent decides. `{sceneOrPoint: {scene} \| {lineId} \| {sequenceNumber} \| {atSeconds} \| {text, scene?}}` | built (FILM-2018, `src/studio/visualRepresentation.js`) |
-| `studio_add_graphic` | agent | Brand graphics | not available yet (FILM-2018) |
+| `studio_add_graphic` | agent | A brand graphic as a composition clip: one of ten primitives (text, counter, callout, arrow, highlight, lower-third, chart, map, timeline, progress-bar; `kind` also takes `text_graphic`, `lower_third`, `progress` and the other names in `GRAPHIC_KINDS`) at `at` for `duration` s. `text` fills the main props (a counter reads "87%"), `props` the rest, checked by the primitive's schema. Placed inside the aspect's safe area; with no `anchor`, moved clear of the captions on screen with it. A counter or callout adds a pop: the library's pop SFX, else the built-in one (`add_sfx_clip`). Same preview/apply flow as `studio_edit`. `{kind, text, at, duration, anchor?, props?, previewOnly?, planId?}` | built (FILM-2018, `src/studio/intents/add_graphic.js`); the render lands in the background, a placeholder shows until it does; QA flags a graphic over a caption |
 | `studio_create_variant` | agent | `short` (a 9:16 cut of a shorts candidate, the strongest line or a range, reframed on the subject, captions in the 9:16 safe area) and `hook` (N five-second openings, each exported) variants | built (FILM-2017); `language` is FILM-2019 |
 | `studio_review` | agent | Renders the scope (keyframes, 720p preview, bus mix with stems), runs QA, then the critic. `{scope?, versionId?}` → `{pass, issues, qa, critic, skipped}` | built (FILM-2014, `electron/studio/reviewTools.js`); the visual critic is skipped, and says so, without a configured vision model |
 | `studio_repair` | agent | One plan for QA issues by `repairIntent`, same preview/apply flow. `{issues, previewOnly?, planId?}` | built (FILM-2014's `intents/repair.js`); issues no edit fixes come back as notes |
@@ -406,7 +406,7 @@ For interchange, preview `export_fcpxml` before writing a file. Use `format: "fc
 
 ## Tool Catalog
 
-StorybookStudio exposes 133 MCP tools in the `expert` profile (130 upstream, plus `set_audio_buses` from FILM-2016 and two from FILM-2017; `node scripts/capability-matrix.mjs` counts them); the `agent` profile serves the 19 capability tools above instead.
+StorybookStudio exposes 135 MCP tools in the `expert` profile (130 upstream, plus `set_audio_buses` from FILM-2016, two from FILM-2017 and two from FILM-2018, `add_composition_clip` and `add_sfx_clip`; `node scripts/capability-matrix.mjs` counts them); the `agent` profile serves the 19 capability tools above instead.
 
 StorybookStudio's AI editor builds on these tools: [AI_EDITOR_CONTRACT.md](AI_EDITOR_CONTRACT.md) defines what an agent may do, and [CAPABILITY_MATRIX.md](CAPABILITY_MATRIX.md) maps every tool onto it.
 
@@ -537,6 +537,7 @@ These tools use the same persistent Director state as the visible Music Video UI
 | `extract_range` | Remove a time range across unlocked tracks, optionally ripple-closing the gap. |
 | `set_clip_speed` | Retime clips from 0.1x to 8x and optionally reverse. |
 | `set_clip_audio` | Set audio gain and fades. |
+| `add_sfx_clip` | Preview/place the built-in pop SFX on an audio track; the first apply writes `assets/audio/sfx/storybookstudio-pop.wav` into the project. |
 | `set_audio_buses` | StorybookStudio projects: preview/change bus gain, ducking under the dialogue bus (duckDb, attack, release) and the master loudness target (`project.studio.audioBuses`). The dialogue bus is never ducked. Preview and export both mix on the buses; a Studio export can also write stems beside the render. |
 | `set_clip_style` | Batch-update label color, enabled state, transform, crop, blur, blend mode, and motion blur. |
 
@@ -588,6 +589,7 @@ Search Pexels photos for "ocean drone shots" with search_stock_media. Show me th
 | `add_adjustment_clip` | Preview/create an adjustment clip for color, blur, GLSL, and keyframed effects. |
 | `duplicate_clip` | Duplicate a clip while preserving style, transform, effects, and keyframes. |
 | `add_text_clip` | Create a text clip with typography, transform, animation, or keyframes. |
+| `add_composition_clip` | Preview/add a catalogue graphic as a composition clip (rendered once to an alpha WebM; a placeholder until then). Props are checked by the primitive's schema. |
 | `update_text_clip` | Preview/update an existing text clip. |
 | `add_shape_clip` | Create shape clips for rectangles, rounded rectangles, ellipses, polygons, or lines. |
 | `update_shape_clip` | Preview/update an existing shape clip. |

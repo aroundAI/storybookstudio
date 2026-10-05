@@ -28,6 +28,8 @@ const STUDIO_EDIT_INTENTS = Object.freeze([
   'punch_in', 'ken_burns', 'speed_ramp', 'freeze_frame', 'color_grade',
 ])
 const AUDIO_INTENTS = Object.freeze(['balance', 'duck', 'normalize', 'fade'])
+// src/studio/compositions/catalogue.js COMPOSITION_ANCHORS (tests/studio/graphic-integration.test.mjs keeps them equal).
+const COMPOSITION_ANCHORS = Object.freeze(['center', 'top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right'])
 const VARIANT_KINDS = Object.freeze(['short', 'language', 'hook'])
 const MAX_REPAIR_ROUNDS = 3
 // An autoRepair job's phases, at most: apply; per QA round qa, keyframes,
@@ -165,13 +167,22 @@ const CAPABILITY_TOOLS = Object.freeze([
     name: 'studio_add_graphic',
     profiles: ['agent'],
     owner: 'FILM-2018',
-    available: false,
+    available: true,
     annotations: write,
-    description: 'A brand composition clip (lower third, title, end card). Not available until FILM-2018.',
+    description: 'Places a brand graphic: a composition clip drawn from the catalogue (studio_get_context compositions: text, counter, callout, arrow, highlight, lower-third, chart, map, timeline, progress-bar, each with its props schema) at `at` for `duration` seconds, inside the aspect\'s safe area and clear of the captions on screen with it unless you give an anchor. `text` fills the primitive\'s main props (a counter reads "87%" as to 87, suffix %; a chart "Q1 12, Q2 18"; a lower third "Name, Title"); `props` sets or overrides the rest and is checked against the schema. A counter or callout lands with a pop SFX (the project\'s own pop, else the built-in one). Preview first, as studio_edit: cards and a planId, then previewOnly false with the planId. The graphic renders in the background; a placeholder shows until it lands.',
     inputSchema: {
       type: 'object',
       required: ['kind', 'text', 'at', 'duration'],
-      properties: { kind: { type: 'string' }, text: { type: 'string' }, at: { type: 'number' }, duration: { type: 'number' }, anchor: { type: 'string' }, previewOnly: previewOnlySchema },
+      properties: {
+        kind: { type: 'string', description: 'A catalogue id or a name for one: text (text_graphic, title), counter, callout, arrow, highlight, lower-third (lower_third), chart, map, timeline, progress-bar (progress).' },
+        text: { type: 'string', description: 'The words or numbers the graphic shows; read into the primitive\'s main props.' },
+        at: { type: 'number', minimum: 0, description: 'Start on the timeline, in seconds.' },
+        duration: { type: 'number', description: 'Seconds on screen, more than 0 and at most 60.' },
+        anchor: { type: 'string', enum: COMPOSITION_ANCHORS, description: 'Where in the safe area. Omit to use the primitive\'s own anchor, moved clear of captions.' },
+        props: { type: 'object', description: 'Primitive props over what `text` gives, e.g. {"from": 50} for a counter or {"x": 0.6, "y": 0.2, "width": 0.3, "height": 0.4} for a highlight. Unknown props are refused.' },
+        previewOnly: previewOnlySchema,
+        planId: { type: 'string', description: 'With previewOnly false: the planId the preview returned.' },
+      },
       additionalProperties: false,
     },
   },
@@ -374,6 +385,9 @@ function promoteResyncPackage(projectDir) {
   return true
 }
 
+// studio_add_graphic's arguments as the compiler's params (no previewOnly or planId).
+const graphicParams = ({ kind, text, at, duration, anchor, props }) => ({ kind, text, at, duration, ...(anchor === undefined ? {} : { anchor }), ...(props === undefined ? {} : { props }) })
+
 function createCapabilityTools({
   performAction = null,
   callPrimitive,
@@ -501,6 +515,13 @@ function createCapabilityTools({
       key: (args) => ({ intent: 'captions:add_captions', scope: {}, params: { language: args.language, ...(args.style ? { style: args.style } : {}) } }),
       applyArgs: (args) => ({ language: args.language, ...(args.style ? { style: args.style } : {}) }),
       versionName: (compiled, args) => `AI: captions (${args.language})`,
+    },
+    graphic: {
+      tool: 'studio_add_graphic',
+      compile: (args) => compileWithReads({ intent: 'graphic:add_graphic', scope: {}, params: graphicParams(args), writable: writable() }),
+      key: (args) => ({ intent: 'graphic:add_graphic', scope: {}, params: graphicParams(args) }),
+      applyArgs: (args) => graphicParams(args),
+      versionName: (compiled) => `AI: ${compiled.prompt}`.slice(0, 120),
     },
     repair: {
       tool: 'studio_repair',
@@ -807,6 +828,8 @@ function createCapabilityTools({
         return planTool('audio')(args, { source, onProgress })
       case 'studio_add_captions':
         return planTool('captions')(args, { source })
+      case 'studio_add_graphic':
+        return planTool('graphic')(args, { source })
       default:
         return notAvailable(tool)
     }
