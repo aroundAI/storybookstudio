@@ -40,7 +40,8 @@ jobs:
 
   pack:
     name: Packaged macOS app identity (arm64)
-    runs-on: macos-14
+    # macos-15, as release.yml: the pinned MoltenVK needs the Xcode 16 Metal SDK; macos-14 fails to link.
+    runs-on: macos-15
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v6
