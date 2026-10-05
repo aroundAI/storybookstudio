@@ -63,6 +63,7 @@ import {
 } from './exportFrameSource'
 import { applyTransitionClip, getFadeOverlayInfo, getTransitionCanvasStyle } from '../utils/transitionStyles'
 import { isFullBakeFresh } from '../utils/clipBakeSignature'
+import { isCompositionClip } from '../studio/compositions/clip.js'
 import { getClipPlaybackTimeAtTimeline, getClipPlaybackTimingAtTimeline } from '../utils/clipPlaybackTiming'
 import {
   FRAME_SAMPLING_MODE,
@@ -1527,9 +1528,12 @@ const runExportTimeline = async (options, onProgress, scheduler) => {
   // Full render bakes (cacheKind 'full') turn any clip type — including
   // text/shape — into a video source, so they ride the video loading path.
   // Stale bakes (content signature mismatch) are excluded and render live.
+  // FILM-2018: a composition clip exports its render the same way, as an
+  // alpha overlay on the layers below.
   const videoClips = timelineState.clips.filter(c => (
     c.type === 'video'
     || (useCachedRenders && isFullBakeFresh(c))
+    || isCompositionClip(c)
   ))
   const imageClips = timelineState.clips.filter(c => c.type === 'image')
 
@@ -1575,6 +1579,27 @@ const runExportTimeline = async (options, onProgress, scheduler) => {
         }
       }
     }
+  }
+
+  // A graphic whose render has not landed would export as nothing; refuse
+  // instead, as the Studio delivery does (previewRender.js).
+  for (const clip of renderableVideoClips) {
+    if (!isCompositionClip(clip)) continue
+    const renderPath = clip.composition?.renderPath
+    let renderUrl = null
+    if (renderPath && typeof projectState.currentProjectHandle === 'string') {
+      try {
+        const filePath = await window.electronAPI.pathJoin(projectState.currentProjectHandle, renderPath)
+        if (!window.electronAPI.exists || await window.electronAPI.exists(filePath)) renderUrl = await window.electronAPI.getFileUrlDirect(filePath)
+      } catch (error) {
+        console.warn('Export: could not resolve a composition render:', getMediaErrorMessage(error))
+      }
+    }
+    renderUrl ||= renderPath ? clip.composition?.renderUrl || null : null
+    if (!renderUrl) {
+      throw new Error(`Cannot export — the graphic "${clip.name || clip.id}" has not rendered yet. Wait for it to render, or remove it.`)
+    }
+    cachedVideoSources.set(clip.id, renderUrl)
   }
 
   for (const clip of renderableVideoClips) {
@@ -2434,7 +2459,7 @@ const runExportTimeline = async (options, onProgress, scheduler) => {
       // adjustments, masks, speed, and text animation inside the baked
       // file; only opacity + blend mode (and transitions) stay live.
       const fullBakeUrl = cachedVideoSources.get(clip.id) || null
-      const isFullBake = !!fullBakeUrl && clip.cacheKind === 'full'
+      const isFullBake = !!fullBakeUrl && (clip.cacheKind === 'full' || isCompositionClip(clip))
       const resolveClipTransformAtTime = (sampleClipTime) => scaleTransformToExport(
         applyEffectsToTransform(getAnimatedTransform(clip, sampleClipTime) || clip.transform || {}, getRenderEffects(clip), sampleClipTime)
       )
@@ -2679,10 +2704,14 @@ const runExportTimeline = async (options, onProgress, scheduler) => {
         const video = sourceUrl ? videoElements.get(sourceUrl) : null
         if (!video) continue
         
+        // A composition render spans the whole graphic; a trimmed clip
+        // starts trimStart into it. A bake spans exactly the clip.
+        const bakeOffset = isCompositionClip(clip) ? Math.max(0, Number(clip.trimStart) || 0) : 0
+        const bakeLength = isCompositionClip(clip) ? (Number(clip.sourceDuration) || Number(clip.duration) || 0) : (Number(clip.duration) || 0)
         const sourceTiming = usingCachedRender
           ? {
-              time: clamp(clipTime, 0, Math.max(0, (Number(clip.duration) || 0) - 0.001)),
-              maxTime: Number(clip.duration) || 0,
+              time: clamp(bakeOffset + clipTime, 0, Math.max(0, bakeLength - 0.001)),
+              maxTime: bakeLength,
             }
           : getClipPlaybackTimingAtTimeline(clip, time, 0.001, {
               useFrameSampling: false,

@@ -41,6 +41,7 @@ import { cullVisualLayerEntries, getTransitionClipIds } from '../utils/layerComp
 import { parseTrackMatte, resolveTrackMatteAssignments, applyTrackMatteToCanvas } from '../utils/trackMatte'
 import { applyTransitionClip, getFadeOverlayInfo, getTransitionStyleForClip } from '../utils/transitionStyles'
 import { isFullBakeFresh } from '../utils/clipBakeSignature'
+import { compositionRenderReady, compositionRenderUrl, drawCompositionPlaceholder, isCompositionClip } from '../studio/compositions/clip.js'
 import { getMotionBlurSamples, getVelocityMotionBlurOptions } from '../utils/motionBlur'
 import { hasSpeedRamp, getRampedSpeedAtTime } from '../utils/timeRemap'
 import {
@@ -124,6 +125,8 @@ function getOpticalFlowContextOptions(clip) {
 // source time with the same speed/ramp/reverse/trim math the preview uses.
 function resolvePreviewUrl(clip, getAssetById, useProxyPlaybackForAssets) {
   if (!clip) return null
+  // FILM-2018: a composition clip plays its render, once one has landed.
+  if (isCompositionClip(clip)) return compositionRenderUrl(clip)
   // Render caches: legacy (mask) bakes apply to video clips; full bakes
   // (cacheKind 'full') turn any clip type into a video source but are only
   // used while their content signature is fresh.
@@ -1023,7 +1026,8 @@ function CanvasPreviewRenderer({
     // text animation inside the baked file; only opacity + blend mode (and
     // transitions) stay live. Stale bakes (content edited since render)
     // automatically fall back to the live path.
-    const isFullBake = isFullBakeFresh(clip)
+    // A composition render is a bake too: its graphic is drawn in the file.
+    const isFullBake = isFullBakeFresh(clip) || compositionRenderReady(clip)
     const transitionStyle = getTransitionStyleForClip(transitionInfo, clip)
     const resolveClipTransformAtTime = (sampleClipTime) => (
       applyEffectsToTransform(getAnimatedTransform(clip, sampleClipTime) || clip.transform || {}, getRenderEffects(clip), sampleClipTime)
@@ -1105,7 +1109,11 @@ function CanvasPreviewRenderer({
     if (blurPx != null) filterParts.push(`blur(${blurPx}px)`)
     offCtx.filter = filterParts.length > 0 ? filterParts.join(' ') : 'none'
 
-    if ((clip.type === 'text' || clip.type === 'shape' || clip.type === 'captions') && !isFullBake) {
+    if (isCompositionClip(clip) && !isFullBake) {
+      // FILM-2018: no render yet; a placeholder until it lands.
+      drawCompositionPlaceholder(offCtx, { width, height }, clip)
+      offCtx.restore()
+    } else if ((clip.type === 'text' || clip.type === 'shape' || clip.type === 'captions') && !isFullBake) {
       const isShapeClip = clip.type === 'shape'
       const isCaptionsClip = clip.type === 'captions'
       const getTextShapeFrame = (sampleClipTime) => {
@@ -1523,7 +1531,7 @@ function CanvasPreviewRenderer({
     const getAssetById = useAssetsStore.getState().getAssetById
     const videoTrackIds = new Set(state.tracks.filter(t => t.type === 'video').map(t => t.id))
     state.clips.forEach((clip) => {
-      if (!videoTrackIds.has(clip.trackId) || clip.type !== 'video' || clip.enabled === false) return
+      if (!videoTrackIds.has(clip.trackId) || (clip.type !== 'video' && !compositionRenderReady(clip)) || clip.enabled === false) return
       const plan = getClipPreviewPreloadPlan({ ...state, clip, time, lookahead: PRELOAD_LOOKAHEAD })
       if (!plan) return
       const url = resolvePreviewUrl(clip, getAssetById, state.useProxyPlaybackForAssets)
@@ -1689,7 +1697,7 @@ function CanvasPreviewRenderer({
       const jumpVideos = new Set()
       if (shouldGateVideoReadiness) {
         for (const { clip, allowHandles, role } of videoReadinessEntries) {
-          if (!clip || (clip.type !== 'video' && !isFullBakeFresh(clip))) continue
+          if (!clip || (clip.type !== 'video' && !isFullBakeFresh(clip) && !compositionRenderReady(clip))) continue
           const seekDriven = isSeekDrivenPlayback(state, clip)
           const isTransitionClip = role === 'picture' && !!allowHandles
           if (state.isPlaying && !playbackJump && !seekDriven && !isTransitionClip && !loopSeekHoldActive) continue
@@ -1858,7 +1866,7 @@ function CanvasPreviewRenderer({
           applyAdjustmentLayer(stageCtx, clip, time, frameIndex, clipState)
           continue
         }
-        if (clip.type === 'video' || clip.type === 'image' || clip.type === 'text' || clip.type === 'shape' || clip.type === 'captions') {
+        if (clip.type === 'video' || clip.type === 'image' || clip.type === 'text' || clip.type === 'shape' || clip.type === 'captions' || isCompositionClip(clip)) {
           const status = drawVisualClip(stageCtx, entry, time, transitionInfo, clipState, frameIndex, matteEntryByClipId.get(clip.id) || null)
           if (status === 'unready') sawUnreadyVisual = true
         }

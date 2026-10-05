@@ -208,7 +208,10 @@ function createPreviewRenderer(options = {}) {
   // aspect's safe area, as a burned delivery must; encoder 'intermediate' is
   // a near-lossless .mov with PCM audio for the media-preparation queue's
   // delivery encode.
-  async function renderVideo({ project, projectDir, timelineId = null, range = null, scene = null, output = null, shortSide = SCENE_PREVIEW_SHORT_SIDE, fullSize = false, size: frameOverride = null, fps = SCENE_PREVIEW_FPS, encoder = 'libx264', preferProxy = true, captions = true, captionsSafeArea = null, audio = true, policy = null, language = null, loudnessTargetLufs = null, signal } = {}) {
+  // A composition clip whose render has not landed is a gap in a preview
+  // (allowMissingCompositions) and an error in anything else: a delivery
+  // never ships without its graphics.
+  async function renderVideo({ project, projectDir, timelineId = null, range = null, scene = null, output = null, shortSide = SCENE_PREVIEW_SHORT_SIDE, fullSize = false, size: frameOverride = null, fps = SCENE_PREVIEW_FPS, encoder = 'libx264', preferProxy = true, captions = true, captionsSafeArea = null, audio = true, policy = null, language = null, loudnessTargetLufs = null, allowMissingCompositions = false, signal } = {}) {
     const started = Date.now()
     const [plan, graph, layout] = await Promise.all([loadPlan(), loadGraph(), loadLayout()])
     const [from, to] = resolveRange(plan, project, { range, scene, timelineId })
@@ -218,6 +221,20 @@ function createPreviewRenderer(options = {}) {
     const video = graph.sceneVideoGraph(segments, { from, to, size, fps })
     const chains = [video.filter]
     let videoOut = video.out
+    const overlays = []
+    for (const overlay of plan.compositionOverlays(project, { timelineId, projectDir })) {
+      if (overlay.end <= from + plan.EPS || overlay.start >= to - plan.EPS) continue
+      const ready = overlay.file ? await fsp.stat(overlay.file).then((stat) => stat.size > 0, () => false) : false
+      if (ready) overlays.push(overlay)
+      else if (!allowMissingCompositions) {
+        throw Object.assign(new Error(`The graphic "${overlay.name}" has not rendered yet; wait for it or remove it.`), { code: 'COMPOSITION_NOT_RENDERED', details: { clipId: overlay.clipId, renderPath: overlay.renderPath } })
+      }
+    }
+    const composited = graph.compositionOverlayGraph(overlays, { from, to, size, fps, base: videoOut, inputOffset: video.inputs.length })
+    if (composited.inputs.length) {
+      chains.push(composited.filter)
+      videoOut = composited.out
+    }
     const workDir = path.join(projectDir, PREVIEW_DIR, `.work-${crypto.randomUUID()}`)
     try {
       let cues = captions && fontFile ? plan.captionCues(project, { timelineId, language }).filter((entry) => entry.end > from && entry.start < to) : []
@@ -231,7 +248,7 @@ function createPreviewRenderer(options = {}) {
         chains.push(`[${videoOut}]${draw.join(',')}[vcap]`)
         videoOut = 'vcap'
       }
-      const inputs = [...video.inputs]
+      const inputs = [...video.inputs, ...composited.inputs]
       let audioOut = null
       let mixed = null
       if (audio) {
@@ -253,13 +270,13 @@ function createPreviewRenderer(options = {}) {
       args.push(...encode, '-pix_fmt', 'yuv420p', '-r', String(fps), ...(encoder === 'intermediate' ? [] : ['-movflags', '+faststart']), '-t', String(to - from), '-y', file)
       await runFfmpegOrThrow(ffmpegPath, args, { signal })
       const ms = Date.now() - started
-      return { file, range: [from, to], duration: to - from, width: size.width, height: size.height, fps, encoder, ms, realtimeFactor: (to - from) / (ms / 1000), captionCues: cues.length, audioClips: mixed?.clips ?? 0, loudness: mixed?.loudness ?? null }
+      return { file, range: [from, to], duration: to - from, width: size.width, height: size.height, fps, encoder, ms, realtimeFactor: (to - from) / (ms / 1000), captionCues: cues.length, compositions: composited.inputs.length, audioClips: mixed?.clips ?? 0, loudness: mixed?.loudness ?? null }
     } finally {
       await fsp.rm(workDir, { recursive: true, force: true }).catch(() => {})
     }
   }
 
-  const renderScenePreview = (args = {}) => renderVideo({ ...args, fullSize: false, shortSide: SCENE_PREVIEW_SHORT_SIDE, fps: SCENE_PREVIEW_FPS, preferProxy: true })
+  const renderScenePreview = (args = {}) => renderVideo({ ...args, fullSize: false, shortSide: SCENE_PREVIEW_SHORT_SIDE, fps: SCENE_PREVIEW_FPS, preferProxy: true, allowMissingCompositions: true })
 
   return { renderKeyframes, renderScenePreview, renderAudioMix, renderVideo, fontFile, ffmpegPath, ffprobePath }
 }
