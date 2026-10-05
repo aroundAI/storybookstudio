@@ -37,3 +37,25 @@ jobs:
       - run: node --test tests/studio/no-upstream-names.test.mjs
         env:
           REQUIRE_DIST: '1'
+
+  pack:
+    name: Packaged macOS app identity (arm64)
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # Unsigned and not notarized: this proves the app packs and carries its identity.
+      - run: npx electron-builder --mac --arm64 --dir
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - run: test -f release/mac-arm64/StorybookStudio.app/Contents/Info.plist
+      # The test skips without a packed app; REQUIRE_PACKED makes that a failure.
+      - run: node --test tests/studio/no-upstream-names.test.mjs
+        env:
+          REQUIRE_PACKED: '1'
