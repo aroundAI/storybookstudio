@@ -9,6 +9,13 @@
 //   a render row per language (AC6);
 // - burned Devanagari is shaped (conjuncts, vowel signs in order) and kept in
 //   the 9:16 safe area.
+// - graphics: a master with a lower third and a callout; the Hindi variant
+//   renders each once for Hindi with its words (the agent's, and the dub of
+//   the line the callout quotes), refit and lengthened, composites it, and
+//   passes QA; an over-long Hindi title fails QA as
+//   localized_text_exceeds_container naming the graphic (AC3, AC4); and
+//   studio_deliver in en and hi plays each language's graphic. The graphics
+//   engine is the test card (helpers/testcard-engine.mjs).
 // The spoken-language check runs a tone detector here (helpers/languages.mjs);
 // with STUDIO_WHISPER_CLI and STUDIO_WHISPER_MODEL set, the last test runs
 // whisper.cpp on synthesized Hindi speech.
@@ -20,10 +27,12 @@ import path from 'node:path'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { makeLanguageProject, toneDetector, TEXTS } from './helpers/languages.mjs'
-import { fakePrepare, fakeStoryBook, waitForJob, SESSION_ID } from './helpers/delivery.mjs'
+import { fakePrepare, fakeRender, fakeStoryBook, passingQa, waitForJob, SESSION_ID } from './helpers/delivery.mjs'
 import { checkCaptionSafeArea } from '../../src/studio/captions/style.js'
 import { SAFE_AREAS } from '../../src/studio/captions/layout.js'
 import { captionAssScript } from '../../src/studio/review/renderGraph.js'
+import { brandTokensFor, resolveCompositionProps } from '../../src/studio/compositions/catalogue.js'
+import { createTestcardEngine } from './helpers/testcard-engine.mjs'
 
 const require = createRequire(import.meta.url)
 const ffmpegPath = require('ffmpeg-static')
@@ -33,6 +42,7 @@ const { createPreviewRenderer } = require('../../electron/studio/previewRender.j
 const { createLanguageDetector } = require('../../electron/studio/languageCheck.js')
 const { createJobRegistry } = require('../../electron/studio/jobs.js')
 const { createStoryBookClient } = require('../../electron/studio/client.js')
+const { createCompositionRenderer } = require('../../electron/studio/compositionRenderer.js')
 
 const DEVANAGARI = /[ऀ-ॿ]/
 const saved = (dir) => JSON.parse(fs.readFileSync(path.join(dir, 'project.storybookstudio'), 'utf8'))
@@ -231,4 +241,129 @@ test('whisper.cpp hears Hindi in the Hindi render and English in the English one
   assert.equal(hindi.language, 'hi', JSON.stringify(hindi))
   const english = await detect(speak('Samantha', 'We have to go now. Did you hear that sound? Close the door, quickly.', 'en'))
   assert.equal(english.language, 'en', JSON.stringify(english))
+})
+
+// The master's graphics: a lower third at 1-4 s, and at 6-8 s a callout
+// quoting the first dialogue line word for word, both showing words.
+function addGraphics(dir, pkg) {
+  const document = saved(dir)
+  const master = document.timelines[0]
+  const graphic = (id, compositionId, props, startTime, duration) => ({
+    id, trackId: 'video-graphics', name: compositionId, type: 'composition', startTime, duration, sourceDuration: duration, trimStart: 0, trimEnd: duration, enabled: true,
+    composition: { engine: 'testcard', compositionId, props: resolveCompositionProps(compositionId, props), propsHash: null, renderPath: null, languageDependency: 'language' },
+  })
+  master.tracks = [{ id: 'video-graphics', name: 'Graphics', type: 'video', visible: true, muted: false, locked: false }, ...master.tracks]
+  master.clips.push(graphic('clip-graphic-1', 'lower-third', { name: 'Maya Rao', title: 'Head of research' }, 1, 3), graphic('clip-graphic-2', 'callout', { text: pkg.dialogue[0].text }, 6, 2))
+  fs.writeFileSync(path.join(dir, 'project.storybookstudio'), JSON.stringify(document))
+}
+
+// One pixel of a frame of an H.264 file, RGB.
+const pixel = (file, time, x, y) => [...execFileSync(ffmpegPath, ['-v', 'error', '-ss', String(time), '-i', file, '-frames:v', '1', '-vf', `crop=2:2:${x}:${y},format=rgb24`, '-f', 'rawvideo', '-pix_fmt', 'rgb24', 'pipe:1']).subarray(0, 3)]
+const near = (a, b, tolerance = 40) => a.every((value, index) => Math.abs(value - b[index]) <= tolerance)
+const hex = (colour) => [1, 3, 5].map((at) => parseInt(colour.slice(at, at + 2), 16))
+
+const HI_NAME = 'माया राव'
+const HI_TITLE = 'ऊर्जा भंडारण अनुसंधान विभाग की प्रमुख वैज्ञानिक'
+// 75 characters: inside the schema's 80, three lines at the floor where two fit.
+const HI_TITLE_TOO_LONG = 'हाइड्रोजन भंडारण अनुसंधान, ग्रिड एकीकरण और युग्मन विभाग की प्रमुख वैज्ञानिक'
+
+test('graphics: the Hindi variant renders each graphic once in Hindi, refit and lengthened, composites it, and passes QA; the master keeps its words', async (t) => {
+  const { dir, pkg } = makeLanguageProject(t, { languages: ['hi'] })
+  addGraphics(dir, pkg)
+  const engine = createTestcardEngine()
+  const compositions = createCompositionRenderer({ engines: { testcard: engine } })
+  const deliver = deliverFor(dir, { renderComposition: (request) => compositions.render(request) })
+  const graphics = { 'clip-graphic-1': { name: HI_NAME, title: HI_TITLE } }
+
+  const preview = await deliver.createVariant({ kind: 'language', language: 'hi', presets: ['youtube_16x9'], graphics })
+  assert.deepEqual(preview.graphics.map((entry) => [entry.clipId, entry.sources, entry.fits]), [
+    ['clip-graphic-1', { name: 'agent', title: 'agent' }, true],
+    ['clip-graphic-2', { text: 'dub' }, true],
+  ], 'the agent\'s words for the lower third; the callout quotes a dialogue line, so it takes that line\'s dub')
+  assert.deepEqual(preview.graphics[0].slots.find((slot) => slot.key === 'title'), { key: 'title', text: HI_TITLE, fontScale: 0.7, lines: ['ऊर्जा भंडारण अनुसंधान विभाग की', 'प्रमुख वैज्ञानिक'], fits: true, maxLines: 2, step: 'wrap' })
+  assert.equal(preview.graphics[0].durationSeconds, 3.6, 'lengthened by the 20% cap')
+  assert.equal(preview.cards[1].heading, 'Graphics in hi: 2 of 2 translated')
+  assert.equal(engine.calls.length, 0, 'a preview renders nothing')
+
+  const result = await deliver.createVariant({ kind: 'language', language: 'hi', presets: ['youtube_16x9'], graphics, previewOnly: false })
+  const master = saved(dir).timelines[0]
+  const lowerThird = master.clips.find((clip) => clip.id === 'clip-graphic-1')
+  assert.deepEqual(lowerThird.composition.localized, { hi: { text: { name: HI_NAME, title: HI_TITLE }, sources: { name: 'agent', title: 'agent' } } })
+  assert.equal(lowerThird.composition.props.title, 'Head of research', 'the master clip keeps its words')
+  assert.equal(lowerThird.duration, 3, 'and its length')
+
+  // Each graphic rendered once, for Hindi: its Hindi props and the refit.
+  assert.deepEqual(engine.calls.map((job) => [job.compositionId, job.props.name ?? job.props.text, job.props.title ?? null, job.durationSeconds]), [
+    ['lower-third', HI_NAME, HI_TITLE, 3.6],
+    ['callout', TEXTS.hi[0], null, 2],
+  ])
+  assert.deepEqual(engine.calls[0].fit.slots.title, { fontScale: 0.7, lines: ['ऊर्जा भंडारण अनुसंधान विभाग की', 'प्रमुख वैज्ञानिक'] })
+  const [render] = result.renders
+  assert.deepEqual(render.graphics.map((entry) => [entry.clipId, /^compositions\/(lower-third|callout)-[0-9a-f]{64}\.webm$/.test(entry.renderPath)]), [['clip-graphic-1', true], ['clip-graphic-2', true]])
+  assert.ok(render.graphics.every((entry) => fs.existsSync(path.join(dir, entry.renderPath))))
+  assert.equal(render.qa.pass, true, JSON.stringify(render.qa.issues))
+  assert.equal(render.qa.issues.some((issue) => issue.type === 'localized_text_exceeds_container'), false)
+  assert.equal(render.languageCheck.state, 'pass')
+
+  // Composited at the clip's time, for its lengthened 3.6 s (the master's ends at 4 s).
+  const primary = hex(brandTokensFor('lower-third', pkg.brand)['colors.primary'])
+  assert.ok(near(pixel(render.file, 2, 960, 540), primary), 'the Hindi graphic plays at 2 s')
+  assert.ok(near(pixel(render.file, 4.3, 960, 540), primary), 'and still at 4.3 s, inside its 20% extension')
+  assert.equal(near(pixel(render.file, 0.5, 960, 540), primary), false, 'not before it starts')
+  assert.equal(near(pixel(render.file, 5, 960, 540), primary), false, 'nor after its extension ends')
+
+  // Re-run: the callout's Hindi render is found again (one render per language and words).
+  await deliver.createVariant({ kind: 'language', language: 'hi', presets: ['youtube_16x9'], previewOnly: false })
+  assert.equal(engine.calls.length, 2, 'the kept Hindi words find their renders')
+})
+
+test('graphics: a Hindi title that does not fit at the floor fails QA as localized_text_exceeds_container, naming the graphic', async (t) => {
+  const { dir, pkg } = makeLanguageProject(t, { languages: ['hi'] })
+  addGraphics(dir, pkg)
+  const engine = createTestcardEngine()
+  const compositions = createCompositionRenderer({ engines: { testcard: engine } })
+  const deliver = deliverFor(dir, { renderComposition: (request) => compositions.render(request) })
+  const result = await deliver.createVariant({ kind: 'language', language: 'hi', presets: ['youtube_16x9'], graphics: { 'clip-graphic-1': { name: HI_NAME, title: HI_TITLE_TOO_LONG } }, previewOnly: false })
+  assert.equal(result.graphics[0].fits, false)
+  const [render] = result.renders
+  assert.equal(render.qa.pass, false)
+  const failing = render.qa.issues.filter((issue) => issue.severity >= 0.5)
+  assert.deepEqual(failing.map((issue) => issue.type), ['localized_text_exceeds_container'])
+  assert.match(failing[0].detail, /^localized text exceeds container: graphic clip-graphic-1 \(lower-third\) in hi: title ".+" needs 3 lines at the 70% font floor and holds 2/)
+  assert.deepEqual(failing[0].timeRange, { start: 1, end: 4.6 })
+  assert.equal(engine.calls[0].props.title, HI_TITLE_TOO_LONG, 'it still renders, at the floor, for the review')
+  assert.equal(result.qa.pass, false)
+})
+
+test('graphics: studio_deliver in en and hi plays the master\'s graphic in the English render and the Hindi one in the Hindi render', async (t) => {
+  const { dir, pkg } = makeLanguageProject(t, { languages: ['hi'] })
+  addGraphics(dir, pkg)
+  const engine = createTestcardEngine()
+  const compositions = createCompositionRenderer({ engines: { testcard: engine } })
+  const renders = []
+  const checks = []
+  const render = fakeRender()
+  const jobs = createJobRegistry()
+  const deliver = deliverFor(dir, {
+    jobs,
+    renderComposition: (request) => compositions.render(request),
+    render: async (args) => { renders.push(args); return render(args) },
+    qa: async (args) => { checks.push(args); return passingQa(args) },
+  })
+  await deliver.createVariant({ kind: 'language', language: 'hi', graphics: { 'clip-graphic-1': { name: HI_NAME, title: HI_TITLE } }, previewOnly: false, exportFiles: false })
+  const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'studio-export-'))
+  t.after(() => fs.rmSync(folder, { recursive: true, force: true }))
+  const args = { presets: ['youtube_16x9'], languages: ['en', 'hi'], destination: 'folder', folder }
+  const { summaryHash } = await deliver.studioDeliver(args)
+  const { jobId } = await deliver.studioDeliver({ ...args, confirm: true, confirmationToken: deliver.issueConfirmationToken(summaryHash).token })
+  const job = await waitForJob(jobs, jobId, 60000)
+  assert.equal(job.status, 'done', JSON.stringify(job.failure))
+  const lowerThirdIn = (language) => renders.find((entry) => entry.language === language).project.timelines[0].clips.find((clip) => clip.id === 'clip-graphic-1')
+  assert.equal(lowerThirdIn('en').composition.props.title, 'Head of research', 'the English render: the master as it is')
+  assert.equal(lowerThirdIn('en').composition.renderPath, null)
+  assert.equal(lowerThirdIn('hi').composition.props.title, HI_TITLE, 'the Hindi render: its Hindi words')
+  assert.equal(lowerThirdIn('hi').duration, 3.6)
+  assert.match(lowerThirdIn('hi').composition.renderPath, /^compositions\/lower-third-[0-9a-f]{64}\.webm$/)
+  assert.deepEqual(checks.map((entry) => [entry.language, entry.warnings.map((issue) => issue.type)]), [['en', []], ['hi', []]])
+  assert.equal(engine.calls.length, 2, 'the Hindi graphics, rendered once each')
 })

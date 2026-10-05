@@ -5,8 +5,8 @@
 import React from 'react'
 import { Easing, interpolate } from 'remotion'
 
-import { fitFont, fontStack } from './layout.js'
-import { Overlay, usePrimitive } from './frame.jsx'
+import { fontStack, slotFontSize } from './layout.js'
+import { Overlay, SlotText, usePrimitive } from './frame.jsx'
 
 export const COUNT_SHARE = 0.75
 
@@ -16,9 +16,8 @@ export function counterValue({ from, to, decimals }, frame, durationInFrames) {
   return value.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
 }
 
-export function Counter({ props, brand }) {
-  const { frame, durationInFrames, box, appear } = usePrimitive('counter', props)
-  const widest = `${props.prefix}${counterValue({ ...props, from: props.to }, 0, 1)}${props.suffix}`
+export function Counter({ props, brand, fit }) {
+  const { frame, durationInFrames, box, appear, slots } = usePrimitive('counter', props)
   return (
     <Overlay
       box={box}
@@ -35,12 +34,12 @@ export function Counter({ props, brand }) {
         justifyContent: 'center',
       }}
     >
-      <div style={{ fontSize: fitFont(widest, box.width * 0.86, box.height * (props.label ? 0.5 : 0.62)), fontWeight: 800, lineHeight: 1.05, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+      <div style={{ fontSize: slotFontSize(slots.number, fit), fontWeight: slots.number.weight, lineHeight: 1.05, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
         {props.prefix}
         {counterValue(props, frame, durationInFrames)}
         {props.suffix}
       </div>
-      {props.label ? <div style={{ fontSize: fitFont(props.label, box.width * 0.86, box.height * 0.16), fontWeight: 600, whiteSpace: 'nowrap' }}>{props.label}</div> : null}
+      {props.label ? <div style={{ fontSize: slotFontSize(slots.label, fit), fontWeight: slots.label.weight, whiteSpace: 'nowrap' }}><SlotText slot={slots.label} fit={fit} /></div> : null}
     </Overlay>
   )
 }

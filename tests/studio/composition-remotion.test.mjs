@@ -10,7 +10,9 @@
 // instead of Remotion's download (a machine whose network refuses it).
 //
 // Then every catalogue primitive renders once (FILM-2018 AC3): drawn, inside
-// its footprint, transparent everywhere else.
+// its footprint, transparent everywhere else. And a language render's refit
+// (FILM-2019 AC4) is what Remotion draws: the German title on the two lines
+// the refit measured, inside the width it measured.
 import assert from 'node:assert/strict'
 import { execFile } from 'node:child_process'
 import { existsSync } from 'node:fs'
@@ -22,7 +24,8 @@ import { promisify } from 'node:util'
 
 import { BUNDLE_DIR, buildCompositions } from '../../scripts/build-compositions.mjs'
 import { COMPOSITION_IDS, brandTokensFor, graphicProps } from '../../src/studio/compositions/catalogue.js'
-import { footprintFor } from '../../src/studio/compositions/remotion/layout.js'
+import { footprintFor, lowerThirdNameHeight, textSlots } from '../../src/studio/compositions/remotion/layout.js'
+import { measureEm, refitGraphic } from '../../src/studio/localization/refit.js'
 import { FFMPEG, FFPROBE, removeDir, tempDir } from './helpers/review-media.mjs'
 
 const require = createRequire(import.meta.url)
@@ -125,4 +128,57 @@ test('every primitive renders through Remotion: drawn inside its footprint, tran
       assert.equal(outside, 0, `${id} ${width}x${height} draws nothing outside its footprint`)
     }
   }
+})
+
+test('a refit German lower third is drawn as measured: on the two lines the refit broke it into, inside the slot\'s width', { timeout: 10 * 60 * 1000 }, async (t) => {
+  await prepare(t)
+  const engine = createRemotionEngine({ serveUrl: BUNDLE_DIR, browserExecutable })
+  t.after(() => engine.close())
+  const dir = await tempDir('remotion-refit')
+  t.after(() => removeDir(dir))
+  const master = graphicProps('lower-third', 'Maya Rao, Head of storage research')
+  const props = { ...master, title: 'Leiterin der Forschung für Energiespeicher und Netze' }
+  const frame = { width: W, height: H }
+  const refit = refitGraphic({ compositionId: 'lower-third', props, masterProps: master, frame, durationSeconds: 1.5 })
+  assert.equal(refit.fit.slots.title.lines.length, 2)
+  const box = footprintFor('lower-third', props, frame)
+  const slot = textSlots('lower-third', props, box).find((entry) => entry.key === 'title')
+  const accent = Math.round(box.height * 0.08)
+  const textLeft = box.x + accent + Math.round(box.height * 0.12)
+  const stripTop = box.y + lowerThirdNameHeight(box, props)
+
+  // The title strip's white text, as rows of ink (bands) and its right edge.
+  const ink = async (fit) => {
+    const outputPath = path.join(dir, `lower-third-${fit ? 'fit' : 'master'}.webm`)
+    await engine.render({ compositionId: 'lower-third', props, brand: brandTokensFor('lower-third', {}), durationSeconds: 1.5, width: W, height: H, fps: 24, fit, outputPath })
+    const pixels = await frameRgba(outputPath, 1.4, W, H)
+    // Each band: its rows' rightmost ink.
+    const bands = []
+    for (let y = stripTop; y < box.y + box.height; y += 1) {
+      let right = -1
+      for (let x = box.x + accent; x < box.x + box.width; x += 1) {
+        const at = (y * W + x) * 4
+        if (pixels[at] > 200 && pixels[at + 1] > 200 && pixels[at + 2] > 200 && pixels[at + 3] > 200) right = x
+      }
+      if (right < 0) continue
+      const last = bands.at(-1)
+      if (last && y - last.bottom <= 2) Object.assign(last, { bottom: y, right: Math.max(last.right, right) })
+      else bands.push({ top: y, bottom: y, right })
+    }
+    return bands.map((band) => band.right - textLeft + 1)
+  }
+  const fitted = await ink(refit.fit)
+  const unfitted = await ink(null)
+  const fontSize = slot.maxFont * refit.fit.slots.title.fontScale
+  const measured = refit.fit.slots.title.lines.map((line) => Math.round(measureEm(line, { weight: slot.weight }) * fontSize))
+  t.diagnostic(`refit lines drawn ${fitted.join(', ')} px wide, measured ${measured.join(', ')} px, of a ${Math.round(slot.width)} px line; without the refit: ${unfitted.length} line`)
+  assert.equal(fitted.length, 2, 'the refit\'s two lines')
+  assert.equal(unfitted.length, 1, 'the master\'s one-line fit, without the refit')
+  fitted.forEach((width, index) => {
+    assert.ok(width <= slot.width, `line ${index + 1} is inside its slot (${width} of ${slot.width} px)`)
+    // The model measures a little wide, so what it says fits is not clipped, and not by much.
+    // How much depends on the platform's system-ui: Linux's fallback draws 2-13% under the
+    // model, macOS's San Francisco about 15% under (CI: 448 of 529 px, 469 of 550 px).
+    assert.ok(width <= measured[index] && width >= measured[index] * 0.8, `line ${index + 1}: drawn ${width} px, measured ${measured[index]} px`)
+  })
 })

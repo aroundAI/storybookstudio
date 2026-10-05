@@ -3,11 +3,11 @@
 // Brand: colors.primary, colors.captionText, fonts.heading.
 import React from 'react'
 
-import { fitFont, fontStack } from './layout.js'
-import { Overlay, usePrimitive } from './frame.jsx'
+import { fontStack, slotFontSize } from './layout.js'
+import { Overlay, SlotText, usePrimitive } from './frame.jsx'
 
-export function Text({ props, brand }) {
-  const { box, appear } = usePrimitive('text', props)
+export function Text({ props, brand, fit }) {
+  const { box, appear, slots } = usePrimitive('text', props)
   const color = brand['colors.captionText'] || '#FFFFFF'
   return (
     <Overlay
@@ -26,8 +26,8 @@ export function Text({ props, brand }) {
         textShadow: props.plate ? 'none' : '0 2px 8px rgba(0, 0, 0, 0.6)',
       }}
     >
-      <div style={{ fontSize: fitFont(props.text, box.width * 0.9, box.height * (props.subtitle ? 0.42 : 0.55)), fontWeight: 800, whiteSpace: 'nowrap' }}>{props.text}</div>
-      {props.subtitle ? <div style={{ fontSize: fitFont(props.subtitle, box.width * 0.9, box.height * 0.2), fontWeight: 500, whiteSpace: 'nowrap' }}>{props.subtitle}</div> : null}
+      <div style={{ fontSize: slotFontSize(slots.text, fit), fontWeight: slots.text.weight, whiteSpace: 'nowrap' }}><SlotText slot={slots.text} fit={fit} /></div>
+      {props.subtitle ? <div style={{ fontSize: slotFontSize(slots.subtitle, fit), fontWeight: slots.subtitle.weight, whiteSpace: 'nowrap' }}><SlotText slot={slots.subtitle} fit={fit} /></div> : null}
     </Overlay>
   )
 }

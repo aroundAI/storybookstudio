@@ -6,13 +6,13 @@
 import React from 'react'
 import { Easing, interpolate } from 'remotion'
 
-import { fitFont, fontStack } from './layout.js'
-import { Overlay, usePrimitive } from './frame.jsx'
+import { fontStack, mapLabelHeight, slotFontSize } from './layout.js'
+import { Overlay, SlotText, usePrimitive } from './frame.jsx'
 
-export function MapMarker({ props, brand }) {
-  const { frame, fps, box, appear, progress } = usePrimitive('map', props)
+export function MapMarker({ props, brand, fit }) {
+  const { frame, fps, box, appear, progress, slots } = usePrimitive('map', props)
   const size = Math.min(box.width, box.height)
-  const labelHeight = Math.round(size * (props.caption ? 0.26 : 0.18))
+  const labelHeight = mapLabelHeight(box, props)
   const ground = { x: box.width / 2, y: (box.height - labelHeight) * 0.78 }
   const drop = interpolate(progress(0, 0.2), [0, 1], [-size * 0.3, 0], { easing: Easing.out(Easing.back(1.6)) })
   const pin = size * 0.22
@@ -29,8 +29,8 @@ export function MapMarker({ props, brand }) {
         </g>
       </svg>
       <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: labelHeight, textAlign: 'center', fontFamily: fontStack(brand['fonts.heading']), textShadow: '0 2px 6px rgba(0, 0, 0, 0.7)', whiteSpace: 'nowrap' }}>
-        <div style={{ fontWeight: 800, fontSize: fitFont(props.place, box.width * 0.95, size * 0.13) }}>{props.place}</div>
-        {props.caption ? <div style={{ fontWeight: 500, fontSize: fitFont(props.caption, box.width * 0.95, size * 0.075) }}>{props.caption}</div> : null}
+        <div style={{ fontWeight: slots.place.weight, fontSize: slotFontSize(slots.place, fit) }}><SlotText slot={slots.place} fit={fit} /></div>
+        {props.caption ? <div style={{ fontWeight: slots.caption.weight, fontSize: slotFontSize(slots.caption, fit) }}><SlotText slot={slots.caption} fit={fit} /></div> : null}
       </div>
     </Overlay>
   )

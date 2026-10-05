@@ -1,8 +1,10 @@
 // FILM-2018: the Remotion entry the composition engine renders from. Every
 // catalogue primitive is one <Composition>; its size, frame rate and length
 // come from the render request (inputProps.render), so one registration
-// serves every aspect. inputProps = {props, brand, render}, built by
-// electron/studio/compositionEngines/remotion.js from the render key.
+// serves every aspect. inputProps = {props, brand, render, fit}, built by
+// electron/studio/compositionEngines/remotion.js from the render key; fit
+// is a language render's refit (FILM-2019, localization/refit.js), absent
+// in the master's.
 import React from 'react'
 import { Composition } from 'remotion'
 
