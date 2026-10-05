@@ -1446,6 +1446,7 @@
       "approveScene": "Approve scene {{scene}}",
       "sceneApplied": "Applied",
       "approveAll": "Approve all",
+      "nothingToChange": "Nothing to change: this plan would leave the timeline as it is.",
       "applying": "Applying…",
       "reject": "Reject",
       "review": "Review",

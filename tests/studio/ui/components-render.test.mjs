@@ -127,3 +127,25 @@ test('a plain upstream project has no scene strip', () => {
   mod.useTimelineStore.setState({ clips: [{ id: 'c1', trackId: 't1', startTime: 0, duration: 5 }], tracks: [{ id: 't1', type: 'video' }], markers: [] })
   assert.equal(mod.render('strip'), '')
 })
+
+test('a no-change "ask" plan shows no Approve all; the drop group is the primary action (task #45)', () => {
+  const { api, emit } = fakeStudioApi()
+  mod.studioUiStore.getState().reset()
+  const stop = mod.startStudioUiBridge({ api, store: mod.studioUiStore, target: null })
+  emit('plan', {
+    phase: 'proposed', planId: 'ask-1', source: 'in-app', tool: 'studio_edit', intent: 'hit_duration', scope: {}, params: { targetSeconds: 60 },
+    instruction: 'make it 60 seconds', cards: [{ scene: null, durationBefore: 99, durationAfter: 99, changes: [] }],
+    proposals: [{ kind: 'dialogue_drops', title: 'Needs your OK: drops 6 lines', durationAfter: 60.4, lines: [{ lineId: 'l1', sequenceNumber: 3, scene: 1, character: 'MAYA', text: 'Did you hear that?', reason: 'Repeats line 2', seconds: 1.6 }], approveWith: { tool: 'studio_edit', arguments: { previewOnly: true } } }],
+  })
+  let html = mod.render('panel')
+  assert.doesNotMatch(html, /data-test="studio-approve-all"/)
+  assert.doesNotMatch(html, /data-test="studio-approve-scene"/)
+  assert.match(html, /data-test="studio-reject"/)
+  assert.match(html, /<button[^>]*bg-sf-accent[^>]*data-test="studio-ask-with-drops"/)
+
+  emit('plan', { phase: 'proposed', planId: 'ask-2', source: 'in-app', tool: 'studio_edit', intent: 'hit_duration', scope: {}, params: {}, instruction: 'make it 98 seconds', cards: [{ scene: null, changes: [] }], proposals: [] })
+  html = mod.render('panel')
+  stop()
+  assert.match(html, /data-test="studio-nothing-to-change"/)
+  assert.equal((html.match(/data-test="studio-approve-all"/g) || []).length, 0)
+})

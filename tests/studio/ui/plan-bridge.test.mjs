@@ -402,3 +402,16 @@ test('a delivery stopped by QA shows that file’s failing QA with its issues, a
   assert.deepEqual(delivery.qa, { 'youtube_16x9-en': qa })
   assert.equal(qaAnnouncement, 'QA stopped the delivery: youtube_16x9-en has 1 issue.')
 })
+
+test('approving a plan that changes nothing is refused before any call (task #45)', async () => {
+  const calls = []
+  const { api, emit } = fakeApi({ callCapability: async (name, args) => { calls.push([name, args]); return mcpResult({ success: true, version: { id: 'v9' } }) } })
+  const store = createStudioUiStore()
+  startStudioUiBridge({ api, store })
+  emit('studio:plan-proposed', { phase: 'proposed', planId: 'ask-1', source: 'in-app', tool: 'studio_edit', intent: 'hit_duration', scope: {}, params: { targetSeconds: 60 }, cards: [{ scene: null, changes: [] }], proposals: [] })
+  const result = await approvePlan({ store, api, runner: fakeRunner().runner, planId: 'ask-1' })
+  assert.equal(result.ok, false)
+  assert.equal(calls.length, 0)
+  assert.equal(store.getState().plans[0].status, 'proposed')
+  assert.equal(store.getState().plans[0].error, 'This plan changes nothing yet.')
+})
