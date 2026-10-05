@@ -37,6 +37,8 @@ import { translateTransitionsForClipMoves } from '../utils/transitionClipMoves.m
 import { isBetweenClipTransition } from '../utils/transitionKinds'
 import { DEFAULT_LINE_THICKNESS, DEFAULT_SHAPE_PROPERTIES, getShapeDisplayName, normalizeShapeProperties } from '../utils/shapes'
 import { normalizeFrameSamplingMode, isOpticalFlowCacheUsable } from '../utils/frameSampling'
+import { buildCompositionFields, isCompositionClip, sameProps } from '../studio/compositions/clip.js'
+import { getComposition, resolveCompositionProps } from '../studio/compositions/catalogue.js'
 import {
   quantizeTimeToFrame as roundToFrame,
   roundDurationToFrame,
@@ -2604,6 +2606,112 @@ export const useTimelineStore = create(
     }))
 
     return newClip
+  },
+
+  /**
+   * FILM-2018: add a composition clip (a catalogue graphic rendered once to an
+   * alpha WebM). It has no media: until a render lands the preview shows a
+   * placeholder; setCompositionRender attaches the file.
+   * @param {string} trackId - Target video track ID
+   * @param {object} options - { engine, compositionId, props?, languageDependency?, duration?, name?, saveHistory? }
+   * @param {number|null} startTime - Start time (null = end of existing clips)
+   * @returns {object|null} the clip; null when the track is not a video track. Throws VALIDATION_FAILED on bad props.
+   */
+  addCompositionClip: (trackId, options = {}, startTime = null) => {
+    const state = get()
+    const track = state.tracks.find(t => t.id === trackId)
+    if (!track || track.type !== 'video') return null
+    const composition = buildCompositionFields(options)
+    const primitive = getComposition(composition.compositionId)
+    const safeClipCounter = getNextClipCounter(state.clips, state.clipCounter || 1)
+    if (options?.saveHistory !== false) get().saveToHistory()
+
+    const fps = state.timelineFps || 24
+    const rawStartTime = startTime ?? state.clips.filter(c => c.trackId === trackId)
+      .reduce((max, clip) => Math.max(max, clip.startTime + clip.duration), 0)
+    const calculatedStartTime = roundToFrame(rawStartTime, fps)
+    const duration = roundDurationToFrame(options.duration || primitive.defaultDurationSeconds, fps)
+    const newClip = {
+      id: `clip-${safeClipCounter}`,
+      trackId,
+      assetId: null,
+      name: options.name || primitive.title,
+      startTime: calculatedStartTime,
+      duration,
+      sourceDuration: duration,
+      trimStart: 0,
+      trimEnd: duration,
+      color: '#7c3aed',
+      type: 'composition',
+      enabled: options?.enabled !== false,
+      url: null,
+      thumbnail: null,
+      composition,
+      transform: { ...createDefaultClipTransform(), blendMode: 'normal' },
+    }
+    const { clips: updatedClips, addedCount } = get().resolveOverlaps(
+      trackId, newClip.id, calculatedStartTime, duration, undefined, safeClipCounter + 1
+    )
+    set((state) => ({
+      clips: [...updatedClips, newClip],
+      clipCounter: Math.max(state.clipCounter, safeClipCounter + 1 + addedCount),
+      selectedClipIds: [newClip.id],
+      duration: Math.max(state.duration, calculatedStartTime + newClip.duration + 10),
+    }))
+    return newClip
+  },
+
+  /**
+   * FILM-2018: new props for a composition clip. The old render no longer
+   * matches, so the clip drops it and shows the placeholder until the new
+   * render lands. Throws VALIDATION_FAILED on bad props.
+   */
+  updateCompositionProps: (clipId, props, options = {}) => {
+    const clip = get().clips.find(c => c.id === clipId)
+    if (!isCompositionClip(clip)) return false
+    const resolved = resolveCompositionProps(clip.composition.compositionId, props)
+    if (sameProps(resolved, clip.composition.props)) return true
+    if (options.saveHistory !== false) get().saveToHistory()
+    set((state) => ({
+      clips: state.clips.map(c => (c.id === clipId
+        ? { ...c, composition: { ...c.composition, props: resolved, propsHash: null, renderPath: null, renderUrl: null, renderError: null } }
+        : c)),
+    }))
+    return true
+  },
+
+  /**
+   * FILM-2018: a render landed. Applied only while the clip still has the
+   * props it was rendered from, so a slow render of old props never replaces
+   * a newer edit. Not an edit itself: no history entry.
+   * @param {object} render - { props, propsHash, renderPath, renderUrl }
+   * @returns {boolean} whether the clip took it
+   */
+  setCompositionRender: (clipId, { props, propsHash, renderPath, renderUrl = null } = {}) => {
+    const clip = get().clips.find(c => c.id === clipId)
+    if (!isCompositionClip(clip) || !sameProps(props, clip.composition.props)) return false
+    if (typeof propsHash !== 'string' || typeof renderPath !== 'string') return false
+    set((state) => ({
+      clips: state.clips.map(c => (c.id === clipId
+        ? { ...c, composition: { ...c.composition, propsHash, renderPath, renderUrl, renderError: null } }
+        : c)),
+    }))
+    return true
+  },
+
+  /**
+   * FILM-2018: the render no longer matches (the brand changed) or failed;
+   * the preview goes back to the placeholder.
+   */
+  clearCompositionRender: (clipId, { error = null } = {}) => {
+    const clip = get().clips.find(c => c.id === clipId)
+    if (!isCompositionClip(clip)) return false
+    set((state) => ({
+      clips: state.clips.map(c => (c.id === clipId
+        ? { ...c, composition: { ...c.composition, propsHash: null, renderPath: null, renderUrl: null, renderError: error } }
+        : c)),
+    }))
+    return true
   },
 
   /**

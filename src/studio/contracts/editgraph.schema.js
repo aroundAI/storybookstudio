@@ -109,12 +109,39 @@ export const ClipMetadataSchema = z
   })
   .passthrough()
 
+// FILM-2018: a composition clip's graphic (src/studio/compositions/clip.js).
+// renderPath is project-relative under compositions/, and named by its key.
+const RenderKeySchema = z.string().regex(/^[0-9a-f]{64}$/, 'propsHash is a sha256 hex digest')
+export const CompositionSchema = z
+  .object({
+    engine: z.string().regex(/^[a-z][a-z0-9-]{0,39}$/),
+    compositionId: z.string().regex(/^[a-z][a-z0-9-]{0,39}$/),
+    props: z.record(z.unknown()),
+    propsHash: RenderKeySchema.nullable(),
+    renderPath: z.string().regex(/^compositions\/[a-z][a-z0-9-]{0,39}-[0-9a-f]{64}\.webm$/, 'renderPath is compositions/<id>-<propsHash>.webm').nullable(),
+    languageDependency: LanguageDependencySchema,
+  })
+  .passthrough()
+  .superRefine((composition, ctx) => {
+    if ((composition.propsHash === null) !== (composition.renderPath === null)) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['renderPath'], message: 'propsHash and renderPath are set together' })
+    } else if (composition.renderPath && composition.renderPath !== `compositions/${composition.compositionId}-${composition.propsHash}.webm`) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['renderPath'], message: 'renderPath is named by compositionId and propsHash' })
+    }
+  })
+
 export const StudioClipSchema = z
   .object({
     id: z.string(),
     metadata: ClipMetadataSchema.nullable().optional(),
+    composition: CompositionSchema.optional(),
   })
   .passthrough()
+  .superRefine((clip, ctx) => {
+    if (clip.type === 'composition' && !clip.composition) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['composition'], message: 'a composition clip carries its composition' })
+    }
+  })
 
 const AspectSchema = z.string().regex(/^\d+:\d+$/, 'aspect is W:H, for example 16:9')
 
