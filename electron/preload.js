@@ -139,6 +139,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
       setPendingWork: (args) => ipcRenderer.invoke('studio:setPendingWork', args),
       confirmQuit: () => ipcRenderer.invoke('studio:confirmQuit'),
       onCloseRequested: subscribe('studio:close-requested'),
+      // FILM-2018: composition clips' render key and render.
+      compositionResolve: (args) => ipcRenderer.invoke('studio:compositionResolve', args),
+      compositionRender: (args) => ipcRenderer.invoke('studio:compositionRender', args),
       // Help > Open-source licenses.
       getLicenses: () => ipcRenderer.invoke('studio:getLicenses'),
       onShowLicenses: subscribe('studio:show-licenses'),

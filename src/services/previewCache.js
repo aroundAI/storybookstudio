@@ -185,6 +185,16 @@ function buildClipSignature(clip) {
     sourceFps: roundNumber(clip.sourceFps),
     timelineFps: roundNumber(clip.timelineFps),
     speed: roundNumber(clip.speed),
+    // FILM-2018: a cached chunk drawn before a graphic's render landed (or
+    // with other props) is stale.
+    ...(clip.composition ? {
+      composition: {
+        compositionId: clip.composition.compositionId || null,
+        props: clip.composition.props || null,
+        propsHash: clip.composition.propsHash || null,
+        renderPath: clip.composition.renderPath || null,
+      },
+    } : {}),
     // Legacy full proxies include sound. Edited EQ/envelopes must never reuse
     // their old mix; current video-only chunks continue using live audio.
     volumeEnvelope: clip.volumeEnvelope || null,

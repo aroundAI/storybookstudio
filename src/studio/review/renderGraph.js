@@ -160,6 +160,29 @@ export function sceneVideoGraph(segments, { from, to, size, fps }) {
   return { inputs, filter: chains.join(';'), out: 'vout' }
 }
 
+// FILM-2018: composition renders composited over the picture `base`, in
+// overlay order (renderPlan.compositionOverlays). Each render is an alpha
+// WebM: libvpx decodes it (FFmpeg's own VP9 decoder drops alpha), it is
+// placed at its clip's time and scaled to the frame. `inputOffset` is the
+// number of inputs before these.
+export function compositionOverlayGraph(overlays, { from, to, size, fps, base, inputOffset = 0 }) {
+  const inputs = []
+  const chains = []
+  let out = base
+  for (const overlay of overlays) {
+    const start = Math.max(overlay.start, from)
+    const end = Math.min(overlay.end, to)
+    if (!overlay.file || end - start <= EPS) continue
+    const n = inputs.length
+    inputs.push(['-c:v', 'libvpx-vp9', '-ss', sec(overlay.sourceStart + (start - overlay.start)), '-t', sec(end - start + 0.1), '-i', overlay.file])
+    const fade = overlay.opacity < 1 - EPS ? `,colorchannelmixer=aa=${round3(overlay.opacity)}` : ''
+    chains.push(`[${inputOffset + n}:v]setpts=PTS-STARTPTS+${sec(start - from)}/TB,fps=${fps},scale=${size.width}:${size.height},format=yuva420p${fade}[co${n}]`)
+    chains.push(`[${out}][co${n}]overlay=eof_action=pass:enable='between(t\\,${sec(start - from)}\\,${sec(end - from)})'[cb${n}]`)
+    out = `cb${n}`
+  }
+  return { inputs, filter: chains.join(';'), out }
+}
+
 const dbFilter = (db) => (Number.isFinite(db) && Math.abs(db) > 1e-3 ? `volume=${round3(db)}dB` : null)
 
 // One clip's chain, from its whole source file to its place in [from, to):

@@ -38,15 +38,16 @@
     "test:shuttle-keyframe-zoom": "node --test ./src/utils/shuttlePlayback.test.mjs ./src/utils/keyframeViewport.test.mjs",
     "dev": "vite",
     "build": "vite build",
+    "build:compositions": "node ./scripts/build-compositions.mjs",
     "icons:generate": "icon-gen -i build/icon.png -o build --ico --ico-name icon --icns --icns-name icon",
     "preview": "vite preview",
     "electron": "electron .",
     "electron:dev": "concurrently -k \"vite --host 127.0.0.1 --port 5173 --strictPort\" \"wait-on http://127.0.0.1:5173 && electron .\"",
-    "electron:build": "npm run build && electron-builder",
-    "electron:build:win": "npm run build && electron-builder --win",
-    "electron:build:mac": "npm run build && electron-builder --mac",
-    "electron:build:linux": "npm run build && electron-builder --linux",
-    "electron:pack": "npm run build && electron-builder --dir",
+    "electron:build": "npm run build && npm run build:compositions && electron-builder",
+    "electron:build:win": "npm run build && npm run build:compositions && electron-builder --win",
+    "electron:build:mac": "npm run build && npm run build:compositions && electron-builder --mac",
+    "electron:build:linux": "npm run build && npm run build:compositions && electron-builder --linux",
+    "electron:pack": "npm run build && npm run build:compositions && electron-builder --dir",
     "rife-runtime:verify": "node ./scripts/runtime-package-gate.cjs rife",
     "runtime:verify-native": "node ./scripts/runtime-package-gate.cjs native",
     "runtime:verify-staged": "node ./scripts/runtime-package-gate.cjs staged",
@@ -111,6 +112,7 @@
     "@anthropic-ai/sdk": "^0.131.0",
     "@derhuerst/ffprobe-static": "5.3.0",
     "@modelcontextprotocol/sdk": "1.18.0",
+    "@remotion/renderer": "4.0.533",
     "@xyflow/react": "^12.10.2",
     "clsx": "^2.0.0",
     "ffmpeg-static": "5.3.0",
@@ -122,11 +124,13 @@
     "mp4box": "^2.4.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "remotion": "4.0.533",
     "zod": "^3.25.76",
     "zustand": "^4.4.7"
   },
   "devDependencies": {
     "@electron/asar": "3.4.1",
+    "@remotion/bundler": "4.0.533",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@vitejs/plugin-react": "^4.2.1",
@@ -167,14 +171,25 @@
       "src/studio/audio/**/*",
       "src/studio/review/**/*",
       "src/studio/critic/**/*",
+      "src/studio/compositions/catalogue.js",
+      "src/studio/compositions/key.js",
       "build/icon.png",
       "package.json",
     "LICENSE",
     "src/studio/legacyNames.json",
       "!node_modules/ffmpeg-static/ffmpeg*",
-      "!node_modules/@derhuerst/ffprobe-static/ffprobe*"
+      "!node_modules/@derhuerst/ffprobe-static/ffprobe*",
+      "!node_modules/@remotion/compositor-*/**"
     ],
     "extraResources": [
+      {
+        "from": "dist-compositions",
+        "to": "compositions",
+        "filter": [
+          "**/*",
+          "!*.bundle.js.map"
+        ]
+      },
       {
         "from": "public/workflows",
         "to": "workflows",
@@ -234,6 +249,16 @@
         }
       ],
       "icon": "build/icon.ico",
+      "extraResources": [
+        {
+          "from": "node_modules/.remotion/chrome-headless-shell/win64",
+          "to": "remotion-browser"
+        },
+        {
+          "from": "node_modules/@remotion/compositor-win32-x64-msvc",
+          "to": "remotion-compositor"
+        }
+      ],
       "artifactName": "${productName}-${version}-windows-${arch}.${ext}",
       "azureSignOptions": {
         "publisherName": "aroundAI",
@@ -260,6 +285,16 @@
         }
       ],
       "icon": "build/icon.icns",
+      "extraResources": [
+        {
+          "from": "node_modules/.remotion/chrome-headless-shell/mac-${arch}",
+          "to": "remotion-browser"
+        },
+        {
+          "from": "node_modules/@remotion/compositor-darwin-${arch}",
+          "to": "remotion-compositor"
+        }
+      ],
       "category": "public.app-category.video",
       "artifactName": "${productName}-${version}-mac-${arch}.${ext}",
       "notarize": true
@@ -280,6 +315,16 @@
         }
       ],
       "icon": "build/icons",
+      "extraResources": [
+        {
+          "from": "node_modules/.remotion/chrome-headless-shell/linux64",
+          "to": "remotion-browser"
+        },
+        {
+          "from": "node_modules/@remotion/compositor-linux-x64-gnu",
+          "to": "remotion-compositor"
+        }
+      ],
       "category": "Video",
       "maintainer": "aroundAI <opensource@aroundai.co>",
       "artifactName": "${productName}-${version}-linux-${arch}.${ext}"

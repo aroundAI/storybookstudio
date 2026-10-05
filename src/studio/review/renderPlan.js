@@ -75,6 +75,35 @@ export function pictureClips(timeline) {
     .sort((a, b) => clipStart(a) - clipStart(b))
 }
 
+// FILM-2018: the composition clips of a timeline as overlays on the picture,
+// bottom layer first so the top track composites last. `file` is the render
+// (null until one lands); a composition clip never takes a picture segment,
+// so the shot below keeps playing under it.
+export function compositionOverlays(project, { timelineId = null, projectDir = null } = {}) {
+  const timeline = activeTimeline(project, timelineId)
+  if (!timeline) return []
+  const order = new Map(pictureTracks(timeline).map((track, index) => [track.id, index]))
+  return (timeline.clips || [])
+    .filter((clip) => clip.type === 'composition' && order.has(clip.trackId) && clip.enabled !== false && num(clip.duration) > EPS)
+    .map((clip) => {
+      const renderPath = typeof clip.composition?.renderPath === 'string' ? clip.composition.renderPath : null
+      const opacity = num(clip.transform?.opacity, 100)
+      return {
+        clipId: clip.id,
+        compositionId: clip.composition?.compositionId ?? null,
+        start: clipStart(clip),
+        end: clipEnd(clip),
+        sourceStart: num(clip.trimStart),
+        renderPath,
+        file: renderPath && projectDir ? joinPath(projectDir, renderPath) : null,
+        opacity: Math.max(0, Math.min(1, opacity / 100)),
+        layer: order.get(clip.trackId),
+        name: clip.name || clip.id,
+      }
+    })
+    .sort((a, b) => b.layer - a.layer || a.start - b.start)
+}
+
 // The program end: the last picture or audio clip, captions excluded (a
 // captions clip may outrun the picture and is checked on its own).
 export function programDuration(timeline) {

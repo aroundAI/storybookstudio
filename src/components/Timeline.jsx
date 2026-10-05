@@ -12,6 +12,8 @@ import useProjectStore from '../stores/projectStore'
 import renderCacheService from '../services/renderCache'
 import { isClipRenderable, renderClipToCache } from '../services/clipRenderCache'
 import { isFullBakeFresh } from '../utils/clipBakeSignature'
+import { isCompositionClip } from '../studio/compositions/clip.js'
+import { getComposition } from '../studio/compositions/catalogue.js'
 import { deleteRenderCache } from '../services/fileSystem'
 import { clearDiskCacheUrl } from './VideoLayerRenderer'
 import useAssetsStore from '../stores/assetsStore'
@@ -1878,7 +1880,7 @@ function Timeline({ onActiveToolChange, onStatusChange }) {
       <div className="absolute inset-0 top-[3px] flex items-center overflow-hidden bg-[#162226]">
         <div className="flex h-full w-full items-center gap-2 px-2 text-[9px] uppercase tracking-[0.16em] text-white/35">
           <Video className="h-3 w-3 flex-shrink-0" />
-          <span className="truncate">Video</span>
+          <span className="truncate">{isCompositionClip(clip) ? `Graphic · ${getComposition(clip.composition?.compositionId)?.title || 'Composition'}` : 'Video'}</span>
         </div>
       </div>
     )
