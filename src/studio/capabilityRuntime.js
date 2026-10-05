@@ -19,6 +19,7 @@ import { RENDER_PRESETS, RENDER_PRESET_NAMES } from './contracts/render-presets.
 import { finishPlan, pictureEnd, shotLabel } from './intents/shared.js'
 import { registerExternalIntents } from './externalIntents.js'
 import { chooseVisualRepresentation } from './visualRepresentation.js'
+import { listCompositions } from './compositions/catalogue.js'
 
 // FILM-2016's audio and caption compilers, when this build has them.
 export const EXTERNAL_INTENTS = registerExternalIntents(import.meta.glob('./intents/{audio,captions,repair}.js', { eager: true }))
@@ -356,7 +357,8 @@ export async function handleStudioAction(action, payload = {}) {
   switch (action) {
     case 'studio_get_context': {
       const { context } = await loadStudioContext()
-      return { ...summarizeContext(context, payload.scope || null), intents: listIntents() }
+      // compositions: the graphics catalogue studio_add_graphic draws from (FILM-2018 AC3).
+      return { ...summarizeContext(context, payload.scope || null), intents: listIntents(), compositions: listCompositions() }
     }
     case 'studio_compile':
       return compileAction(payload)

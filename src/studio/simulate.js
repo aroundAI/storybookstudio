@@ -6,6 +6,7 @@
 // partner). It is a model for cards, not a second editor: the applied result
 // is whatever the upstream editor's handlers do, and the report after apply is built from
 // the real document. Pure module: no Electron, no stores.
+import { POP_DURATION_SECONDS } from './compositions/sfx.js'
 
 const EPS = 1e-6
 const clone = (value) => JSON.parse(JSON.stringify(value))
@@ -229,6 +230,30 @@ export function simulateStep(timeline, step, { fps = 24, counter = { n: 0 }, ass
         duration: toFrame(Number(args.durationSeconds ?? 5), fps),
         textProperties: { text: args.text, ...(args.style || {}) },
         metadata: args.metadata ?? null,
+      }]
+      return
+    case 'add_composition_clip':
+      counter.n += 1
+      timeline.clips = [...timeline.clips, {
+        id: `sim-composition-${counter.n}`,
+        type: 'composition',
+        name: String(args.name || args.compositionId),
+        trackId: args.trackId,
+        startTime: toFrame(Number(args.startSeconds) || 0, fps),
+        duration: toFrame(Number(args.durationSeconds ?? 4), fps),
+        composition: { engine: args.engine, compositionId: args.compositionId, props: args.props ?? {} },
+      }]
+      return
+    case 'add_sfx_clip':
+      counter.n += 1
+      timeline.clips = [...timeline.clips, {
+        id: `sim-sfx-${counter.n}`,
+        type: 'audio',
+        name: String(args.sfx || 'SFX'),
+        trackId: args.trackId,
+        startTime: toFrame(Number(args.startSeconds) || 0, fps),
+        duration: toFrame(POP_DURATION_SECONDS, fps),
+        metadata: { semantic: { scene: null, shotId: null, role: 'sfx' } },
       }]
       return
     case 'add_asset_to_timeline': {

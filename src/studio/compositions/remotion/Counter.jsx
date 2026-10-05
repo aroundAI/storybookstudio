@@ -1,12 +1,12 @@
 // FILM-2018: the Counter primitive. A number counts from `from` to `to` over
 // the first 75% of the clip, eased out, then holds; prefix, suffix and label
-// around it. Brand: colors.primary (the plate), colors.captionText (the
-// text), fonts.heading. Transparent everywhere else, so it renders as an
-// overlay.
+// around it, on a plate that fills the footprint. Brand: colors.primary (the
+// plate), colors.captionText (the text), fonts.heading.
 import React from 'react'
-import { AbsoluteFill, Easing, interpolate, useCurrentFrame, useVideoConfig } from 'remotion'
+import { Easing, interpolate } from 'remotion'
 
-import { anchorStyle, fontStack } from './layout.js'
+import { fitFont, fontStack } from './layout.js'
+import { Overlay, usePrimitive } from './frame.jsx'
 
 export const COUNT_SHARE = 0.75
 
@@ -17,36 +17,30 @@ export function counterValue({ from, to, decimals }, frame, durationInFrames) {
 }
 
 export function Counter({ props, brand }) {
-  const frame = useCurrentFrame()
-  const { width, height, durationInFrames, fps } = useVideoConfig()
-  const short = Math.min(width, height)
-  const appear = interpolate(frame, [0, Math.max(1, Math.round(fps * 0.25))], [0, 1], { extrapolateRight: 'clamp' })
-  const text = brand['colors.captionText'] || '#FFFFFF'
+  const { frame, durationInFrames, box, appear } = usePrimitive('counter', props)
+  const widest = `${props.prefix}${counterValue({ ...props, from: props.to }, 0, 1)}${props.suffix}`
   return (
-    <AbsoluteFill style={{ backgroundColor: 'transparent' }}>
-      <div style={anchorStyle(props.anchor, { width, height })}>
-        <div
-          style={{
-            opacity: appear,
-            transform: `scale(${0.9 + appear * 0.1})`,
-            backgroundColor: brand['colors.primary'] || '#2563EB',
-            color: text,
-            fontFamily: fontStack(brand['fonts.heading']),
-            borderRadius: Math.round(short * 0.025),
-            padding: `${Math.round(short * 0.02)}px ${Math.round(short * 0.045)}px`,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          }}
-        >
-          <div style={{ fontSize: Math.round(short * 0.14), fontWeight: 800, lineHeight: 1.05, fontVariantNumeric: 'tabular-nums' }}>
-            {props.prefix}
-            {counterValue(props, frame, durationInFrames)}
-            {props.suffix}
-          </div>
-          {props.label ? <div style={{ fontSize: Math.round(short * 0.045), fontWeight: 600, marginTop: Math.round(short * 0.006) }}>{props.label}</div> : null}
-        </div>
+    <Overlay
+      box={box}
+      style={{
+        opacity: appear,
+        transform: `scale(${0.9 + appear * 0.1})`,
+        backgroundColor: brand['colors.primary'] || '#2563EB',
+        color: brand['colors.captionText'] || '#FFFFFF',
+        fontFamily: fontStack(brand['fonts.heading']),
+        borderRadius: Math.round(box.height * 0.08),
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <div style={{ fontSize: fitFont(widest, box.width * 0.86, box.height * (props.label ? 0.5 : 0.62)), fontWeight: 800, lineHeight: 1.05, fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+        {props.prefix}
+        {counterValue(props, frame, durationInFrames)}
+        {props.suffix}
       </div>
-    </AbsoluteFill>
+      {props.label ? <div style={{ fontSize: fitFont(props.label, box.width * 0.86, box.height * 0.16), fontWeight: 600, whiteSpace: 'nowrap' }}>{props.label}</div> : null}
+    </Overlay>
   )
 }

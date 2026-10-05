@@ -111,6 +111,9 @@ const MCP_ACTION_PLAN_WRITABLE_TOOLS = new Set([
   'set_clip_speed',
   'set_clip_audio',
   'update_caption_cues',
+  // FILM-2018: studio_add_graphic's composition clip and its pop.
+  'add_composition_clip',
+  'add_sfx_clip',
   // FILM-2013: every studio_* write tool but studio_deliver (contract S3).
   'studio_edit',
   'studio_edit_audio',
@@ -7729,6 +7732,39 @@ function createToolDefinitions() {
       },
     },
     {
+      name: 'add_composition_clip',
+      description: 'Add a composition clip: a catalogue graphic (text, counter, callout, arrow, highlight, lower-third, chart, map, timeline, progress-bar; studio_get_context lists the catalogue with each props schema) that StorybookStudio renders once to an alpha WebM and plays as an overlay; a placeholder shows until the render lands. Props are checked against the primitive\'s schema. Undoable. Defaults to previewOnly.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          compositionId: { type: 'string', description: 'Catalogue id, e.g. counter, lower-third.' },
+          props: { type: 'object', description: 'The primitive\'s props; defaults are filled.' },
+          engine: { type: 'string', description: 'Render engine. Defaults to remotion.' },
+          languageDependency: { type: 'string', enum: ['none', 'language', 'locale'], description: 'Whether a language variant re-renders it. Defaults to none.' },
+          trackId: { type: 'string', description: 'Target video track ID. Defaults to the first unlocked video track.' },
+          startSeconds: { type: 'number', description: 'Timeline start time in seconds. Defaults to the playhead.' },
+          durationSeconds: { type: 'number', description: 'Clip duration in seconds. Defaults to the primitive\'s.' },
+          name: { type: 'string', description: 'Clip name.' },
+          previewOnly: { type: 'boolean', description: 'When true, returns the plan without changing the timeline. Defaults to true.' },
+        },
+        required: ['compositionId'],
+      },
+    },
+    {
+      name: 'add_sfx_clip',
+      description: 'Place StorybookStudio\'s built-in pop SFX (0.3 s) on an audio track. The first apply writes it into the project as assets/audio/sfx/storybookstudio-pop.wav and adds it to the library; later ones reuse it. Undoable. Defaults to previewOnly.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          sfx: { type: 'string', enum: ['pop'], description: 'The built-in sound.' },
+          trackId: { type: 'string', description: 'Target audio track ID.' },
+          startSeconds: { type: 'number', description: 'Timeline start time in seconds.' },
+          previewOnly: { type: 'boolean', description: 'When true, returns the plan without changing the timeline. Defaults to true.' },
+        },
+        required: ['sfx', 'trackId', 'startSeconds'],
+      },
+    },
+    {
       name: 'list_recent_projects',
       description: 'List recently opened StorybookStudio projects (name, path, last modified, whether currently open). Works with no project open. Use with open_project to recover after an app restart or switch projects.',
       inputSchema: {
@@ -11151,6 +11187,10 @@ class StorybookStudioMcpServer {
         return this.runRendererActionTool('set_clip_speed', args, { bridgeName: 'MCP clip edit bridge', suggestedTool: 'set_clip_speed', defaultPreviewOnly: true })
       case 'set_clip_audio':
         return this.runRendererActionTool('set_clip_audio', args, { bridgeName: 'MCP clip edit bridge', suggestedTool: 'set_clip_audio', defaultPreviewOnly: true })
+      case 'add_composition_clip':
+        return this.runRendererActionTool('add_composition_clip', args, { bridgeName: 'MCP composition bridge', suggestedTool: 'add_composition_clip', defaultPreviewOnly: true })
+      case 'add_sfx_clip':
+        return this.runRendererActionTool('add_sfx_clip', args, { bridgeName: 'MCP composition bridge', suggestedTool: 'add_sfx_clip', defaultPreviewOnly: true })
       case 'list_recent_projects':
         return this.runRendererActionTool('list_recent_projects', args, { bridgeName: 'MCP project bridge', suggestedTool: 'list_recent_projects' })
       case 'open_project':

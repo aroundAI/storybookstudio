@@ -33,7 +33,7 @@ test('the props hash is stable: key order and filled defaults do not change it, 
   assert.match(a, /^[0-9a-f]{64}$/)
   // Pinned: a change to the key's makeup must bump COMPOSITION_KEY_VERSION
   // (every cached render is re-rendered), never change it silently.
-  assert.equal(a, '93665a19a019f32faa54f8f5a0134f6ba40ed3d9d77992cba3324e00d3723078')
+  assert.equal(a, 'f0ab2da41ced037efaeecdeb821c868e4d6be8495ba8a96d5374cfd4743fca8c')
   assert.equal(compositionRenderPath('counter', a), `compositions/counter-${a}.webm`)
   // The main process hashes with node:crypto (Electron 28 is Node 18, no Web Crypto); the digests agree.
   assert.equal(createHash('sha256').update(compositionKeyMaterial(request())).digest('hex'), a)
@@ -65,7 +65,7 @@ test('props are checked against the primitive schema, with defaults filled', () 
   assert.throws(() => resolveCompositionProps('counter', {}), (error) => error.code === 'VALIDATION_FAILED' && /to/.test(error.message))
   assert.throws(() => resolveCompositionProps('counter', { to: 5, colour: 'red' }), (error) => error.code === 'VALIDATION_FAILED')
   assert.throws(() => resolveCompositionProps('counter', { to: 5, anchor: 'middle' }), (error) => error.code === 'VALIDATION_FAILED')
-  assert.throws(() => resolveCompositionProps('sparkles', {}), (error) => error.code === 'VALIDATION_FAILED' && /Known: counter/.test(error.message))
+  assert.throws(() => resolveCompositionProps('sparkles', {}), (error) => error.code === 'VALIDATION_FAILED' && /Known: .*\bcounter\b/.test(error.message))
   assert.throws(() => compositionKeyMaterial(request({ width: 0 })), (error) => error.code === 'VALIDATION_FAILED')
 })
 
@@ -78,12 +78,12 @@ test('the catalogue describes each primitive for the agent, and the Remotion roo
   const catalogue = listCompositions()
   assert.deepEqual(catalogue.map((entry) => entry.id), COMPOSITION_IDS)
   const counter = catalogue.find((entry) => entry.id === 'counter')
-  assert.deepEqual(counter.props.to, { type: 'number', required: true })
-  assert.deepEqual(counter.props.anchor.values.slice(0, 2), ['center', 'top'])
-  assert.equal(counter.props.decimals.default, 0)
+  assert.equal(counter.props.to, 'number, required')
+  assert.equal(counter.props.anchor, 'anchor, default "center"')
+  assert.equal(counter.props.decimals, 'number 0..3, default 0')
   assert.deepEqual(counter.textProps, ['prefix', 'suffix', 'label'])
   assert.equal(getComposition('counter').defaultDurationSeconds, 4)
   const root = readFileSync(new URL('../../src/studio/compositions/remotion/Root.jsx', import.meta.url), 'utf8')
   const components = root.match(/COMPONENTS = \{([^}]*)\}/)[1]
-  for (const id of COMPOSITION_IDS) assert.match(components, new RegExp(`\\b${id}:`), `Root.jsx draws ${id}`)
+  for (const id of COMPOSITION_IDS) assert.match(components, new RegExp(`(^|[\\s,'"])${id}['"]?:`), `Root.jsx draws ${id}`)
 })

@@ -7,10 +7,30 @@ import React from 'react'
 import { Composition } from 'remotion'
 
 import { COMPOSITION_IDS } from '../catalogue.js'
+import { Arrow } from './Arrow.jsx'
+import { Callout } from './Callout.jsx'
+import { Chart } from './Chart.jsx'
 import { Counter } from './Counter.jsx'
+import { Highlight } from './Highlight.jsx'
+import { LowerThird } from './LowerThird.jsx'
+import { MapMarker } from './MapMarker.jsx'
+import { ProgressBar } from './ProgressBar.jsx'
+import { Text } from './Text.jsx'
+import { Timeline } from './Timeline.jsx'
 
 // One component per catalogue id; a test checks the two lists agree.
-export const COMPONENTS = { counter: Counter }
+export const COMPONENTS = {
+  text: Text,
+  counter: Counter,
+  callout: Callout,
+  arrow: Arrow,
+  highlight: Highlight,
+  'lower-third': LowerThird,
+  chart: Chart,
+  map: MapMarker,
+  timeline: Timeline,
+  'progress-bar': ProgressBar,
+}
 
 const calculateMetadata = ({ props }) => {
   const { durationSeconds, width, height, fps } = props.render

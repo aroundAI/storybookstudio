@@ -7,7 +7,8 @@
 // package, written to a temp folder with its storybook/ files.
 //
 // Replaced, because Node has no window: the preload (an object that calls the
-// same main-process handlers: editsFiles.js, fs:readFile, path:join) and
+// same main-process handlers: editsFiles.js, fs:readFile, path:join, and the
+// few file writes FILM-2018's pop needs) and
 // get_audio_analysis, which decodes with Web Audio. The analysis stub reports
 // no silence inside a dialogue clip unless a test passes one, so silence is
 // what lies between the fixture's dialogue lines.
@@ -115,6 +116,10 @@ export async function startStudioHarness(m, { shots = 20, runRead = silentLinesA
       }
     },
     pathJoin: async (...parts) => path.join(...parts),
+    // fs:createDirectory, fs:writeFileFromArrayBuffer and media:getFileUrlDirect (FILM-2018's built-in pop)
+    createDirectory: async (dirPath) => { await mkdir(dirPath, { recursive: true }); return { success: true } },
+    writeFileFromArrayBuffer: async (filePath, arrayBuffer) => { await writeFile(filePath, Buffer.from(arrayBuffer)); return { success: true } },
+    getFileUrlDirect: async (filePath) => `file://${filePath}`,
     mcp: { updateSnapshot: async (snapshot) => ({ success: Boolean(server?.updateSnapshot(snapshot)) }) },
     studio: { callCapability: (name, args) => server.callCapabilityTool(name, args, { source: 'in-app' }) },
   }
