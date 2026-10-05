@@ -10,6 +10,10 @@
 //     renderPath,          project-relative alpha WebM, compositions/<id>-<hash>.webm;
 //                          null until a render lands
 //     languageDependency,  'none' | 'language' | 'locale' (FILM-2019)
+//     localized,           {<lang>: {text, sources}}: a 'language' graphic's
+//                          words per language, which a render of that
+//                          language draws (localization/graphics.js); absent
+//                          until a language variant gives them
 //     renderUrl,           session only: the URL the preview and export read
 //   }
 //

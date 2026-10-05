@@ -5,19 +5,19 @@
 import React from 'react'
 import { Easing, interpolate } from 'remotion'
 
-import { fitFont, fontStack } from './layout.js'
+import { fontStack, progressLabelHeight, slotFontSize } from './layout.js'
 import { Overlay, usePrimitive } from './frame.jsx'
 
-export function ProgressBar({ props, brand }) {
-  const { box, appear, progress } = usePrimitive('progress-bar', props)
+export function ProgressBar({ props, brand, fit }) {
+  const { box, appear, progress, slots } = usePrimitive('progress-bar', props)
   const filled = interpolate(progress(0, 0.7), [0, 1], [0, props.value], { easing: Easing.out(Easing.cubic) })
-  const labelHeight = Math.round(box.height * 0.42)
+  const labelHeight = progressLabelHeight(box)
   const barHeight = box.height - labelHeight
   const font = fontStack(brand['fonts.body'])
   const percent = `${Math.round(filled)}%`
   return (
     <Overlay box={box} style={{ opacity: appear, color: brand['colors.captionText'] || '#FFFFFF', fontFamily: font, textShadow: '0 1px 4px rgba(0, 0, 0, 0.6)' }}>
-      <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: labelHeight, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700, fontSize: Math.min(fitFont(`${props.label} 100%`, box.width, labelHeight * 0.8), labelHeight * 0.8), whiteSpace: 'nowrap' }}>
+      <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: labelHeight, display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: slots.label.weight, fontSize: Math.min(slotFontSize(slots.label, fit), labelHeight * 0.8), whiteSpace: 'nowrap' }}>
         <span>{props.label}</span>
         <span style={{ fontVariantNumeric: 'tabular-nums' }}>{percent}</span>
       </div>

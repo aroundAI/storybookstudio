@@ -75,6 +75,13 @@ function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, get
     getFfprobePath,
   })
 
+  // FILM-2018: composition clips render here, once per key, into
+  // <project>/compositions/; the renderer asks for the key and the file, and
+  // a language variant renders its graphics with it (FILM-2019).
+  const remotionEngine = createRemotionEngine(packagedRemotionPaths({ isPackaged: Boolean(app.isPackaged), resourcesPath: process.resourcesPath }))
+  const compositions = createCompositionRenderer({ engines: { remotion: remotionEngine }, log: (line) => console.warn(line) })
+  app.on?.('will-quit', () => { remotionEngine.close() })
+
   // FILM-2017: Deliver, variants and the reframe tools.
   const deliver = createStudioDeliver({
     jobs: cloud.jobs,
@@ -92,6 +99,7 @@ function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, get
     })(),
     // FILM-2019: the spoken-language check runs on the local caption engine.
     detectLanguage: createLanguageDetector({ getEngine: () => languageEngine(app), getFfmpegPath }),
+    renderComposition: (request) => compositions.render(request),
     log: (line) => console.warn(line),
   })
   const deliverGuard = (handler) => async (event, args = {}) => {
@@ -138,11 +146,6 @@ function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, get
   // KB-190: get_audio_analysis decodes and analyses in a utility process.
   const audioReads = createAudioReads({ getFfmpegPath, runAnalysis: utilityProcess ? utilityProcessAnalysis(utilityProcess) : null })
 
-  // FILM-2018: composition clips render here, once per key, into
-  // <project>/compositions/; the renderer asks for the key and the file.
-  const remotionEngine = createRemotionEngine(packagedRemotionPaths({ isPackaged: Boolean(app.isPackaged), resourcesPath: process.resourcesPath }))
-  const compositions = createCompositionRenderer({ engines: { remotion: remotionEngine }, log: (line) => console.warn(line) })
-  app.on?.('will-quit', () => { remotionEngine.close() })
   ipcMain.handle('studio:compositionResolve', deliverGuard((args) => compositions.resolve(args)))
   ipcMain.handle('studio:compositionRender', deliverGuard(async (args) => {
     const { propsHash, renderPath, cached, ms } = await compositions.render(args)

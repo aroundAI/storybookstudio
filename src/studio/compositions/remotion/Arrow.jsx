@@ -3,12 +3,12 @@
 // Brand: colors.secondary (the arrow), colors.captionText, fonts.body.
 import React from 'react'
 
-import { fitFont, fontStack } from './layout.js'
-import { Overlay, usePrimitive } from './frame.jsx'
+import { fontStack, slotFontSize } from './layout.js'
+import { Overlay, SlotText, usePrimitive } from './frame.jsx'
 import { angleOf } from './pointer.js'
 
-export function Arrow({ props, brand }) {
-  const { box, appear, progress } = usePrimitive('arrow', props)
+export function Arrow({ props, brand, fit }) {
+  const { box, appear, progress, slots } = usePrimitive('arrow', props)
   const grow = progress(0, 0.3)
   const size = Math.min(box.width, box.height)
   const color = brand['colors.secondary'] || '#F59E0B'
@@ -23,7 +23,7 @@ export function Arrow({ props, brand }) {
         </g>
       </svg>
       {props.label ? (
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, textAlign: 'center', color: brand['colors.captionText'] || '#FFFFFF', fontFamily: fontStack(brand['fonts.body']), fontWeight: 700, fontSize: fitFont(props.label, box.width * 0.95, size * 0.14), textShadow: '0 2px 6px rgba(0, 0, 0, 0.7)', whiteSpace: 'nowrap' }}>{props.label}</div>
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, textAlign: 'center', color: brand['colors.captionText'] || '#FFFFFF', fontFamily: fontStack(brand['fonts.body']), fontWeight: slots.label.weight, fontSize: slotFontSize(slots.label, fit), textShadow: '0 2px 6px rgba(0, 0, 0, 0.7)', whiteSpace: 'nowrap' }}><SlotText slot={slots.label} fit={fit} /></div>
       ) : null}
     </Overlay>
   )

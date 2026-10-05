@@ -3,24 +3,15 @@
 // colors.background (the text on it), fonts.body.
 import React from 'react'
 
-import { fitFont, fontStack } from './layout.js'
-import { Overlay, usePrimitive } from './frame.jsx'
-import { DIRECTION_VECTORS } from './pointer.js'
+import { calloutBubble, fontStack, slotFontSize } from './layout.js'
+import { Overlay, SlotText, usePrimitive } from './frame.jsx'
 
-export function Callout({ props, brand }) {
-  const { box, appear } = usePrimitive('callout', props)
+export function Callout({ props, brand, fit }) {
+  const { box, appear, slots } = usePrimitive('callout', props)
   const fill = brand['colors.secondary'] || '#F59E0B'
-  const [dx, dy] = DIRECTION_VECTORS[props.pointer] || DIRECTION_VECTORS['down-left']
   // The bubble keeps clear of the side the tail leaves from.
-  const tail = Math.min(box.width, box.height) * 0.3
-  const bubble = {
-    left: dx < 0 ? tail : 0,
-    right: dx > 0 ? tail : 0,
-    top: dy < 0 ? tail : 0,
-    bottom: dy > 0 ? tail : 0,
-  }
-  const bubbleWidth = box.width - bubble.left - bubble.right
-  const bubbleHeight = box.height - bubble.top - bubble.bottom
+  const bubble = calloutBubble(box, props.pointer)
+  const { dx, dy, tail, width: bubbleWidth, height: bubbleHeight } = bubble
   const cx = bubble.left + bubbleWidth / 2
   const cy = bubble.top + bubbleHeight / 2
   const tipX = cx + dx * (bubbleWidth / 2 + tail * 0.9)
@@ -42,15 +33,15 @@ export function Callout({ props, brand }) {
           borderRadius: Math.round(bubbleHeight * 0.3),
           color: brand['colors.background'] || '#000000',
           fontFamily: fontStack(brand['fonts.body']),
-          fontWeight: 700,
-          fontSize: fitFont(props.text, bubbleWidth * 0.88, bubbleHeight * 0.42),
+          fontWeight: slots.text.weight,
+          fontSize: slotFontSize(slots.text, fit),
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           whiteSpace: 'nowrap',
         }}
       >
-        {props.text}
+        <SlotText slot={slots.text} fit={fit} />
       </div>
     </Overlay>
   )

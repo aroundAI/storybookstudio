@@ -8,14 +8,14 @@
 //                     render
 //
 // request = {projectDir, engine, compositionId, props, durationSeconds,
-// width, height, fps}. The brand is read here, from the project's
+// width, height, fps, fit?} (fit: a language render's refit, FILM-2019). The brand is read here, from the project's
 // storybook/brand.json, so it is part of every key (src/studio/compositions/key.js):
 // a brand change gives a new key, and the clip renders again.
 //
 // The engine draws the picture. Its interface is one call:
 //
 //   engine.render({compositionId, props, brand, durationSeconds, width,
-//                  height, fps, outputPath, signal}) -> outputPath
+//                  height, fps, fit, outputPath, signal}) -> outputPath
 //
 // writing a WebM with an alpha channel (VP9, yuva420p) to outputPath. This
 // module writes to a temporary name and renames it into place, so a file at
@@ -60,13 +60,13 @@ function createCompositionRenderer({ engines = {}, readBrand = readProjectBrand,
   const load = () => (modules ||= Promise.all([studioModule('compositions/key.js'), studioModule('compositions/catalogue.js')]).then(([key, catalogue]) => ({ key, catalogue })))
 
   async function resolve(request = {}) {
-    const { projectDir, engine, compositionId, props, durationSeconds, width, height, fps } = request
+    const { projectDir, engine, compositionId, props, durationSeconds, width, height, fps, fit = null } = request
     if (typeof projectDir !== 'string' || !path.isAbsolute(projectDir)) throw failure('VALIDATION_FAILED', 'A composition render needs the open project folder.')
     if (!engineMap.has(engine)) throw failure('ENGINE_UNAVAILABLE', `No composition engine "${engine}" is installed.`)
     const { key, catalogue } = await load()
     const projectBrand = await readBrand(projectDir)
     const brand = catalogue.brandTokensFor(compositionId, projectBrand)
-    const material = key.compositionKeyMaterial({ engine, compositionId, props, brand: projectBrand, durationSeconds, width, height, fps })
+    const material = key.compositionKeyMaterial({ engine, compositionId, props, brand: projectBrand, durationSeconds, width, height, fps, fit })
     // node:crypto, not key.sha256Hex: Electron 28's main process is Node 18,
     // which has no global Web Crypto. Same digest (a test checks it).
     const propsHash = crypto.createHash('sha256').update(material).digest('hex')
@@ -77,7 +77,7 @@ function createCompositionRenderer({ engines = {}, readBrand = readProjectBrand,
       renderPath,
       file,
       cached: await finishedFile(file),
-      job: { engine, compositionId, props: catalogue.resolveCompositionProps(compositionId, props), brand, durationSeconds: Number(durationSeconds), width: Math.round(width), height: Math.round(height), fps: Number(fps) },
+      job: { engine, compositionId, props: catalogue.resolveCompositionProps(compositionId, props), brand, durationSeconds: Number(durationSeconds), width: Math.round(width), height: Math.round(height), fps: Number(fps), fit: key.normalizeFit(fit) },
     }
   }
 

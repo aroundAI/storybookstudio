@@ -15,6 +15,7 @@
 //   (the builder mutes every language but the episode's), not the render's.
 // - Without a language (an export with no preset) the tracks are as stored.
 // Pure.
+import { getComposition } from '../compositions/catalogue.js'
 
 export const elementLanguage = (clip, track) => clip?.metadata?.language ?? track?.language ?? null
 
@@ -50,4 +51,36 @@ export function selectLanguage(timelineState, language) {
   const byId = new Map(sourceTracks.map((track) => [track.id, track]))
   const clips = (timelineState.clips || []).filter((clip) => inLanguage(clip, byId.get(clip.trackId), language))
   return { ...timelineState, tracks, clips }
+}
+
+// FILM-2019 AC3: a composition clip's props as a render of `language` draws
+// them. Like the lanes, every language sits on the one master clip and the
+// render selects: its text props in that language where the clip carries
+// them (composition.localized[language].text, by text prop path, written by
+// studio_create_variant), the master's elsewhere. Only a clip whose
+// languageDependency is 'language' changes; the master's props are never
+// rewritten. Null for any other clip or without a language.
+// -> {props, translated, untranslated}: the text prop paths in each state
+//    (only filled ones count).
+export function compositionPropsForLanguage(clip, language) {
+  const composition = clip?.type === 'composition' ? clip.composition : null
+  if (!language || composition?.languageDependency !== 'language') return null
+  const primitive = getComposition(composition.compositionId)
+  if (!primitive) return null
+  const text = composition.localized?.[language]?.text || {}
+  const props = { ...(composition.props || {}) }
+  const translated = []
+  const untranslated = []
+  for (const path of primitive.textProps) {
+    const [head, tail] = path.split('.')
+    const value = props[head]
+    const filled = tail ? Array.isArray(value) && value.some((item) => String(item?.[tail] ?? '').trim()) : typeof value === 'string' && value.trim() !== ''
+    const given = text[path]
+    const usable = tail ? Array.isArray(given) && Array.isArray(value) && given.length === value.length && given.every((entry) => typeof entry === 'string') : typeof given === 'string'
+    if (usable) {
+      props[head] = tail ? value.map((item, index) => ({ ...item, [tail]: given[index] })) : given
+      translated.push(path)
+    } else if (filled) untranslated.push(path)
+  }
+  return { props, translated, untranslated }
 }

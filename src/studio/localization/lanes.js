@@ -8,6 +8,8 @@
 //     → { language, timelineId, removeTrackIds, removeClipIds, tracks, clips,
 //         assets, captions, lines, overruns, warnings }
 //   applyLanguageLane(timeline, lane) → the timeline with the lane in place
+//                                       (and lane.graphics' words for the
+//                                       language on its graphics, graphics.js)
 //
 // Placement is the rough-cut builder's (projectBuilder.js), so a lane added
 // later sits exactly where it would have had the dubs been there at pull:
@@ -19,6 +21,7 @@
 import { buildProject } from '../projectBuilder.js'
 import { styleCaptionCues, emphasisWordsFrom, STUDIO_CAPTION_PRESET_ID, aspectOf } from '../captions/style.js'
 import { EditPolicySchema } from '../contracts/edit-policy.schema.mjs'
+import { storeGraphicStrings } from './graphics.js'
 
 const LANGUAGE_TAG = /^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})?$/
 const CAPTION_CLIP_COLOR = '#3E6B5C'
@@ -182,7 +185,7 @@ export function applyLanguageLane(timeline, lane) {
     const firstAudio = list.findIndex((track) => track.type === 'audio')
     return firstAudio >= 0 ? firstAudio : list.length
   })
-  const clips = [...(timeline.clips || []).filter((clip) => !removeClips.has(clip.id)), ...lane.clips]
+  const { clips } = storeGraphicStrings({ clips: [...(timeline.clips || []).filter((clip) => !removeClips.has(clip.id)), ...lane.clips] }, lane.language, lane.graphics || [])
   const contentEnd = Math.max(0, ...clips.map((clip) => (Number(clip.startTime) || 0) + (Number(clip.duration) || 0)))
   return {
     ...timeline,

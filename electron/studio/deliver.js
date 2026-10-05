@@ -156,6 +156,8 @@ function createStudioDeliver({
   qa = checkDeliveredFile,
   // FILM-2019 AC5: whisper's spoken-language check (languageCheck.js), for the qa.
   detectLanguage = null,
+  // FILM-2019 AC3: renders a language's graphics (compositionRenderer.render).
+  renderComposition = null,
   prepare = null,
   put = putFile,
   now = () => new Date(),
@@ -326,13 +328,43 @@ function createStudioDeliver({
     return result
   }
 
+  // FILM-2019 AC3/AC4: the project as a render of `language` plays it: each
+  // graphic that shows words (languageDependency language) with its words in
+  // the language, refit to its room and rendered for this language
+  // (localization/graphics.js), and the issues: text that does not fit,
+  // text left in the master's words. The master's own language, and a
+  // timeline with no such graphic, are the project as it is.
+  async function languageGraphics({ project, projectDir, timelineId, language }) {
+    const unchanged = { project, graphics: [], issues: [] }
+    if (!language) return unchanged
+    const [graphicsModule, plan, presetsModule] = await Promise.all([studioModule('localization/graphics.js'), studioModule('review/renderPlan.js'), studioModule('delivery/presets.js')])
+    const master = (project.timelines || []).find((timeline) => timeline.studio?.kind === 'master') || (project.timelines || [])[0]
+    if (language === (master?.studio?.language || presetsModule.DEFAULT_LANGUAGE)) return unchanged
+    const timeline = (project.timelines || []).find((entry) => entry.id === timelineId)
+    if (!timeline?.clips?.some(graphicsModule.isLanguageGraphic)) return unchanged
+    const { graphics, issues } = graphicsModule.planLanguageGraphics({ timeline, language, frame: plan.timelineFrame(project, timelineId) })
+    if (graphics.length && !renderComposition) throw fail('ENGINE_UNAVAILABLE', `No composition engine is installed to render the ${language} graphics.`)
+    const renders = {}
+    for (const entry of graphics) {
+      const { propsHash, renderPath } = await renderComposition({ projectDir, ...entry.request })
+      renders[entry.clipId] = { propsHash, renderPath }
+    }
+    const localized = graphicsModule.withLanguageGraphics(timeline, graphics, renders)
+    return {
+      project: { ...project, timelines: project.timelines.map((entry) => (entry.id === timelineId ? localized : entry)) },
+      graphics: graphics.map(({ clipId, compositionId, translated, props, fits, slots, durationSeconds, extendedSeconds, durationCapped }) => ({ clipId, compositionId, translated, props, fits, slots, durationSeconds, extendedSeconds, durationCapped, renderPath: renders[clipId].renderPath })),
+      issues,
+    }
+  }
+
   async function renderAndCheck({ job, item, projectDir, document, outputPath, presetsModule, policy }) {
     const timeline = document.timelines.find((entry) => entry.id === item.timelineId)
     const preset = presetsModule.resolvePreset(item.preset, { timeline, policy })
     job.update({ phase: `render ${item.preset}-${item.language}` })
-    const rendered = await render({ project: document, projectDir, timelineId: item.timelineId, preset, language: item.language, outputPath, ffmpegPath: getFfmpegPath(), onProgress: () => {} })
+    const localized = await languageGraphics({ project: document, projectDir, timelineId: item.timelineId, language: item.language })
+    const rendered = await render({ project: localized.project, projectDir, timelineId: item.timelineId, preset, language: item.language, outputPath, ffmpegPath: getFfmpegPath(), onProgress: () => {} })
     job.update({ phase: `qa ${item.preset}-${item.language}` })
-    const checked = await qa({ file: outputPath, preset, expectedDuration: rendered.durationSeconds, warnings: timeline.studio?.reframeWarnings || [], ffmpegPath: getFfmpegPath(), ffprobePath: getFfprobePath(), project: document, timelineId: item.timelineId, language: item.language, detectLanguage })
+    const checked = await qa({ file: outputPath, preset, expectedDuration: rendered.durationSeconds, warnings: [...(timeline.studio?.reframeWarnings || []), ...localized.issues], ffmpegPath: getFfmpegPath(), ffprobePath: getFfprobePath(), project: localized.project, timelineId: item.timelineId, language: item.language, detectLanguage })
     return { rendered, checked, preset }
   }
 
@@ -637,9 +669,11 @@ function createStudioDeliver({
 
   // FILM-2019 AC3: kind language. The dubbed lines in the pulled package
   // (re-sync, FILM-2011, brings them in) become a Dialogue (<lang>) lane and
-  // a Captions (<lang>) track on the master (localization/lanes.js); applied,
-  // each preset is rendered in that language and QA-checked, including the
-  // spoken-language check (AC5), into renders/<version>/languages/.
+  // a Captions (<lang>) track on the master (localization/lanes.js), and the
+  // graphics' words in the language (args.graphics, localization/graphics.js)
+  // are stored on their clips; applied, each preset is rendered in that
+  // language with its graphics re-rendered and refit (AC4) and QA-checked,
+  // including the spoken-language check (AC5), into renders/<version>/languages/.
   async function dubProbes(pkg, language, projectDir) {
     const { planDownloads } = require('./pull')
     const { createProbe } = require('./probe')
@@ -671,9 +705,36 @@ function createStudioDeliver({
     if (!pkg?.episode) throw fail('NOT_FOUND', 'This project was not pulled from StoryBook: a language variant needs the dubbed lines of its package.')
     const language = String(args.language || '')
     const lane = lanes.buildLanguageLane({ document, pkg, language, probes: await dubProbes(pkg, language, projectDir), brand: context.brand, policy: context.policy })
+    const [graphicsModule, plan, refit] = await Promise.all([studioModule('localization/graphics.js'), studioModule('review/renderPlan.js'), studioModule('localization/refit.js')])
+    const laneMaster = lanes.masterTimeline(document)
+    const strings = graphicsModule.graphicStrings({ timeline: laneMaster, pkg, language, graphics: args.graphics ?? null })
+    lane.graphics = strings.filter((entry) => entry.localized).map(({ clipId, localized }) => ({ clipId, localized }))
+    // What the graphics will draw in the master's frame, for the cards.
+    const planned = graphicsModule.planLanguageGraphics({ timeline: graphicsModule.storeGraphicStrings(laneMaster, language, strings), language, frame: plan.timelineFrame(document, laneMaster.id) })
+    const plannedById = new Map(planned.graphics.map((entry) => [entry.clipId, entry]))
+    const graphicsSummary = strings.map((entry) => {
+      const fitted = plannedById.get(entry.clipId)
+      return { clipId: entry.clipId, compositionId: entry.compositionId, sources: entry.localized?.sources || {}, untranslated: entry.untranslated, fits: fitted ? fitted.fits : null, slots: fitted?.slots || [], durationSeconds: fitted?.durationSeconds ?? null, extendedSeconds: fitted?.extendedSeconds ?? 0 }
+    })
     const presetNames = [...new Set(Array.isArray(args.presets) && args.presets.length ? args.presets : ['youtube_16x9'])]
     const presetsModule = await studioModule('delivery/presets.js')
     for (const name of presetNames) presetsModule.presetFor(name)
+    const describeSlots = (entry) => entry.slots.filter((slot) => slot.step !== 'none').map((slot) => `${slot.key} at ${Math.round(slot.fontScale * 100)}%${slot.lines.length > 1 ? ` on ${slot.lines.length} lines` : ''}`).join(', ')
+    const graphicsCard = strings.length ? {
+      scene: null,
+      heading: `Graphics in ${language}: ${graphicsSummary.filter((entry) => Object.keys(entry.sources).length).length} of ${strings.length} translated`,
+      durationBefore: null,
+      durationAfter: null,
+      targetDuration: null,
+      changes: graphicsSummary.filter((entry) => Object.keys(entry.sources).length).map((entry) => ({
+        text: `${entry.compositionId} ${entry.clipId}: ${Object.keys(entry.sources).join(', ')} in ${language}${describeSlots(entry) ? `, ${describeSlots(entry)}` : ''}${entry.extendedSeconds > 0 ? `, ${entry.extendedSeconds} s longer` : ''}`,
+        reason: `Words from ${[...new Set(Object.values(entry.sources))].join(' and ')}; refit to the master's room (font down to ${Math.round(refit.REFIT_FONT_FLOOR * 100)}%, then wrap, then up to ${Math.round(refit.DURATION_EXTENSION_CAP * 100)}% longer); rendered for ${language} only`,
+        tool: 'studio_apply_language_lane',
+        step: 0,
+      })),
+      touchesYourEdits: [],
+      notes: planned.issues.map((issue) => issue.detail),
+    } : null
     const card = {
       scene: null,
       heading: `${language} language lane from StoryBook's dub`,
@@ -689,7 +750,6 @@ function createStudioDeliver({
       notes: [
         ...lane.overruns.slice(0, 5).map((entry) => `A dubbed line runs ${entry.overrunSeconds} s past its slot at ${entry.speed}x; it is placed whole, not trimmed.`),
         ...(lane.lines.offline ? [`${lane.lines.offline} dubbed line(s) are not downloaded and are placed offline.`] : []),
-        'Graphics are not refit for this language: composition clips (FILM-2018) keep the master\'s text; re-rendering them per language is not built yet.',
       ],
     }
     const response = {
@@ -703,7 +763,8 @@ function createStudioDeliver({
       overruns: lane.overruns,
       tracks: lane.tracks.map(({ id, name, type, role, language: trackLanguage }) => ({ id, name, type, role: role ?? null, language: trackLanguage })),
       presets: presetNames,
-      cards: [card],
+      graphics: graphicsSummary,
+      cards: graphicsCard ? [card, graphicsCard] : [card],
     }
     if (previewOnly) return response
     let applied = document
@@ -724,9 +785,10 @@ function createStudioDeliver({
       const { timeline } = timelineForPreset(applied, { ...presetsModule.presetFor(name), name, aspect: contracts.RENDER_PRESETS[name].aspect ?? null })
       const preset = presetsModule.resolvePreset(name, { timeline, policy: context.policy })
       const outputPath = path.join(projectDir, 'renders', String(versionId), 'languages', presetsModule.deliveryFileName(name, language))
-      const rendered = await render({ project: applied, projectDir, timelineId: timeline.id, preset, language, outputPath, ffmpegPath: getFfmpegPath() })
-      const checked = await qa({ file: outputPath, preset, expectedDuration: rendered.durationSeconds, warnings: timeline.studio?.reframeWarnings || [], ffmpegPath: getFfmpegPath(), ffprobePath: getFfprobePath(), project: applied, timelineId: timeline.id, language, detectLanguage })
-      renders.push({ preset: name, language, timelineId: timeline.id, file: outputPath, captionsFile: rendered.captionsPath ?? null, durationSeconds: rendered.durationSeconds, captionCues: rendered.captionCues ?? null, qa: checked.qa, languageCheck: checked.languageCheck ?? null })
+      const localized = await languageGraphics({ project: applied, projectDir, timelineId: timeline.id, language })
+      const rendered = await render({ project: localized.project, projectDir, timelineId: timeline.id, preset, language, outputPath, ffmpegPath: getFfmpegPath() })
+      const checked = await qa({ file: outputPath, preset, expectedDuration: rendered.durationSeconds, warnings: [...(timeline.studio?.reframeWarnings || []), ...localized.issues], ffmpegPath: getFfmpegPath(), ffprobePath: getFfprobePath(), project: localized.project, timelineId: timeline.id, language, detectLanguage })
+      renders.push({ preset: name, language, timelineId: timeline.id, file: outputPath, captionsFile: rendered.captionsPath ?? null, durationSeconds: rendered.durationSeconds, captionCues: rendered.captionCues ?? null, graphics: localized.graphics, qa: checked.qa, languageCheck: checked.languageCheck ?? null })
     }
     return { ...response, applied: true, renders, qa: combineQa(renders.map((entry) => entry.qa)) }
   }

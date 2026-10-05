@@ -38,13 +38,13 @@ function createRemotionEngine({ serveUrl, browserExecutable = null, binariesDire
     }
   }
 
-  async function render({ compositionId, props, brand, durationSeconds, width, height, fps, outputPath, signal = null }) {
+  async function render({ compositionId, props, brand, durationSeconds, width, height, fps, fit = null, outputPath, signal = null }) {
     const bundle = typeof serveUrl === 'function' ? await serveUrl() : serveUrl
     if (!bundle || !fs.existsSync(path.join(bundle, 'index.html'))) {
       throw Object.assign(new Error('The composition bundle is missing; run npm run build:compositions.'), { code: 'ENGINE_UNAVAILABLE' })
     }
     const { selectComposition, renderMedia, makeCancelSignal } = remotion()
-    const inputProps = { props, brand, render: { durationSeconds, width, height, fps } }
+    const inputProps = { props, brand, render: { durationSeconds, width, height, fps }, ...(fit ? { fit } : {}) }
     const puppeteerInstance = await ensureOpen()
     const common = { serveUrl: bundle, inputProps, puppeteerInstance, browserExecutable, binariesDirectory, logLevel: 'error', chromeMode: 'headless-shell' }
     const composition = await selectComposition({ ...common, id: compositionId })
