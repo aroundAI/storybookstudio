@@ -5,8 +5,8 @@ const path = require('path')
 const { spawnSync } = require('child_process')
 const { authorizeMcpRequest, isLoopbackOrigin } = require('./studio/mcpAuth')
 const { createCapabilityTools } = require('./studio/mcpCapabilities')
+const { DEFAULT_MCP_PORT, mcpUrlForPort } = require('./studio/mcpPort')
 
-const DEFAULT_MCP_PORT = 19790
 const MCP_PROTOCOL_VERSION = '2024-11-05'
 // FILM-2013: /mcp?profile=agent (default) serves the capability tools; expert serves StorybookStudio's.
 const MCP_PROFILES = new Set(['agent', 'expert'])
@@ -10731,10 +10731,35 @@ class StorybookStudioMcpServer {
       : this.capabilities.definitions('agent')
   }
 
-  async start() {
+  // FILM-2010: `ports` are tried in order, moving on only past EADDRINUSE, so
+  // a second StorybookStudio on the machine takes the next free port.
+  async start({ ports } = {}) {
     if (this.server) return this.getStatus()
+    const candidates = Array.isArray(ports) && ports.length ? ports : [this.port]
 
-    this.server = http.createServer((req, res) => {
+    let lastError = null
+    for (const port of candidates) {
+      try {
+        await this.listenOn(port)
+        return this.getStatus()
+      } catch (error) {
+        lastError = error
+        if (error?.code !== 'EADDRINUSE') break
+      }
+    }
+
+    const allInUse = lastError?.code === 'EADDRINUSE' && candidates.length > 1
+    const message = allInUse
+      ? `Ports ${candidates[0]}–${candidates[candidates.length - 1]} are all in use, so the MCP server did not start. Quit another StorybookStudio or the program holding them, then restart.`
+      : lastError?.message || String(lastError)
+    this.error = message
+    this.running = false
+    if (allInUse) throw Object.assign(new Error(message), { code: 'EADDRINUSE' })
+    throw lastError
+  }
+
+  async listenOn(port) {
+    const server = http.createServer((req, res) => {
       this.handleRequest(req, res).catch((error) => {
         this.writeJson(res, 500, {
           jsonrpc: '2.0',
@@ -10743,23 +10768,17 @@ class StorybookStudioMcpServer {
         })
       })
     })
-
     await new Promise((resolve, reject) => {
-      this.server.once('error', reject)
-      this.server.listen(this.port, '127.0.0.1', () => {
-        this.server.off('error', reject)
-        this.running = true
-        this.error = null
+      server.once('error', reject)
+      server.listen(port, '127.0.0.1', () => {
+        server.off('error', reject)
         resolve()
       })
-    }).catch((error) => {
-      this.error = error?.message || String(error)
-      this.running = false
-      this.server = null
-      throw error
     })
-
-    return this.getStatus()
+    this.server = server
+    this.port = server.address().port
+    this.running = true
+    this.error = null
   }
 
   async stop() {
@@ -10781,7 +10800,7 @@ class StorybookStudioMcpServer {
     return {
       running: this.running,
       port: this.port,
-      url: `http://127.0.0.1:${this.port}/mcp`,
+      url: mcpUrlForPort(this.port),
       error: this.error,
       toolCount: this.tools.length,
       agentToolCount: this.capabilities.definitions('agent').length,
@@ -10796,7 +10815,8 @@ class StorybookStudioMcpServer {
 
     // FILM-2010: loopback Host/Origin (403), then the bearer from userData/mcp-secret (401).
     // A CORS preflight carries no Authorization header, so it is checked for Host/Origin only.
-    const auth = authorizeMcpRequest(req.headers, this.authSecret, { requireBearer: req.method !== 'OPTIONS' })
+    // The Host must name the port this instance got, not another instance's.
+    const auth = authorizeMcpRequest(req.headers, this.authSecret, { requireBearer: req.method !== 'OPTIONS', port: this.port })
     if (!auth.ok) {
       if (auth.status === 401) res.setHeader('WWW-Authenticate', 'Bearer realm="storybookstudio-mcp"')
       this.writeJson(res, auth.status, { error: auth.reason })

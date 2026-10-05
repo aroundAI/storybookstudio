@@ -7874,13 +7874,8 @@ app.whenReady().then(async () => {
   })
   // FILM-2017: set_auto_reframe and set_focal_point run in electron/studio/deliver.js.
   mcpServer.studioTools = studioMain.deliver.expertTools
-  mcpServer.start()
-    .then((status) => {
-      console.log(`[MCP] StorybookStudio MCP server running at ${status.url}`)
-    })
-    .catch((error) => {
-      console.warn('[MCP] server failed to start:', error?.message || error)
-    })
+  // FILM-2010: the next free port when another StorybookStudio holds this one.
+  void studioMain.startMcpServer(mcpServer)
   initComfyLauncher()
     .then(() => maybeAutoStartComfyLauncher())
     .catch((error) => {

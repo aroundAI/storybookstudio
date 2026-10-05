@@ -23,6 +23,12 @@ function isLoopbackHost(host) {
   return LOOPBACK_HOSTNAMES.has(hostname)
 }
 
+// FILM-2010: the port a Host header names, or null when it names none.
+function hostPort(host) {
+  const match = /:(\d{1,5})$/.exec(String(host || '').trim())
+  return match ? Number(match[1]) : null
+}
+
 // Origin header: "http://127.0.0.1:5173". "null" and non-http schemes are not loopback.
 function isLoopbackOrigin(origin) {
   const value = String(origin || '').trim()
@@ -46,10 +52,15 @@ function secretsMatch(presented, secret) {
 
 // Returns { ok: true, status: 200 } or { ok: false, status: 401|403, reason }.
 // The reason never contains the presented or the expected secret.
-function authorizeMcpRequest(headers, secret, { requireBearer = true } = {}) {
+// With `port`, the Host must name that port: a second StorybookStudio on the
+// machine listens on another one (electron/studio/mcpPort.js).
+function authorizeMcpRequest(headers, secret, { requireBearer = true, port = null } = {}) {
   const host = headerValue(headers, 'host')
   if (!isLoopbackHost(host)) {
     return { ok: false, status: 403, reason: 'Host is not loopback.' }
+  }
+  if (port != null && hostPort(host) !== port) {
+    return { ok: false, status: 403, reason: 'Host names another port.' }
   }
   const origin = headerValue(headers, 'origin')
   if (origin && !isLoopbackOrigin(origin)) {
@@ -73,6 +84,7 @@ function authorizeMcpRequest(headers, secret, { requireBearer = true } = {}) {
 
 module.exports = {
   authorizeMcpRequest,
+  hostPort,
   isLoopbackHost,
   isLoopbackOrigin,
 }

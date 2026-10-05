@@ -3,6 +3,7 @@
 // upstream file changes only at its registration points.
 const path = require('path')
 const { loadOrCreateMcpSecret, buildMcpConnectCommand } = require('./mcpSecret')
+const { DEFAULT_MCP_PORT, mcpUrlForPort, mcpPortCandidates, readMcpEndpoint, writeMcpEndpoint } = require('./mcpPort')
 const { storybookstudioUrlToPath, resolveAllowedPath, createGrantedFileSet } = require('./protocolAllowlist')
 const secrets = require('./secrets')
 const { createStudioCloud } = require('./cloud')
@@ -44,7 +45,7 @@ function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, get
   ipcMain.handle('studio:getMcpConnectCommand', (event) => {
     if (!isMainWindowSender(event)) return { success: false, error: 'Not available to this window.' }
     const status = getMcpServer()?.getStatus?.()
-    const url = status?.url || 'http://127.0.0.1:19790/mcp'
+    const url = status?.url || mcpUrlForPort(DEFAULT_MCP_PORT)
     return { success: true, ...buildMcpConnectCommand({ url, secret: getMcpSecret() }) }
   })
 
@@ -125,8 +126,40 @@ function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, get
   // FILM-2015: the quit prompt when a plan or a delivery is in flight.
   createStudioUiMain({ app, ipcMain, getMainWindow, isMainWindowSender })
 
+  // FILM-2010: listen on the port this userData had last time when it is
+  // free, else the next free one in 19790…19799; record it in
+  // userData/mcp-endpoint.json; tell the user when none is free.
+  const startMcpServer = async (server) => {
+    const userDataDir = app.getPath('userData')
+    try {
+      const status = await server.start({ ports: mcpPortCandidates(readMcpEndpoint(userDataDir)?.port) })
+      try {
+        writeMcpEndpoint(userDataDir, { port: status.port })
+      } catch (error) {
+        console.warn('[MCP] could not record the endpoint:', error?.message || error)
+      }
+      console.log(`[MCP] StorybookStudio MCP server running at ${status.url}`)
+      return status
+    } catch (error) {
+      const detail = server.getStatus?.()?.error || error?.message || String(error)
+      console.warn('[MCP] server failed to start:', detail)
+      const picker = dialog || require('electron').dialog
+      const mainWindow = getMainWindow()
+      const options = {
+        type: 'warning',
+        message: 'The MCP server did not start',
+        detail: `${detail}\n\nAI agents cannot connect to StorybookStudio until it runs. Settings › Agents shows its status.`,
+        buttons: ['OK'],
+      }
+      Promise.resolve(mainWindow && !mainWindow.isDestroyed() ? picker.showMessageBox(mainWindow, options) : picker.showMessageBox(options))
+        .catch(() => {})
+      return server.getStatus?.() || { running: false, error: detail }
+    }
+  }
+
   return {
     audioReads,
+    startMcpServer,
     // Plan cards to the AI panel (FILM-2015), from any client.
     emitPlanProposed(proposal) {
       const mainWindow = getMainWindow()
