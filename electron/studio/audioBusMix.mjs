@@ -26,9 +26,10 @@ const KEY_LEVEL = 0.5
 const KEY_LEVEL_DB = 20 * Math.log10(KEY_LEVEL)
 const SIDECHAIN_RATIO = 20
 const DEFAULT_THRESHOLD_DB = -45
-// QA's ceiling is -1 dBTP on the delivered file; the AAC encode adds up to
-// ~2 dB of overshoot on transient material, so the mix stops at -2 dBTP,
-// limited at 4x oversampling (a true-peak limiter) after loudnorm.
+// QA's ceiling is -1 dBTP on the delivered file. The mix stops at -2 dBTP,
+// limited at 4x oversampling after loudnorm, so most encodes need nothing
+// more; what the AAC encode adds on top is held at the delivered file
+// (holdDeliveredTruePeak below).
 export const LOUDNORM_TRUE_PEAK_DB = -2
 const TRUE_PEAK_OVERSAMPLE = 4
 
@@ -228,6 +229,60 @@ export async function measureLoudness(ffmpegPath, file, { start = null, duration
     integratedLufs: pick(/I:\s+(-?[\d.]+|-inf)\s+LUFS/),
     lra: pick(/LRA:\s+(-?[\d.]+)\s+LU/),
     truePeakDb: pick(/Peak:\s+(-?[\d.]+|-inf)\s+dBFS/),
+  }
+}
+
+// QA reads the true peak of the delivered file, and every delivery encode
+// is AAC (FFmpeg's native encoder; the Studio uses no other). Measured on
+// the bundled ffmpeg 6.0, that encode adds up to +3.6 dB of inter-sample
+// overshoot on transient material (a -1.5 dBTP drum mix came back at
+// +2.1 dBTP at 320 kb/s), it does not shrink as the bitrate rises, and it is
+// chaotic: the same mix 0.01 dB quieter encoded 2.7 dB lower. No headroom
+// chosen before the encode bounds it, so the delivered file is measured,
+// and when it is over, its audio is limited lower by the excess, encoded
+// again and swapped in (the picture stream copied), until it is under.
+export const DELIVERY_TRUE_PEAK_DB = -1
+const DELIVERY_MARGIN_DB = 0.2
+const FIT_ATTEMPTS = 6
+
+// file: the encoded delivery (.mp4/.m4a/.mov). audioSource: the audio it was
+// encoded from (a WAV, or a file whose first audio stream is it). Rewrites
+// file in place only when it peaks above ceilingDb - margin.
+export async function holdDeliveredTruePeak({
+  ffmpegPath, file, audioSource, bitrateKbps = 192, sampleRate = 48000, channels = 2,
+  ceilingDb = DELIVERY_TRUE_PEAK_DB, timeoutMs = 180000,
+}) {
+  const layout = channels === 1 ? 'mono' : 'stereo'
+  const target = ceilingDb - DELIVERY_MARGIN_DB
+  const first = await measureLoudness(ffmpegPath, file, { timeoutMs })
+  if (!(first.truePeakDb > target)) return { ceilingDb, truePeakDb: first.truePeakDb, integratedLufs: first.integratedLufs, limiterDb: null, attempts: 1 }
+  const work = await fs.mkdtemp(path.join(os.tmpdir(), 'studio-peakhold-'))
+  try {
+    let worst = first.truePeakDb
+    let limiterDb = null
+    for (let attempt = 2; attempt <= FIT_ATTEMPTS + 1; attempt++) {
+      // A tenth more than the excess, so a limiter that lands on its
+      // ceiling still converges.
+      limiterDb = (limiterDb ?? target) - (worst - target) - 0.1
+      const oversampled = sampleRate * TRUE_PEAK_OVERSAMPLE
+      const filter = `aformat=channel_layouts=${layout},aresample=${oversampled},aformat=sample_rates=${oversampled}:channel_layouts=${layout},alimiter=limit=${num(dbToGain(limiterDb))}:attack=1:release=50:level=disabled:latency=1,aresample=${sampleRate},aformat=sample_rates=${sampleRate}:channel_layouts=${layout}`
+      const audio = path.join(work, `audio-${attempt}.m4a`)
+      const encoded = await runFfmpeg(ffmpegPath, ['-y', '-hide_banner', '-nostats', '-i', audioSource, '-map', '0:a:0', '-af', filter, '-c:a', 'aac', '-b:a', `${bitrateKbps}k`, '-ar', String(sampleRate), '-ac', String(channels), audio], { timeoutMs })
+      if (encoded.code !== 0) throw new Error(`True-peak re-encode failed: ${ffmpegFailureReason(encoded.stderr, { timedOut: encoded.timedOut })}`)
+      const measured = await measureLoudness(ffmpegPath, audio, { timeoutMs })
+      worst = measured.truePeakDb
+      if (worst > target) continue
+      const swapped = path.join(work, `swapped${path.extname(file)}`)
+      const muxed = await runFfmpeg(ffmpegPath, ['-y', '-hide_banner', '-i', file, '-i', audio, '-map', '0', '-map', '-0:a', '-map', '1:a:0', '-c', 'copy', '-movflags', '+faststart', swapped], { timeoutMs })
+      if (muxed.code !== 0) throw new Error(`True-peak remux failed: ${ffmpegFailureReason(muxed.stderr, { timedOut: muxed.timedOut })}`)
+      const final = await measureLoudness(ffmpegPath, swapped, { timeoutMs })
+      if (final.truePeakDb > target) throw new Error(`The remuxed file peaks at ${final.truePeakDb} dBTP though its audio measured ${worst}.`)
+      await fs.copyFile(swapped, file)
+      return { ceilingDb, truePeakDb: final.truePeakDb, integratedLufs: final.integratedLufs, encodedTruePeakDb: first.truePeakDb, limiterDb, attempts: attempt }
+    }
+    throw new Error(`The AAC encode still peaks at ${worst} dBTP, above ${ceilingDb} dBTP, after ${FIT_ATTEMPTS} limiter passes (limiter at ${num(limiterDb, 1)} dBTP).`)
+  } finally {
+    await fs.rm(work, { recursive: true, force: true })
   }
 }
 
