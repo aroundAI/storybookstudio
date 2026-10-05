@@ -40,6 +40,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Refuse an installer that contains Remotion (FILM-2018)
+        env:
+          REMOTION_RELEASE_APPROVED: ${{ vars.REMOTION_RELEASE_APPROVED }}
+        run: node scripts/check-release-licences.mjs
+
       - name: Build application
         run: npm run build
 
@@ -59,6 +64,7 @@ jobs:
 
   ensure-release:
     name: Ensure Release Exists
+    needs: [preflight]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
