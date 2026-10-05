@@ -132,7 +132,7 @@ Captions can be generated from edited timeline audio and styled in-app.
 - Live preview with play/scrub controls and safe-zone overlays.
 - Export-ready caption renders.
 
-> **macOS: the caption engine does not download yet.** On first use, captions download a whisper-cli build from this repository's releases. That release has not been published, so on macOS the first download fails (HTTP 404) until it is. Windows and Linux download from whisper.cpp's own releases and are unaffected. A machine that already has the engine keeps working. The release is built by `.github/workflows/whisper-mac-engine.yml`, run by hand with `publish` set.
+> **macOS caption engine.** On first use, captions on macOS download a universal whisper-cli build from this repository's prerelease [`whisper-cli-v1.9.1-mac`](https://github.com/aroundAI/storybookstudio/releases/tag/whisper-cli-v1.9.1-mac) (published 2026-10-05). Windows and Linux download from whisper.cpp's own releases. A new whisper tag needs a new build: run `.github/workflows/whisper-mac-engine.yml` by hand with `publish` set, after changing `WHISPER_RELEASE_TAG` in `electron/captionWhisper.js`.
 
 ### Export
 
