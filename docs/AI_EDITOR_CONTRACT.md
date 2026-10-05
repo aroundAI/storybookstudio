@@ -13,7 +13,7 @@ Each clause has an id, its inputs (**In**), its outputs (**Out**), the invariant
 - **Version**: a named snapshot of the timeline document plus the op range since its parent (FILM-2012).
 - **Scope**: `{ scene?: number, scenes?: number[], range?: [start, end], clipIds?: string[], timelineId?: string }`. An empty scope means the active timeline. An unknown scene, or a timeline other than the active one, is `VALIDATION_FAILED` (FILM-2013 adopted this shape and added `scene`).
 
-Both profiles are served on `http://127.0.0.1:19790/mcp`, chosen by `?profile=agent|expert` or the `X-MCP-Profile` header (any other value is a `400`), and both require the bearer secret (S1). `agent`, the default, lists the 18 capability tools; `expert` lists the upstream editor's tools (133 with FILM-2016's `set_audio_buses` and FILM-2017's `set_auto_reframe` and `set_focal_point`) plus the 6 lifecycle tools (`studio_open_episode`, `studio_get_job_status`, `studio_check_readiness`, `studio_create_version`, `studio_restore_version`, `studio_deliver`). Each profile refuses the other's tools.
+Both profiles are served on `http://127.0.0.1:19790/mcp`, chosen by `?profile=agent|expert` or the `X-MCP-Profile` header (any other value is a `400`), and both require the bearer secret (S1). `agent`, the default, lists the 19 capability tools; `expert` lists the upstream editor's tools (133 with FILM-2016's `set_audio_buses` and FILM-2017's `set_auto_reframe` and `set_focal_point`) plus the 6 lifecycle tools (`studio_open_episode`, `studio_get_job_status`, `studio_check_readiness`, `studio_create_version`, `studio_restore_version`, `studio_deliver`). Each profile refuses the other's tools.
 
 ## 1. Inputs
 
@@ -162,6 +162,11 @@ Every intent compiles to an action plan (A1) and reads its bounds from the polic
 | `match_brand` | `studio_edit` | IN2 | `add_transition`, `add_dip_to_black`, `remove_transitions` at scene changes; caption style is `studio_add_captions` (FILM-2016) | Each change is reported with the brand field it came from | FILM-2013 |
 | `reorder_scenes` | `studio_edit` | P2 | `move_clips` per scene block | Clips keep their relative order inside a scene; beds stay in place | FILM-2013 |
 | `recut_around_drops` | `studio_edit` | `analyticsHints.retention` | `trim_clips`, `move_clips` around drop timestamps | With `reason: 'unmeasured'` it returns no plan and says so; it never guesses drops | FILM-2013 |
+| `punch_in` | `studio_edit` | P2 | `set_clip_keyframes` scale with `hold` keyframes: a cut to the zoom on the moment's first frame and back at its end | Zoom capped at 110% while `visual.avoidExtremeZoom` (120% otherwise) | FILM-2018 |
+| `ken_burns` | `studio_edit` | P2 | `set_clip_keyframes` scale and position over the clip | The pan stays inside the room the smaller scale leaves, so no frame edge shows | FILM-2018 |
+| `speed_ramp` | `studio_edit` | P2 | `set_clip_keyframes` `speed` (ease to the speed, hold, ease back), `split_clip` where the ramp ends | Slow motion only (0.05-0.99x); the shot keeps its length and the rest of it resumes on its sound | FILM-2018 |
+| `freeze_frame` | `studio_edit` | P2 | `set_clip_keyframes` `speed` at the ramp floor (0.05x) with `hold` keyframes, `split_clip` where the hold ends | The sound plays on; the reason says how many source frames move over the hold | FILM-2018 |
+| `color_grade` | `studio_edit` | P2 | `add_glsl_effect` `glslFilmLook` per shot with `replaceExisting` | Re-grading replaces the look, never stacks it | FILM-2018 |
 | `balance` | `studio_edit_audio` | P5, bus stems | `set_clip_audio`, bus gain | Dialogue-to-music ratio per segment within policy | FILM-2016 |
 | `duck` | `studio_edit_audio` | policy | bus `duckDb`, 120 ms attack, 400 ms release | As `keep_music_under_dialogue` | FILM-2016 |
 | `normalize` | `studio_edit_audio` | preset LUFS | bus and master targets, `set_master_audio` | Master within ±1 LU of the preset target | FILM-2016 |

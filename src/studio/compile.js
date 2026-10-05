@@ -21,12 +21,17 @@ import * as addCta from './intents/add_cta.js'
 import * as matchBrand from './intents/match_brand.js'
 import * as reorderScenes from './intents/reorder_scenes.js'
 import * as recutAroundDrops from './intents/recut_around_drops.js'
+import { EFFECT_COMPILERS } from './intents/effects.js'
 
 const BUILT_IN = [hitDuration, tightenPacing, removeDeadAir, openWithStrongestLine, keepMusicUnderDialogue, addBroll, emphasize, addCta, matchBrand, reorderScenes, recutAroundDrops]
 
-const compilers = new Map(BUILT_IN.map((module) => [module.INTENT, { reads: module.reads, compile: module.compile, owner: 'FILM-2013' }]))
+const compilers = new Map([
+  ...BUILT_IN.map((module) => [module.INTENT, { reads: module.reads, compile: module.compile, owner: 'FILM-2013' }]),
+  // FILM-2018's semantic effects (src/studio/intents/effects.js).
+  ...EFFECT_COMPILERS.map((module) => [module.INTENT, { reads: module.reads, compile: module.compile, owner: 'FILM-2018' }]),
+])
 
-export const STUDIO_EDIT_INTENTS = Object.freeze(BUILT_IN.map((module) => module.INTENT))
+export const STUDIO_EDIT_INTENTS = Object.freeze([...BUILT_IN, ...EFFECT_COMPILERS].map((module) => module.INTENT))
 
 // Another spec's compiler (FILM-2016's audio and caption intents, FILM-2014's
 // repairs) registers here: {reads?, compile} with the same signature.
@@ -43,6 +48,7 @@ export const COMPILER_TOOLS = Object.freeze([
   'extract_range', 'trim_clips', 'delete_clips', 'move_clips', 'split_clip', 'set_clip_speed', 'set_clip_audio',
   'update_transition', 'add_transition', 'remove_transitions', 'add_dip_to_black', 'set_clip_keyframes',
   'update_caption_cues', 'set_timeline_marker_properties', 'add_track', 'add_text_clip', 'add_asset_to_timeline',
+  'add_glsl_effect',
 ])
 
 export class CompileError extends Error {

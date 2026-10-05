@@ -76,7 +76,7 @@ After an upstream merge adds or removes a tool, `--check` fails (and so does `te
 | 39 | `get_generation_status` | generation | — | exists | — | — | Return active, failed, and recent generated asset status for the open project. | Expert profile only. |
 | 40 | `split_clip` | trims | E3 trims | exists | yes, default | yes | Razor timeline clips at a time. | Plan-writable since FILM-2013; freeze_frame and speed_ramp (FILM-2018) compile to it. Since FILM-2013 the right piece keeps the clip's metadata (scene). |
 | 41 | `extract_range` | trims | E3 trims | exists | yes, default | yes | Remove a timeline time range across unlocked tracks: splits clips at the range edges, deletes everything inside, and (by default) ripples… | Ripple range cut: every FILM-2013 cut (tighten_pacing, remove_dead_air, hit_duration, recut_around_drops) compiles to it, over all but the captions and bed tracks. Plan-writable since FILM-2013. |
-| 42 | `set_clip_speed` | trims | E3 trims; E7 effects and graphics | exists | yes, default | yes | Retime clips: playback speed from 0.1x to 8x and/or reverse. | Plan-writable since FILM-2013; speed_ramp compiles to it (FILM-2018). |
+| 42 | `set_clip_speed` | trims | E3 trims; E7 effects and graphics | exists | yes, default | yes | Retime clips: playback speed from 0.1x to 8x and/or reverse. | Plan-writable since FILM-2013. No FILM-2018 effect emits it: it changes the clip's length; speed_ramp and freeze_frame keyframe 'speed' instead. |
 | 43 | `set_clip_audio` | audio | E5 audio | adapter | yes, default | yes | Set audio clip mix properties: gain in dB and fade-in/fade-out durations in seconds (clamped to clip length). | Gain and fades only, no volume envelope; plan-writable since FILM-2013. Ducking automation is FILM-2016. |
 | 44 | `list_recent_projects` | project | — | exists | — | — | List recently opened StorybookStudio projects (name, path, last modified, whether currently open). | Recovery after restart. |
 | 45 | `open_project` | project | L1 open episode | adapter | yes, default | — | Open a StorybookStudio project by folder path or by recent-project name. | studio_open_episode calls it after the FILM-2011 pull has built the folder. |
@@ -158,10 +158,10 @@ After an upstream merge adds or removes a tool, `--check` fails (and so does `te
 | 121 | `add_shape_clip` | graphics | E7 effects and graphics | exists | yes | yes | Create a StorybookStudio shape clip on a video track for motion graphics: rectangle, rounded rectangle, ellipse, polygon, or line. |  |
 | 122 | `update_shape_clip` | graphics | E7 effects and graphics | exists | yes | yes | Update an existing shape clip by explicit clipId: shape type, size, solid/gradient fill style, stroke style, transform, timing, or visual… |  |
 | 123 | `list_glsl_effects` | effects | E7 effects and graphics | exists | — | — | List the GLSL/GPU-backed clip effects StorybookStudio can add through MCP, including supported parameter keys, ranges, defaults, and pres… |  |
-| 124 | `add_glsl_effect` | effects | E7 effects and graphics | exists | yes, default | yes | Add a GLSL/GPU-backed effect to a visual clip. | color_grade (FILM-2018). |
+| 124 | `add_glsl_effect` | effects | E7 effects and graphics | exists | yes, default | yes | Add a GLSL/GPU-backed effect to a visual clip. | color_grade (FILM-2018): glslFilmLook per shot; plan-writable for compilers since FILM-2018. |
 | 125 | `update_glsl_effect` | effects | E7 effects and graphics | exists | yes, default | yes | Update an existing GLSL effect on a visual clip: enabled state, preset, static settings, or effect-parameter keyframes. |  |
 | 126 | `remove_glsl_effect` | effects | E7 effects and graphics | exists | yes, default | yes | Remove an existing GLSL effect from a visual clip and clear its effect-parameter keyframes. |  |
-| 127 | `set_clip_keyframes` | effects | E7 effects and graphics; V3 repair | exists | yes, default | yes | Preview or set explicit keyframes on an existing visual timeline clip. | punch_in, ken_burns, reframe crop paths; the add_fade repair on visuals. |
+| 127 | `set_clip_keyframes` | effects | E7 effects and graphics; V3 repair | exists | yes, default | yes | Preview or set explicit keyframes on an existing visual timeline clip. | punch_in, ken_burns, speed_ramp and freeze_frame ('speed' keyframes, FILM-2018), reframe crop paths; the add_fade repair on visuals. |
 | 128 | `add_dip_to_black` | transitions | E4 transitions | exists | yes, default | yes | Preview or apply dip-to-black opacity fades between adjacent visual clips. | brand transitionStyle dip. |
 | 129 | `export_timeline` | export | E8 export; L7 render | exists | yes | yes | Start a StorybookStudio timeline export using the existing hidden export worker. | The 720p review render as is; keyframe, scene and audio-only tiers are FILM-2014. |
 | 130 | `export_fcpxml` | export | E8 export | exists | yes, default | yes | Preview or export the active StorybookStudio timeline as modern FCPXML for Resolve/Final Cut or legacy XMEML v5 for Adobe Premiere Pro. | Interchange; not part of delivery. |
@@ -184,11 +184,12 @@ After an upstream merge adds or removes a tool, `--check` fails (and so does `te
 | `studio_open_episode` | L1 open episode | FILM-2013 | Built: starts the FILM-2011 pull (studioMain.cloud.openEpisode) and returns a jobId. |
 | `src/studio/projectBuilder.js` | L3 rough cut; P2 scene map | FILM-2012 | Package to project JSON; not a tool. |
 | `studio_check_readiness` | L2 readiness | FILM-2013 | Built: package, policy, target, offline and unprobed media, codecs, captions, coverage, plus check_media_health and check_export_readiness. |
-| `studio_edit` | L4 plan and preview; L5 apply | FILM-2013 | Built: eleven intent compilers (src/studio/intents/), per-step previews, plan cards, apply into a version with a reason per op-log line. |
+| `studio_edit` | L4 plan and preview; L5 apply | FILM-2013 | Built: eleven intent compilers (src/studio/intents/) and FILM-2018's five effects (intents/effects.js), per-step previews, plan cards, apply into a version with a reason per op-log line. |
 | `src/studio/oplog.js` | L5 apply | FILM-2012 | One line per applied step with its reason; not a tool. |
 | `studio_create_version / studio_restore_version` | L6 version; E9 checkpoints | FILM-2013 | Built over src/studio/versions.js (FILM-2012). |
 | `studio_edit_audio and bus parameters` | E5 audio | FILM-2016 | Buses, sidechain ducking, stems. The upstream editor's UI ducking (src/utils/audioDucking.mjs) has no MCP tool. |
 | `studio_add_captions` | E6 captions | FILM-2016 | Brand style and per-aspect safe areas. |
+| `studio_choose_visual_representation` | E7 effects and graphics | FILM-2018 | Built: ranks generated_video, stock_video, archival_image, chart, map, diagram, timeline, text_graphic for a scene or point with a reason each; read-only; the agent decides. |
 | `studio_add_graphic and the composition clip type` | E7 effects and graphics | FILM-2018 | VALIDATION_FAILED 'not available yet' until then. |
 | `studio_create_variant` | E1 timeline items; L8 deliver | FILM-2017 | short and hook; language is FILM-2019. |
 | `studio_deliver` | L8 deliver | FILM-2017 | confirm:true needs the renderer's one-time confirmation token. |
@@ -200,7 +201,7 @@ After an upstream merge adds or removes a tool, `--check` fails (and so does `te
 | --- | --- |
 | exists | 121 (of which 52 serve no contract verb and stay in the expert profile) |
 | adapter | 12 |
-| build | 20 (items above; none is a upstream tool) |
+| build | 21 (items above; none is a upstream tool) |
 
 | Verb | `exists` tools | `adapter` tools | `build` items |
 | --- | --- | --- | --- |
@@ -218,7 +219,7 @@ After an upstream merge adds or removes a tool, `--check` fails (and so does `te
 | E4 transitions | 4 | 0 | — |
 | E5 audio | 3 | 1 | studio_edit_audio and bus parameters (FILM-2016) |
 | E6 captions | 1 | 3 | studio_add_captions (FILM-2016) |
-| E7 effects and graphics | 16 | 0 | studio_add_graphic and the composition clip type (FILM-2018) |
+| E7 effects and graphics | 16 | 0 | studio_choose_visual_representation (FILM-2018); studio_add_graphic and the composition clip type (FILM-2018) |
 | E8 export | 4 | 0 | — |
 | E9 checkpoints | 3 | 3 | studio_create_version / studio_restore_version (FILM-2013) |
 | E10 assets | 6 | 0 | — |

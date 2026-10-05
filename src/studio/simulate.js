@@ -150,6 +150,32 @@ export function simulateStep(timeline, step, { fps = 24, counter = { n: 0 }, ass
       timeline.transitions = (timeline.transitions || []).filter((transition) => !gone.has(transition.id))
       return
     }
+    case 'split_clip': {
+      // The razor: the left piece keeps the id, its keyframes and effects;
+      // the right one starts at the cut on the same source time.
+      const time = toFrame(Number(args.timeSeconds), fps)
+      for (const id of ids(args.clipIds ?? args.clipId)) {
+        const clip = byId(id)
+        if (!clip || time <= start(clip) + 0.5 / fps || time >= end(clip) - 0.5 / fps) continue
+        const scale = (Number(clip.sourceTimeScale) || 1) * (Number(clip.speed) > 0 ? Number(clip.speed) : 1)
+        const left = time - start(clip)
+        const trimStart = (Number(clip.trimStart) || 0) + left * scale
+        counter.n += 1
+        const { keyframes, effects, ...rest } = clip
+        timeline.clips.push({ ...clone(rest), id: `${clip.id}~${counter.n}`, startTime: time, duration: end(clip) - time, trimStart, trimEnd: trimStart + (end(clip) - time) * scale })
+        clip.duration = left
+        clip.trimEnd = trimStart
+      }
+      return
+    }
+    case 'add_glsl_effect': {
+      const clip = byId(String(args.clipId))
+      if (!clip) return
+      counter.n += 1
+      const kept = (clip.effects || []).filter((effect) => !(args.replaceExisting && effect.type === args.effectType))
+      clip.effects = [...kept, { id: `sim-effect-${counter.n}`, type: args.effectType, enabled: args.enabled !== false, presetId: args.presetId ?? null, settings: { ...(args.settings || {}) } }]
+      return
+    }
     case 'set_clip_keyframes': {
       const clip = byId(String(args.clipId))
       if (!clip) return
