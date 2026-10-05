@@ -100,9 +100,10 @@ Both close gaps found in v0.3.36 and are not StorybookStudio-specific, so upstre
 take them and the merge conflict surface shrinks.
 
 1. **MCP bearer authentication.** The local MCP server in `electron/mcpServer.js` accepts
-   any request that reaches its port. The patch generates a per-launch token, requires
-   `Authorization: Bearer <token>` and shows the token in Settings next to the connect
-   commands.
+   any request that reaches its port. The patch generates a 32-byte secret on first run,
+   keeps it in `userData/mcp-secret` (mode 0600) across restarts
+   (`electron/studio/mcpSecret.js`), requires `Authorization: Bearer <secret>` and shows
+   it in Settings next to the connect commands.
 2. **`comfystudio://` path allowlist.** The `comfystudio://` file protocol serves any path
    the renderer asks for. The patch limits it to the open project folder, the media library
    and the app's own resources.
