@@ -346,6 +346,8 @@ async function renderDelivery({ project, projectDir, timelineId, preset, languag
       '-c:a', 'aac', '-b:a', `${preset.audioBitrate}k`, '-ar', '48000', '-ac', '2',
       '-t', String(duration), '-movflags', '+faststart', temporary,
     ], { signal })
+    const { holdDeliveredTruePeak } = await import('./audioBusMix.mjs')
+    await holdDeliveredTruePeak({ ffmpegPath, file: temporary, audioSource: normalized, bitrateKbps: preset.audioBitrate })
     await fsp.rename(temporary, outputPath)
     onProgress({ phase: 'encode', done: segments.length + 2, total })
 

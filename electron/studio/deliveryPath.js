@@ -84,6 +84,10 @@ function createDeliveryPath({ ffmpegPath = null, ffprobePath = null, getFfmpegPa
         await runFfmpegOrThrow(ffmpeg, ['-loglevel', 'error', '-i', intermediate, '-c:v', 'libx264', '-preset', 'fast', '-b:v', `${kbps}k`, '-maxrate', `${Math.round(kbps * 1.5)}k`, '-bufsize', `${kbps * 2}k`, '-pix_fmt', 'yuv420p', '-g', String(Math.round(fps * 2)), '-c:a', 'aac', '-b:a', `${Number(preset.audioBitrate) || 192}k`, '-ar', '48000', '-ac', '2', '-movflags', '+faststart', '-y', outputPath], { signal })
         encoded = { success: true, encoder: 'libx264', hardware: false, fallbackReason: 'no media-preparation queue' }
       }
+      // The AAC encode can overshoot the mix's true peak by up to ~3.6 dB;
+      // QA's -1 dBTP is held on the file itself (audioBusMix.mjs).
+      const { holdDeliveredTruePeak } = await import('./audioBusMix.mjs')
+      const truePeak = await holdDeliveredTruePeak({ ffmpegPath: ffmpeg, file: outputPath, audioSource: intermediate, bitrateKbps: service ? 192 : Number(preset.audioBitrate) || 192 })
       onProgress({ phase: 'encode', done: 2, total: 3 })
 
       const thumbnailPath = outputPath.replace(/\.mp4$/i, '.jpg')
@@ -100,6 +104,7 @@ function createDeliveryPath({ ffmpegPath = null, ffprobePath = null, getFfmpegPa
         encoder: encoded.encoder ?? null,
         hardware: Boolean(encoded.hardware),
         fallbackReason: encoded.fallbackReason ?? null,
+        truePeak,
       }
     } finally {
       await fsp.rm(intermediate, { force: true }).catch(() => {})
