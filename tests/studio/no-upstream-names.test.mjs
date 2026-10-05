@@ -125,6 +125,7 @@ test('a packed macOS app registers storybookstudio:// under the aroundAI bundle 
     ? walk(release).find((file) => file.endsWith('.app/Contents/Info.plist') && !file.includes('Helper'))
     : null
   if (!plist) {
+    assert.notEqual(process.env.REQUIRE_PACKED, '1', 'REQUIRE_PACKED is set but release/ holds no packed app')
     t.skip('no packed app under release/')
     return
   }

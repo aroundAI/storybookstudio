@@ -37,3 +37,46 @@ jobs:
       - run: node --test tests/studio/no-upstream-names.test.mjs
         env:
           REQUIRE_DIST: '1'
+
+  pack:
+    name: Packaged macOS app identity (arm64)
+    # macos-15, as release.yml: the pinned MoltenVK needs the Xcode 16 Metal SDK; macos-14 fails to link.
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - run: brew install ninja
+      # The packaging gate refuses to pack without the staged RIFE runtime, as in release.yml.
+      - name: Install pinned MoltenVK SDK
+        run: |
+          SDK_URL=$(node -p "require('./scripts/rife-runtime/pins.json').optionalSdks.moltenVkMac.url")
+          SDK_SHA=$(node -p "require('./scripts/rife-runtime/pins.json').optionalSdks.moltenVkMac.sha256")
+          SDK_ARCHIVE="$RUNNER_TEMP/MoltenVK-all.tar"
+          SDK_PARENT="$RUNNER_TEMP/moltenvk-sdk"
+          curl --fail --location --retry 3 "$SDK_URL" --output "$SDK_ARCHIVE"
+          echo "$SDK_SHA  $SDK_ARCHIVE" | shasum -a 256 --check
+          mkdir -p "$SDK_PARENT"
+          tar -xf "$SDK_ARCHIVE" -C "$SDK_PARENT"
+          SDK_ROOT="$SDK_PARENT/MoltenVK/MoltenVK"
+          test -f "$SDK_ROOT/include/vulkan/vulkan.h"
+          echo "MOLTENVK_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+      - run: npm ci
+      - name: Build and verify the macOS RIFE runtime
+        run: |
+          python3 scripts/rife-runtime/build.py build --platform darwin --arch arm64 \
+            --vulkan-sdk "$MOLTENVK_SDK_ROOT" --clean --replace
+          node scripts/runtime-package-gate.cjs staged --platform darwin --arch arm64
+      - run: npm run build
+      # Unsigned and not notarized: this proves the app packs and carries its identity.
+      - run: npx electron-builder --mac --arm64 --dir
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - run: test -f release/mac-arm64/StorybookStudio.app/Contents/Info.plist
+      # The test skips without a packed app; REQUIRE_PACKED makes that a failure.
+      - run: node --test tests/studio/no-upstream-names.test.mjs
+        env:
+          REQUIRE_PACKED: '1'
