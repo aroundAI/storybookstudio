@@ -206,7 +206,7 @@ const EMPTY_CUSTOM_KEYFRAME_WORKFLOW = Object.freeze({
   updatedAt: 0,
 })
 
-const COMFYSTUDIO_BRIDGE_SOURCE = 'comfystudio-comfyui-bridge'
+const STORYBOOKSTUDIO_BRIDGE_SOURCE = 'storybookstudio-comfyui-bridge'
 const MUSIC_VIDEO_AGENT_PHASES = new Set([
   'intake',
   'song',
@@ -219,7 +219,7 @@ const MUSIC_VIDEO_AGENT_PHASES = new Set([
   'review',
   'complete',
 ])
-const EMPTY_COMFYSTUDIO_BRIDGE_STATUS = Object.freeze({
+const EMPTY_STORYBOOKSTUDIO_BRIDGE_STATUS = Object.freeze({
   state: 'unknown',
   installed: false,
   version: '',
@@ -317,11 +317,11 @@ function normalizeCustomKeyframeWorkflow(value) {
   }
 }
 
-function normalizeComfyStudioBridgeStatus(value) {
-  if (!value || typeof value !== 'object') return { ...EMPTY_COMFYSTUDIO_BRIDGE_STATUS }
+function normalizeStorybookStudioBridgeStatus(value) {
+  if (!value || typeof value !== 'object') return { ...EMPTY_STORYBOOKSTUDIO_BRIDGE_STATUS }
   const state = String(value.state || (value.installed ? 'installed' : 'not_installed') || 'unknown').trim()
   return {
-    ...EMPTY_COMFYSTUDIO_BRIDGE_STATUS,
+    ...EMPTY_STORYBOOKSTUDIO_BRIDGE_STATUS,
     ...value,
     state: state || 'unknown',
     installed: Boolean(value.installed),
@@ -330,7 +330,7 @@ function normalizeComfyStudioBridgeStatus(value) {
     targetDir: String(value.targetDir || ''),
     comfyRootPath: String(value.comfyRootPath || ''),
     customNodesPath: String(value.customNodesPath || ''),
-    message: String(value.message || value.error || EMPTY_COMFYSTUDIO_BRIDGE_STATUS.message),
+    message: String(value.message || value.error || EMPTY_STORYBOOKSTUDIO_BRIDGE_STATUS.message),
     error: String(value.error || ''),
     restartRequired: Boolean(value.restartRequired),
   }
@@ -1137,7 +1137,7 @@ function stripUgcDialogueQuotes(value = '') {
 // Global (cross-project) cache of voice audition clips, keyed by ElevenLabs
 // voice name -> base64 data URL. Lives in localStorage so it persists across
 // projects and restarts; generated once via the Voiceover step.
-const VOICE_PREVIEW_STORAGE_KEY = 'comfystudio-voice-previews-v1'
+const VOICE_PREVIEW_STORAGE_KEY = 'storybookstudio-voice-previews-v1'
 
 function readVoicePreviewCache() {
   if (typeof localStorage === 'undefined') return {}
@@ -3745,7 +3745,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
   ))
   const [customWorkflowBridgeTarget, setCustomWorkflowBridgeTarget] = useState('music-keyframe')
   const [yoloMusicCustomKeyframeBridgeStatus, setYoloMusicCustomKeyframeBridgeStatus] = useState(() => (
-    normalizeComfyStudioBridgeStatus()
+    normalizeStorybookStudioBridgeStatus()
   ))
   const [yoloMusicCustomKeyframeBridgeBusy, setYoloMusicCustomKeyframeBridgeBusy] = useState(false)
   const [yoloMusicVideoWorkflowId, setYoloMusicVideoWorkflowId] = useState(() => {
@@ -3920,8 +3920,8 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
       setFormError(null)
       addComfyLog('status', `MCP prepared timeline frame for ${getWorkflowDisplayLabel(nextWorkflowId) || nextWorkflowId}. Review settings, then click Generate when ready.`)
     }
-    window.addEventListener('comfystudio-mcp-prepare-generation', handler)
-    return () => window.removeEventListener('comfystudio-mcp-prepare-generation', handler)
+    window.addEventListener('storybookstudio-mcp-prepare-generation', handler)
+    return () => window.removeEventListener('storybookstudio-mcp-prepare-generation', handler)
   }, [addComfyLog, frameForAI?.workflowId])
 
   // Restore selected asset from ID when assets are available
@@ -5050,7 +5050,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           image: '',
         },
         _meta: {
-          title: 'VELORN_INPUT_IMAGE',
+          title: 'STORYBOOKSTUDIO_INPUT_IMAGE',
         },
       },
       '2': {
@@ -5059,7 +5059,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           value: 'StorybookStudio will inject the shot keyframe prompt here.',
         },
         _meta: {
-          title: 'VELORN_PROMPT',
+          title: 'STORYBOOKSTUDIO_PROMPT',
         },
       },
       '3': {
@@ -5068,7 +5068,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           value: 0,
         },
         _meta: {
-          title: 'VELORN_SEED',
+          title: 'STORYBOOKSTUDIO_SEED',
         },
       },
       '4': {
@@ -5077,7 +5077,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           value: 1280,
         },
         _meta: {
-          title: 'VELORN_WIDTH',
+          title: 'STORYBOOKSTUDIO_WIDTH',
         },
       },
       '5': {
@@ -5086,7 +5086,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           value: 720,
         },
         _meta: {
-          title: 'VELORN_HEIGHT',
+          title: 'STORYBOOKSTUDIO_HEIGHT',
         },
       },
       '6': {
@@ -5109,7 +5109,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           filename_prefix: 'image/custom_keyframe_starter',
         },
         _meta: {
-          title: 'VELORN_OUTPUT_IMAGE',
+          title: 'STORYBOOKSTUDIO_OUTPUT_IMAGE',
         },
       },
     }
@@ -5130,7 +5130,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           image: '',
         },
         _meta: {
-          title: 'VELORN_INPUT_IMAGE',
+          title: 'STORYBOOKSTUDIO_INPUT_IMAGE',
         },
       },
       '2': {
@@ -5139,7 +5139,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           value: 'StorybookStudio will inject the ad shot keyframe prompt here.',
         },
         _meta: {
-          title: 'VELORN_PROMPT',
+          title: 'STORYBOOKSTUDIO_PROMPT',
         },
       },
       '3': {
@@ -5148,7 +5148,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           value: 0,
         },
         _meta: {
-          title: 'VELORN_SEED',
+          title: 'STORYBOOKSTUDIO_SEED',
         },
       },
       '4': {
@@ -5157,7 +5157,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           value: 1280,
         },
         _meta: {
-          title: 'VELORN_WIDTH',
+          title: 'STORYBOOKSTUDIO_WIDTH',
         },
       },
       '5': {
@@ -5166,7 +5166,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           value: 720,
         },
         _meta: {
-          title: 'VELORN_HEIGHT',
+          title: 'STORYBOOKSTUDIO_HEIGHT',
         },
       },
       '6': {
@@ -5189,7 +5189,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           filename_prefix: 'image/custom_ad_keyframe_starter',
         },
         _meta: {
-          title: 'VELORN_OUTPUT_IMAGE',
+          title: 'STORYBOOKSTUDIO_OUTPUT_IMAGE',
         },
       },
     }
@@ -5210,7 +5210,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           image: '',
         },
         _meta: {
-          title: 'VELORN_INPUT_IMAGE',
+          title: 'STORYBOOKSTUDIO_INPUT_IMAGE',
         },
       },
       '2': {
@@ -5219,7 +5219,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           value: 'StorybookStudio will inject the shot video prompt here.',
         },
         _meta: {
-          title: 'VELORN_PROMPT',
+          title: 'STORYBOOKSTUDIO_PROMPT',
         },
       },
       '3': {
@@ -5228,7 +5228,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           value: 0,
         },
         _meta: {
-          title: 'VELORN_SEED',
+          title: 'STORYBOOKSTUDIO_SEED',
         },
       },
       '4': {
@@ -5237,7 +5237,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           value: 1280,
         },
         _meta: {
-          title: 'VELORN_WIDTH',
+          title: 'STORYBOOKSTUDIO_WIDTH',
         },
       },
       '5': {
@@ -5246,7 +5246,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           value: 720,
         },
         _meta: {
-          title: 'VELORN_HEIGHT',
+          title: 'STORYBOOKSTUDIO_HEIGHT',
         },
       },
       '6': {
@@ -5255,7 +5255,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           value: 24,
         },
         _meta: {
-          title: 'VELORN_FPS',
+          title: 'STORYBOOKSTUDIO_FPS',
         },
       },
       '7': {
@@ -5264,7 +5264,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           value: 5,
         },
         _meta: {
-          title: 'VELORN_DURATION',
+          title: 'STORYBOOKSTUDIO_DURATION',
         },
       },
       '8': {
@@ -5273,7 +5273,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           audio: '',
         },
         _meta: {
-          title: 'VELORN_AUDIO',
+          title: 'STORYBOOKSTUDIO_AUDIO',
         },
       },
       '9': {
@@ -5296,7 +5296,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           filename_prefix: 'video/custom_video_starter',
         },
         _meta: {
-          title: 'VELORN_OUTPUT_VIDEO',
+          title: 'STORYBOOKSTUDIO_OUTPUT_VIDEO',
         },
       },
     }
@@ -5365,7 +5365,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           filename_prefix: 'image/custom_generate_starter',
         },
         _meta: {
-          title: 'VELORN_OUTPUT_IMAGE',
+          title: 'STORYBOOKSTUDIO_OUTPUT_IMAGE',
         },
       },
     }
@@ -5390,7 +5390,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           image: '',
         },
         _meta: {
-          title: 'VELORN_INPUT_IMAGE',
+          title: 'STORYBOOKSTUDIO_INPUT_IMAGE',
         },
       },
       '2': {
@@ -5399,7 +5399,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           value: 'StorybookStudio will inject the video prompt here.',
         },
         _meta: {
-          title: 'VELORN_PROMPT',
+          title: 'STORYBOOKSTUDIO_PROMPT',
         },
       },
       '3': {
@@ -5408,7 +5408,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           value: 0,
         },
         _meta: {
-          title: 'VELORN_SEED',
+          title: 'STORYBOOKSTUDIO_SEED',
         },
       },
       '4': {
@@ -5417,7 +5417,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           value: 1280,
         },
         _meta: {
-          title: 'VELORN_WIDTH',
+          title: 'STORYBOOKSTUDIO_WIDTH',
         },
       },
       '5': {
@@ -5426,7 +5426,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           value: 720,
         },
         _meta: {
-          title: 'VELORN_HEIGHT',
+          title: 'STORYBOOKSTUDIO_HEIGHT',
         },
       },
       '6': {
@@ -5435,7 +5435,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           value: 24,
         },
         _meta: {
-          title: 'VELORN_FPS',
+          title: 'STORYBOOKSTUDIO_FPS',
         },
       },
       '7': {
@@ -5444,7 +5444,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           value: 5,
         },
         _meta: {
-          title: 'VELORN_DURATION',
+          title: 'STORYBOOKSTUDIO_DURATION',
         },
       },
       '8': {
@@ -5453,7 +5453,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           audio: '',
         },
         _meta: {
-          title: 'VELORN_AUDIO',
+          title: 'STORYBOOKSTUDIO_AUDIO',
         },
       },
       '9': {
@@ -5476,7 +5476,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           filename_prefix: 'video/custom_generate_starter',
         },
         _meta: {
-          title: 'VELORN_OUTPUT_VIDEO',
+          title: 'STORYBOOKSTUDIO_OUTPUT_VIDEO',
         },
       },
     }
@@ -5949,10 +5949,10 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
   const handleCheckYoloMusicCustomKeyframeBridge = useCallback(async ({ silent = false } = {}) => {
     const bridge = typeof window !== 'undefined' ? window.electronAPI?.comfyBridge : null
     if (!bridge?.getStatus) {
-      const unavailable = normalizeComfyStudioBridgeStatus({
+      const unavailable = normalizeStorybookStudioBridgeStatus({
         state: 'unavailable',
         installed: false,
-        message: 'Velorn Bridge is only available in the desktop app.',
+        message: 'Studio Bridge is only available in the desktop app.',
       })
       setYoloMusicCustomKeyframeBridgeStatus(unavailable)
       if (!silent) addComfyLog('warning', unavailable.message)
@@ -5962,17 +5962,17 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
     setYoloMusicCustomKeyframeBridgeBusy(true)
     try {
       const result = await bridge.getStatus()
-      const next = normalizeComfyStudioBridgeStatus(result)
+      const next = normalizeStorybookStudioBridgeStatus(result)
       setYoloMusicCustomKeyframeBridgeStatus(next)
       if (!silent) {
         addComfyLog(next.installed ? 'ok' : 'status', next.message)
       }
       return next
     } catch (error) {
-      const next = normalizeComfyStudioBridgeStatus({
+      const next = normalizeStorybookStudioBridgeStatus({
         state: 'unavailable',
         installed: false,
-        error: error?.message || 'Could not check the Velorn Bridge.',
+        error: error?.message || 'Could not check the Studio Bridge.',
       })
       setYoloMusicCustomKeyframeBridgeStatus(next)
       if (!silent) addComfyLog('error', next.message)
@@ -5997,7 +5997,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
   useEffect(() => {
     const handleBridgeMessage = (event) => {
       const data = event?.data
-      if (!data || data.source !== COMFYSTUDIO_BRIDGE_SOURCE || data.type !== 'api-workflow') return
+      if (!data || data.source !== STORYBOOKSTUDIO_BRIDGE_SOURCE || data.type !== 'api-workflow') return
       const workflow = data.workflow
       if (!workflow || typeof workflow !== 'object' || Array.isArray(workflow)) {
         addComfyLog('warning', 'ComfyUI sent an empty workflow. Export as API JSON is still available as a fallback.')
@@ -6061,8 +6061,8 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
         addComfyLog(validation.ok ? 'ok' : 'warning', validation.ok
           ? `Received custom ${targetLabel} workflow from ComfyUI: ${name}`
           : `Received workflow from ComfyUI but it needs attention: ${validation.message}`)
-        window.dispatchEvent(new CustomEvent('comfystudio-open-generate-tab', {
-          detail: { source: COMFYSTUDIO_BRIDGE_SOURCE },
+        window.dispatchEvent(new CustomEvent('storybookstudio-open-generate-tab', {
+          detail: { source: STORYBOOKSTUDIO_BRIDGE_SOURCE },
         }))
       } catch (error) {
         const message = error?.message || 'Could not import the workflow sent from ComfyUI.'
@@ -7797,10 +7797,10 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
   const handleInstallYoloMusicCustomKeyframeBridge = useCallback(async () => {
     const bridge = typeof window !== 'undefined' ? window.electronAPI?.comfyBridge : null
     if (!bridge?.install) {
-      const unavailable = normalizeComfyStudioBridgeStatus({
+      const unavailable = normalizeStorybookStudioBridgeStatus({
         state: 'unavailable',
         installed: false,
-        message: 'Velorn Bridge is only available in the desktop app.',
+        message: 'Studio Bridge is only available in the desktop app.',
       })
       setYoloMusicCustomKeyframeBridgeStatus(unavailable)
       addComfyLog('warning', unavailable.message)
@@ -7810,11 +7810,11 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
     setYoloMusicCustomKeyframeBridgeBusy(true)
     try {
       const result = await bridge.install()
-      const status = normalizeComfyStudioBridgeStatus(result)
+      const status = normalizeStorybookStudioBridgeStatus(result)
       setYoloMusicCustomKeyframeBridgeStatus(status)
 
       if (!result?.success) {
-        addComfyLog('error', status.message || status.error || 'Could not install the Velorn Bridge.')
+        addComfyLog('error', status.message || status.error || 'Could not install the Studio Bridge.')
         return status
       }
 
@@ -7823,7 +7823,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
 
       const restartNow = await requestConfirm({
         title: 'Restart ComfyUI now?',
-        message: 'The Velorn Bridge is installed. Restart ComfyUI now to load the Send to StorybookStudio button.\n\nIf this ComfyUI session was started outside StorybookStudio, restart it manually and then re-check the bridge.',
+        message: 'The Studio Bridge is installed. Restart ComfyUI now to load the Send to StorybookStudio button.\n\nIf this ComfyUI session was started outside StorybookStudio, restart it manually and then re-check the bridge.',
         confirmLabel: 'Restart ComfyUI',
         cancelLabel: 'Later',
         tone: 'primary',
@@ -7863,10 +7863,10 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
       await handleCheckYoloMusicCustomKeyframeBridge({ silent: true })
       return status
     } catch (error) {
-      const next = normalizeComfyStudioBridgeStatus({
+      const next = normalizeStorybookStudioBridgeStatus({
         state: 'unavailable',
         installed: false,
-        error: error?.message || 'Could not install the Velorn Bridge.',
+        error: error?.message || 'Could not install the Studio Bridge.',
       })
       setYoloMusicCustomKeyframeBridgeStatus(next)
       addComfyLog('error', next.message)
@@ -10993,8 +10993,8 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
   ])
 
   useEffect(() => {
-    const eventName = 'comfystudio-mcp-music-video-keyframe'
-    const probeEventName = 'comfystudio-mcp-music-video-keyframe-probe'
+    const eventName = 'storybookstudio-mcp-music-video-keyframe'
+    const probeEventName = 'storybookstudio-mcp-music-video-keyframe-probe'
     const handleProbe = (event) => {
       event?.detail?.respond?.({ ready: true })
     }
@@ -12625,7 +12625,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
   }, [buildMcpMusicVideoPlanReport, yoloActivePlan])
 
   useEffect(() => {
-    const eventName = 'comfystudio-mcp-music-video-workflow'
+    const eventName = 'storybookstudio-mcp-music-video-workflow'
     const handler = async (event) => {
       const detail = event?.detail || {}
       const respond = typeof detail.respond === 'function' ? detail.respond : () => {}
@@ -13763,8 +13763,8 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
       })
     }
 
-    window.addEventListener('comfystudio-mcp-queue-prepared-generation', handler)
-    return () => window.removeEventListener('comfystudio-mcp-queue-prepared-generation', handler)
+    window.addEventListener('storybookstudio-mcp-queue-prepared-generation', handler)
+    return () => window.removeEventListener('storybookstudio-mcp-queue-prepared-generation', handler)
   }, [
     addComfyLog,
     allowQueueWhileWaiting,
@@ -13984,8 +13984,8 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
       })
     }
 
-    window.addEventListener('comfystudio-mcp-queue-timeline-generation-batch', handler)
-    return () => window.removeEventListener('comfystudio-mcp-queue-timeline-generation-batch', handler)
+    window.addEventListener('storybookstudio-mcp-queue-timeline-generation-batch', handler)
+    return () => window.removeEventListener('storybookstudio-mcp-queue-timeline-generation-batch', handler)
   }, [
     addComfyLog,
     allowQueueWhileWaiting,
@@ -14394,8 +14394,8 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
       })
     }
 
-    window.addEventListener('comfystudio-mcp-queue-template-generation', handler)
-    return () => window.removeEventListener('comfystudio-mcp-queue-template-generation', handler)
+    window.addEventListener('storybookstudio-mcp-queue-template-generation', handler)
+    return () => window.removeEventListener('storybookstudio-mcp-queue-template-generation', handler)
   }, [
     addComfyLog,
     allowQueueWhileWaiting,
@@ -14772,8 +14772,8 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
       })
     }
 
-    window.addEventListener('comfystudio-mcp-queue-prompt-generation-batch', handler)
-    return () => window.removeEventListener('comfystudio-mcp-queue-prompt-generation-batch', handler)
+    window.addEventListener('storybookstudio-mcp-queue-prompt-generation-batch', handler)
+    return () => window.removeEventListener('storybookstudio-mcp-queue-prompt-generation-batch', handler)
   }, [
     addComfyLog,
     allowQueueWhileWaiting,
@@ -14836,8 +14836,8 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
       })
     }
 
-    window.addEventListener('comfystudio-mcp-get-generation-queue-status', handler)
-    return () => window.removeEventListener('comfystudio-mcp-get-generation-queue-status', handler)
+    window.addEventListener('storybookstudio-mcp-get-generation-queue-status', handler)
+    return () => window.removeEventListener('storybookstudio-mcp-get-generation-queue-status', handler)
   }, [])
 
   // Poll for result
@@ -15852,7 +15852,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
           ? 'image'
           : importedJobEntry.manifest?.outputType === 'audio'
             ? 'audio'
-          : 'video'}/velorn_${outputToken}`
+          : 'video'}/storybookstudio_${outputToken}`
       ) : (
         isSingleVideoWorkflowId(job.workflowId) ||
         job.workflowId === 'ltx23-t2v' ||
@@ -15883,10 +15883,10 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
             job.workflowId === CUSTOM_AD_KEYFRAME_WORKFLOW_ID ||
             job.workflowId === CUSTOM_MUSIC_KEYFRAME_WORKFLOW_ID
           )
-            ? `image/velorn_${outputToken}`
+            ? `image/storybookstudio_${outputToken}`
             : (
               job.workflowId === 'sonilo-v2m' || job.workflowId === ELEVENLABS_TTS_WORKFLOW_ID
-              ? `audio/velorn_${outputToken}`
+              ? `audio/storybookstudio_${outputToken}`
                 : ''
             )
       )
@@ -16185,7 +16185,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
             frames: Math.round(job.duration * job.fps) + 1,
             fps: job.fps,
             seed: job.seed,
-            filenamePrefix: outputPrefix || 'video/Velorn_wan',
+            filenamePrefix: outputPrefix || 'video/StorybookStudio_wan',
             qualityPreset: job.wanQualityPreset || 'balanced',
           })
           break
@@ -16400,7 +16400,7 @@ function GenerateWorkspace({ onOpenWorkflowSetup = null }) {
             width: job.resolution?.width,
             height: job.resolution?.height,
             referenceImages: referenceFilenames,
-            filenamePrefix: outputPrefix || 'image/Velorn_edit',
+            filenamePrefix: outputPrefix || 'image/StorybookStudio_edit',
           })
           break
         case CUSTOM_MUSIC_KEYFRAME_WORKFLOW_ID:

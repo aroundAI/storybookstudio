@@ -2,7 +2,7 @@
 // project. The export worker window has no currentProject, so ExportPanel
 // (or FILM-2017's delivery batch) resolves the buses once into the job's
 // options as `studioAudio`, and the exporter turns that into the IPC's
-// `studio` block. A plain Velorn project has no audioBuses: no block, and
+// `studio` block. A plain upstream project has no audioBuses: no block, and
 // the mix is exactly what it was.
 import { busForTrack, DIALOGUE_BUS, loudnessTargetFor, resolveAudioBuses } from './buses.js'
 

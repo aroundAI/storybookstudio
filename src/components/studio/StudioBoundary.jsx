@@ -1,8 +1,8 @@
 // FILM-2015: an error boundary around every studio surface. A surface that
 // throws (an unexpected payload on studio:plan-proposed, say) must not
-// unmount App, because App also runs Velorn's MCP action bridge; without the
+// unmount App, because App also runs the upstream editor's MCP action bridge; without the
 // boundary every MCP call then times out. The surface is replaced by its
-// fallback (Velorn's own screen for Welcome) or a small notice with Try again.
+// fallback (the upstream editor's own screen for Welcome) or a small notice with Try again.
 import { Component } from 'react'
 
 export default class StudioBoundary extends Component {

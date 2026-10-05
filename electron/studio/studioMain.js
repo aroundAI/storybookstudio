@@ -3,19 +3,20 @@
 // upstream file changes only at its registration points.
 const path = require('path')
 const { loadOrCreateMcpSecret, buildMcpConnectCommand } = require('./mcpSecret')
-const { comfystudioUrlToPath, resolveAllowedPath, createGrantedFileSet } = require('./protocolAllowlist')
+const { storybookstudioUrlToPath, resolveAllowedPath, createGrantedFileSet } = require('./protocolAllowlist')
 const secrets = require('./secrets')
 const { createStudioCloud } = require('./cloud')
 const { createStudioDeliver } = require('./deliver')
 const { createDeliveryPath } = require('./deliveryPath')
 const { createAudioReads } = require('./audioReads')
 const { createStudioUiMain } = require('./studioUi')
-const { applyAppBranding } = require('./appBranding')
+const { applyAppBranding, APP_NAME } = require('./appBranding')
+const { readLicenses, buildAppMenuTemplate } = require('./licenses')
 
-// Velorn's own temp working directories; Electron has no "cache" path name.
-const CACHE_DIR_NAMES = ['comfystudio-shot-audio', 'comfystudio-caption-audio']
+// The upstream editor's own temp working directories; Electron has no "cache" path name.
+const CACHE_DIR_NAMES = ['storybookstudio-shot-audio', 'storybookstudio-caption-audio']
 
-function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, getMcpServer, getFfprobePath = () => null, getFfmpegPath = () => null, getMediaPreparation = () => null, dialog = null, iconPath = null }) {
+function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, getMcpServer, getFfprobePath = () => null, getFfmpegPath = () => null, getMediaPreparation = () => null, dialog = null, iconPath = null, Menu = null }) {
   // A separate profile (and so a separate single-instance lock) for a
   // development run beside an installed StorybookStudio.
   if (process.env.STUDIO_USER_DATA_DIR) app.setPath('userData', process.env.STUDIO_USER_DATA_DIR)
@@ -32,6 +33,13 @@ function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, get
     return Boolean(mainWindow && !mainWindow.isDestroyed() && event.sender === mainWindow.webContents)
   }
 
+  // Help > Open-source licenses (GPL-3.0 §5 notices; electron/studio/licenses.js).
+  ipcMain.handle('studio:getLicenses', () => readLicenses({ appPath: app.getAppPath() }))
+  const showLicenses = () => {
+    const mainWindow = getMainWindow()
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('studio:show-licenses')
+  }
+
   // Settings > Agents (MCP) asks for this to show the ready-made command.
   ipcMain.handle('studio:getMcpConnectCommand', (event) => {
     if (!isMainWindowSender(event)) return { success: false, error: 'Not available to this window.' }
@@ -40,7 +48,7 @@ function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, get
     return { success: true, ...buildMcpConnectCommand({ url, secret: getMcpSecret() }) }
   })
 
-  // FILM-2011: sign-in, pull, re-sync, edit events and velorn:// links.
+  // FILM-2011: sign-in, pull, re-sync, edit events and storybookstudio:// links.
   // Created here, at load, so the scheme and the single-instance lock are
   // claimed before `ready` (macOS delivers open-url that early).
   const cloud = createStudioCloud({
@@ -131,17 +139,18 @@ function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, get
     isPrimaryInstance: cloud.protocol.primary,
     onReady() {
       applyAppBranding({ app, iconPath })
+      if (Menu) Menu.setApplicationMenu(Menu.buildFromTemplate(buildAppMenuTemplate({ appName: APP_NAME, onShowLicenses: showLicenses })))
       secrets.configureSecrets({ userDataDir: app.getPath('userData'), safeStorage })
       cloud.onReady()
     },
     // media:getFileUrl is reachable only from windows that load the preload,
     // which already read any file through fs IPC; this grants nothing new to
-    // them and keeps comfystudio:// closed to every other page.
+    // them and keeps storybookstudio-file:// closed to every other page.
     grantFile(filePath) {
       grantedFiles.grant(filePath)
     },
     resolveProtocolUrl(url) {
-      const requestPath = comfystudioUrlToPath(url)
+      const requestPath = storybookstudioUrlToPath(url)
       return resolveAllowedPath(requestPath, protocolRoots(), { files: grantedFiles.list() })
     },
   }

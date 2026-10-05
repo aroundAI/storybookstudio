@@ -1,41 +1,39 @@
 <div align="center">
 
-# Velorn
+# StorybookStudio
 
 **The open-source AI video workstation — a real editor for you, and 100+ MCP tools for your agent.**
 
-[![Latest Release](https://img.shields.io/github/v/release/VelornLabs/velorn?label=Latest&color=6C63FF)](https://github.com/VelornLabs/velorn/releases/latest)
+[![Latest Release](https://img.shields.io/github/v/release/aroundAI/storybookstudio?label=Latest&color=6C63FF)](https://github.com/aroundAI/storybookstudio/releases/latest)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue)](LICENSE)
-[![Platforms](https://img.shields.io/badge/Platforms-Windows%20%C2%B7%20macOS%20%C2%B7%20Linux-444444)](https://github.com/VelornLabs/velorn/releases/latest)
+[![Platforms](https://img.shields.io/badge/Platforms-Windows%20%C2%B7%20macOS%20%C2%B7%20Linux-444444)](https://github.com/aroundAI/storybookstudio/releases/latest)
 
-[![Website](https://img.shields.io/badge/Website-velorn.ai-0A9396)](https://velorn.ai)
-[![Follow on X](https://img.shields.io/badge/Follow-%40getvelorn-000000?logo=x&logoColor=white)](https://x.com/getvelorn)
 [![Join our Discord](https://img.shields.io/badge/Discord-Join%20the%20community-5865F2?logo=discord&logoColor=white)](https://discord.gg/QWZUuUChVK)
 
-[![Download for Windows](https://img.shields.io/badge/Windows-Download-0078D4?style=for-the-badge)](https://github.com/VelornLabs/velorn/releases/latest)
-[![Download for macOS](https://img.shields.io/badge/macOS-Download-1a1a1a?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/VelornLabs/velorn/releases/latest)
-[![Download for Linux](https://img.shields.io/badge/Linux-Download-E95420?style=for-the-badge&logo=linux&logoColor=white)](https://github.com/VelornLabs/velorn/releases/latest)
+[![Download for Windows](https://img.shields.io/badge/Windows-Download-0078D4?style=for-the-badge)](https://github.com/aroundAI/storybookstudio/releases/latest)
+[![Download for macOS](https://img.shields.io/badge/macOS-Download-1a1a1a?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/aroundAI/storybookstudio/releases/latest)
+[![Download for Linux](https://img.shields.io/badge/Linux-Download-E95420?style=for-the-badge&logo=linux&logoColor=white)](https://github.com/aroundAI/storybookstudio/releases/latest)
 
 English · [Español](docs/i18n/README.es.md) · [简体中文](docs/i18n/README.zh-CN.md) · [日本語](docs/i18n/README.ja.md) · [한국어](docs/i18n/README.ko.md) · [Português (Brasil)](docs/i18n/README.pt-BR.md) · [Français](docs/i18n/README.fr.md)
 
-[Help translate the Velorn interface](docs/LOCALIZATION.md)
+[Help translate the StorybookStudio interface](docs/LOCALIZATION.md)
 
 </div>
 
-<p align="center"><img src="docs/readme/agent-editing.gif" alt="One prompt: Claude builds the edit in Velorn via MCP" width="860"></p>
+<p align="center"><img src="docs/readme/agent-editing.gif" alt="One prompt: Claude builds the edit in StorybookStudio via MCP" width="860"></p>
 <p align="center"><i>One prompt. The agent generates media, builds the timeline, and mixes the audio — live, via MCP.</i></p>
 
-Velorn is an open-source desktop video editor and AI video workstation. It brings planning, generation, asset management, timeline editing, captions, effects, and export into one project-based app.
+StorybookStudio is an open-source desktop video editor and AI video workstation. It brings planning, generation, asset management, timeline editing, captions, effects, and export into one project-based app.
 
 Editing, captions, export, project management, and MCP editorial tools work without ComfyUI. All current generation features require a locally running ComfyUI instance.
 
-Use built-in local and cloud workflows, bring your own ComfyUI API workflow JSON, or install the bundled Velorn Bridge so a graph open in ComfyUI can be sent back into Velorn.
+Use built-in local and cloud workflows, bring your own ComfyUI API workflow JSON, or install the bundled Studio Bridge so a graph open in ComfyUI can be sent back into StorybookStudio.
 
 <p align="center">
-  <img src="docs/readme/editor-timeline.png" alt="Velorn editor with generated assets, preview, timeline tracks, and inspector" />
+  <img src="docs/readme/editor-timeline.png" alt="StorybookStudio editor with generated assets, preview, timeline tracks, and inspector" />
 </p>
 
-## What Velorn Is For
+## What StorybookStudio Is For
 
 - Creating music videos from lyrics, timing, characters, keyframes, video shots, and timeline edits.
 - Building UGC-style creator ads and small-business ads with editable shot plans.
@@ -44,15 +42,15 @@ Use built-in local and cloud workflows, bring your own ComfyUI API workflow JSON
 - Editing generated clips with tracks, transitions, effects, captions, proxy/cache tools, and export.
 - Keeping generated media, prompts, workflow outputs, and timelines organized inside a project.
 
-For generation, Velorn is not a replacement for ComfyUI. It is the production layer around ComfyUI: plan the work, send jobs to ComfyUI, collect the outputs, and finish the edit.
+For generation, StorybookStudio is not a replacement for ComfyUI. It is the production layer around ComfyUI: plan the work, send jobs to ComfyUI, collect the outputs, and finish the edit.
 
 <p align="center">
-  <img src="docs/readme/create-workflows.png" alt="Velorn Create workspace with UGC, business ad, music video, and short film creators" />
+  <img src="docs/readme/create-workflows.png" alt="StorybookStudio Create workspace with UGC, business ad, music video, and short film creators" />
 </p>
 
 ## Download
 
-Most users should download the packaged desktop app from the [GitHub Releases page](https://github.com/VelornLabs/velorn/releases).
+Most users should download the packaged desktop app from the [GitHub Releases page](https://github.com/aroundAI/storybookstudio/releases).
 
 Release assets include:
 
@@ -63,7 +61,7 @@ Release assets include:
 - `Linux AppImage`
 - `Linux deb`
 
-Ignore GitHub's auto-generated source-code archives unless you plan to build Velorn from source.
+Ignore GitHub's auto-generated source-code archives unless you plan to build StorybookStudio from source.
 
 ## Main Features
 
@@ -73,25 +71,25 @@ Generate runs built-in local workflows, cloud/partner workflows, and custom Comf
 
 - Local image, video, image-edit, audio, and utility workflows.
 - Cloud workflows such as Nano Banana 2, GPT Image 2, Seedance, Kling, and other partner-node routes where available.
-- Custom Image and Custom Video workflows for users who want Velorn to run their own ComfyUI API graphs.
+- Custom Image and Custom Video workflows for users who want StorybookStudio to run their own ComfyUI API graphs.
 - API JSON import for advanced users who prefer exporting workflows manually from ComfyUI.
-- Velorn Bridge support so compatible graphs can be sent from ComfyUI back to the correct Velorn panel.
+- Studio Bridge support so compatible graphs can be sent from ComfyUI back to the correct StorybookStudio panel.
 - Workflow setup checks for missing nodes, models, credentials, and configuration.
 - A Featured / My Workflows / Templates browser with Local and Cloud filters. Imported community workflows appear in Featured next to the built-ins.
 
 <p align="center">
-  <img src="docs/readme/generate-featured.png" alt="Velorn Generate browser with Featured workflows, Local and Cloud filters, and the dependency checker" />
+  <img src="docs/readme/generate-featured.png" alt="StorybookStudio Generate browser with Featured workflows, Local and Cloud filters, and the dependency checker" />
 </p>
 
 The Templates tab browses the official ComfyUI template catalog (500+ templates with size and popularity info) and launches any of them into the embedded ComfyUI tab.
 
 <p align="center">
-  <img src="docs/readme/generate-templates.png" alt="Velorn Templates browser showing the official ComfyUI template catalog with categories and filters" />
+  <img src="docs/readme/generate-templates.png" alt="StorybookStudio Templates browser showing the official ComfyUI template catalog with categories and filters" />
 </p>
 
 ### Create
 
-Create contains guided creator workflows built on Velorn's Director Mode engine.
+Create contains guided creator workflows built on StorybookStudio's Director Mode engine.
 
 - **Music Video Creation** - turns a song, lyric timing, characters, references, and a director script into keyframes, video shots, and an editable timeline.
 - **UGC Creator** - builds creator-style social ads with hooks, dialogue, product demos, try-ons, testimonials, and editable shot-by-shot outputs.
@@ -107,7 +105,7 @@ The Music Video Creator supports:
 - People/cast setup, including existing character sheets.
 - Per-shot keyframe prompts, reference images, prompt copy, prompt editing, image replacement, and shot reruns.
 - Built-in keyframe routes such as Qwen Image Edit and Nano Banana 2.
-- Custom keyframe workflows using Velorn endpoint nodes.
+- Custom keyframe workflows using StorybookStudio endpoint nodes.
 - Built-in video routes such as LTX 2.3 Music and WAN 2.2.
 - Custom video workflows with optional injected keyframe image, prompt, seed, width, height, FPS, duration, and audio.
 - Timeline assembly from generated shot assets.
@@ -135,12 +133,14 @@ Captions can be generated from edited timeline audio and styled in-app.
 - Live preview with play/scrub controls and safe-zone overlays.
 - Export-ready caption renders.
 
+> **macOS: the caption engine does not download yet.** On first use, captions download a whisper-cli build from this repository's releases. That release has not been published, so on macOS the first download fails (HTTP 404) until it is. Windows and Linux download from whisper.cpp's own releases and are unaffected. A machine that already has the engine keeps working. The release is built by `.github/workflows/whisper-mac-engine.yml`, run by hand with `publish` set.
+
 ### Export
 
 The Export tab includes practical render presets, hardware-accelerated options where available, numbered PNG image sequence export, queue controls, and project-aware output settings.
 
 <p align="center">
-  <img src="docs/readme/export-settings.png" alt="Velorn export settings with presets, codec controls, and export queue" />
+  <img src="docs/readme/export-settings.png" alt="StorybookStudio export settings with presets, codec controls, and export queue" />
 </p>
 
 ### Stock
@@ -148,12 +148,12 @@ The Export tab includes practical render presets, hardware-accelerated options w
 The Stock tab uses Pexels so you can search and import photos or videos directly into the current project. A Pexels API key is optional and can be added in Settings.
 
 <p align="center">
-  <img src="docs/readme/stock-pexels.png" alt="Velorn Stock tab with Pexels photo and video search" />
+  <img src="docs/readme/stock-pexels.png" alt="StorybookStudio Stock tab with Pexels photo and video search" />
 </p>
 
 ### ComfyUI Integration
 
-Velorn talks to a local ComfyUI server and can also help launch it.
+StorybookStudio talks to a local ComfyUI server and can also help launch it.
 
 - Default endpoint: `http://127.0.0.1:8188`
 - Custom port support in Settings.
@@ -168,7 +168,7 @@ Only localhost/loopback ComfyUI endpoints are supported in the desktop app.
 
 ### AI Agents (MCP)
 
-Velorn includes a local MCP server with 100+ tools for Codex, Claude Code, Cursor-compatible tools, and other MCP clients.
+StorybookStudio includes a local MCP server with 100+ tools for Codex, Claude Code, Cursor-compatible tools, and other MCP clients.
 
 - Endpoint: `http://127.0.0.1:19790/mcp`
 - In-app setup: `Settings > Agents (MCP)` (one copy-paste command per client)
@@ -179,43 +179,43 @@ Agents can inspect the open project, review timeline frames and visible shots, t
 
 Agents can also bring in community ComfyUI workflows: hand one a workflow link or file, and it analyzes the graph, reports missing custom nodes and models, installs them after your approval, and runs the workflow on your timeline assets.
 
-Most MCP write tools support a preview step, and many default to preview-first behavior. Normal timeline edits participate in Velorn's undo system. Imports, exports, generated files, project creation, and other filesystem changes are not universally undoable, so agents should get explicit approval before applying them. MCP is the recommended automation path for agent-assisted review, timeline operations, graphics polish, and generation workflows.
+Most MCP write tools support a preview step, and many default to preview-first behavior. Normal timeline edits participate in StorybookStudio's undo system. Imports, exports, generated files, project creation, and other filesystem changes are not universally undoable, so agents should get explicit approval before applying them. MCP is the recommended automation path for agent-assisted review, timeline operations, graphics polish, and generation workflows.
 
 <p align="center">
-  <img src="docs/readme/agents-mcp.png" alt="Velorn Agents (MCP) settings with the running local server, connect commands, and the full tool list" />
+  <img src="docs/readme/agents-mcp.png" alt="StorybookStudio Agents (MCP) settings with the running local server, connect commands, and the full tool list" />
 </p>
 
 ## Custom Workflows
 
-Custom workflows are one of the main reasons Velorn exists.
+Custom workflows are one of the main reasons StorybookStudio exists.
 
 Advanced users can:
 
-1. Open a starter graph from Velorn.
+1. Open a starter graph from StorybookStudio.
 2. Modify it in ComfyUI.
-3. Keep the required Velorn endpoint nodes.
-4. Send it back with the Velorn Bridge or import the API workflow JSON manually.
-5. Run that graph from Velorn as part of a creator flow or from Generate.
+3. Keep the required StorybookStudio endpoint nodes.
+4. Send it back with the Studio Bridge or import the API workflow JSON manually.
+5. Run that graph from StorybookStudio as part of a creator flow or from Generate.
 
-Common Velorn endpoint node titles include:
+Common StorybookStudio endpoint node titles include:
 
-- Velorn input image - `VELORN_INPUT_IMAGE`
-- Velorn prompt - `VELORN_PROMPT`
-- Velorn seed - `VELORN_SEED`
-- Velorn width - `VELORN_WIDTH`
-- Velorn height - `VELORN_HEIGHT`
-- Velorn FPS - `VELORN_FPS`
-- Velorn duration - `VELORN_DURATION`
-- Velorn audio - `VELORN_AUDIO`
-- Velorn output image - `VELORN_OUTPUT_IMAGE`
-- Velorn output video - `VELORN_OUTPUT_VIDEO`
+- StorybookStudio input image - `STORYBOOKSTUDIO_INPUT_IMAGE`
+- StorybookStudio prompt - `STORYBOOKSTUDIO_PROMPT`
+- StorybookStudio seed - `STORYBOOKSTUDIO_SEED`
+- StorybookStudio width - `STORYBOOKSTUDIO_WIDTH`
+- StorybookStudio height - `STORYBOOKSTUDIO_HEIGHT`
+- StorybookStudio FPS - `STORYBOOKSTUDIO_FPS`
+- StorybookStudio duration - `STORYBOOKSTUDIO_DURATION`
+- StorybookStudio audio - `STORYBOOKSTUDIO_AUDIO`
+- StorybookStudio output image - `STORYBOOKSTUDIO_OUTPUT_IMAGE`
+- StorybookStudio output video - `STORYBOOKSTUDIO_OUTPUT_VIDEO`
 
-Exact `VELORN_*` titles are preferred, but Velorn also recognizes readable titles such as `Velorn input image`. Older graphs that still use `COMFYSTUDIO_*` marker titles are supported for backward compatibility.
+Exact `STORYBOOKSTUDIO_*` titles are preferred, but StorybookStudio also recognizes readable titles such as `StorybookStudio input image`. Older graphs that still use `STORYBOOKSTUDIO_*` marker titles are supported for backward compatibility.
 
-If an endpoint is present, Velorn can inject that value. If an endpoint is not present, the graph controls that setting itself.
+If an endpoint is present, StorybookStudio can inject that value. If an endpoint is not present, the graph controls that setting itself.
 
 <p align="center">
-  <img src="docs/readme/comfyui-bridge.png" alt="Embedded ComfyUI graph with Velorn endpoint nodes and Send to Velorn button" />
+  <img src="docs/readme/comfyui-bridge.png" alt="Embedded ComfyUI graph with StorybookStudio endpoint nodes and Send to StorybookStudio button" />
 </p>
 
 ## Requirements
@@ -240,16 +240,16 @@ Local workflow requirements vary by model. Some workflows can run on modest GPUs
 
 ## First Run
 
-1. Install and launch Velorn.
+1. Install and launch StorybookStudio.
 2. Choose a projects folder.
 3. Create or open a project.
-4. Use `Velorn > Getting Started` from the bottom menu if you want the guided setup path.
+4. Use `StorybookStudio > Getting Started` from the bottom menu if you want the guided setup path.
 
 To use generation, configure your local ComfyUI instance in `Settings > ComfyUI Connection`. This step is optional for editing, captions, export, project management, and MCP editorial tools. If ComfyUI is running on a non-default port, update the endpoint in Settings and run the connection test.
 
 ## ComfyUI Setup Notes
 
-Velorn ships workflow JSON files, but workflows still need the correct ComfyUI environment.
+StorybookStudio ships workflow JSON files, but workflows still need the correct ComfyUI environment.
 
 Depending on the workflow, users may need:
 
@@ -258,7 +258,7 @@ Depending on the workflow, users may need:
 - Cloud/partner credentials.
 - Enough local VRAM for the selected model and resolution.
 
-Velorn 0.2.1+ talks to local ComfyUI without any CORS setup. On older Velorn versions, launch ComfyUI with `--enable-cors-header` if the embedded tab is blank or API calls return 403.
+StorybookStudio 0.2.1+ talks to local ComfyUI without any CORS setup. On older StorybookStudio versions, launch ComfyUI with `--enable-cors-header` if the embedded tab is blank or API calls return 403.
 
 Inside Generate, use the workflow setup and dependency tools when something is missing.
 
@@ -296,13 +296,13 @@ See [ROADMAP.md](ROADMAP.md).
 
 <p align="center">
   <a href="ROADMAP.md">
-    <img src="docs/roadmap-overview.svg" alt="Velorn roadmap overview" />
+    <img src="docs/roadmap-overview.svg" alt="StorybookStudio roadmap overview" />
   </a>
 </p>
 
 ## Contributing
 
-Velorn is open source, and contributions are welcome.
+StorybookStudio is open source, and contributions are welcome.
 
 See:
 
@@ -312,6 +312,6 @@ See:
 
 ## License
 
-Velorn is licensed under the GNU General Public License v3.0. See `LICENSE`.
+StorybookStudio is licensed under the GNU General Public License v3.0. See `LICENSE`.
 
 Versions released before this license change remain available under the license terms they were released with.

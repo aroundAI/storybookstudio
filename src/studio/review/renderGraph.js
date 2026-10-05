@@ -131,7 +131,7 @@ export function clipFilters(clip, { from, to }) {
   return filters
 }
 
-// The mix of [from, to) for a project with no audio buses (a plain Velorn
+// The mix of [from, to) for a project with no audio buses (a plain the upstream editor
 // project): clips summed per bus label for stems, then the master gain and
 // the master limiter insert. A Studio project mixes through FILM-2016's bus
 // graph instead (electron/studio/audioBusMix.mjs, the export's own), so

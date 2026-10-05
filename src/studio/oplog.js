@@ -3,7 +3,7 @@
 // runMcpAction (by: 'ai') and around the timeline/assets store mutators
 // (by: 'user'). An operation is applied when it changed the project
 // document; a preview, a read or a refused write changes nothing and logs
-// nothing. Every line carries the inverse patch that undoes it. Velorn's
+// nothing. Every line carries the inverse patch that undoes it. The upstream editor's
 // in-memory undo stays the fast path; this log is the durable one.
 // Pure module: no Electron, no stores; the sink and document are injected.
 import { z } from 'zod'
@@ -153,7 +153,7 @@ export function sceneOfChange(patch, before, after, args = null) {
 
 // runMcpAction(action, payload) -> the same, logged. Callers that know why a
 // step runs (FILM-2013's compiler) put {reason, scene, session, by} under
-// payload.studioMeta; the wrapper strips it before Velorn's handler sees it.
+// payload.studioMeta; the wrapper strips it before the upstream editor's handler sees it.
 export function wrapMcpActionRunner(run, { oplog, getDocument, by = 'ai' } = {}) {
   return async function runMcpActionWithOpLog(action, payload = {}) {
     const { studioMeta = null, ...args } = payload || {}

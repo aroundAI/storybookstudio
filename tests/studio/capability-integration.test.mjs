@@ -216,7 +216,7 @@ test('studio_apply_updates: FILM-2011\'s re-sync plan for a shot StoryBook remov
   next.shots = next.shots.filter((shot) => shot.id !== removed.id)
   next.etag = 'v8-resynced'
   const diff = diffEditPackages(current, next)
-  const projectFile = JSON.parse(await readFile(path.join(harness.dir, 'project.comfystudio'), 'utf8'))
+  const projectFile = JSON.parse(await readFile(path.join(harness.dir, 'project.storybookstudio'), 'utf8'))
   const { steps, unresolved } = buildResyncPlan({ diff, project: projectFile, assetPaths: {}, session: null })
   assert.deepEqual(steps.map((step) => step.tool), ['delete_clips'])
   await writeFile(path.join(harness.dir, 'storybook/package.next.json'), JSON.stringify(next))

@@ -1,5 +1,5 @@
 // FILM-2016 AC5, AC6 and the caption test plan: the brand caption style on
-// Velorn's live captions, safe-area placement per aspect, emphasis words,
+// the upstream editor's live captions, safe-area placement per aspect, emphasis words,
 // and the QA caption check. The 9:16 test draws through the real subtitle
 // renderer (src/utils/kineticCaptionRenderer.js, bundled with esbuild into
 // this process) onto a canvas that records every glyph and box it draws.
@@ -196,7 +196,7 @@ test('9:16 variant through the real subtitle renderer: every glyph and the box s
   assert.deepEqual(checkCaptionSafeArea({ cues: styled, width, height }), [])
 })
 
-test('a cue without a safe area still draws the upstream way (stock Velorn captions unchanged)', async () => {
+test('a cue without a safe area still draws the upstream way (the stock upstream editor captions unchanged)', async () => {
   const { renderKineticCaptionFrame, getKineticStyleById } = await loadRenderer()
   const { ctx, drawn } = recordingContext()
   renderKineticCaptionFrame({ ctx, width: 1080, height: 1920, style: getKineticStyleById('kinetic-traditional'), cues: [{ id: 'a', start: 0, end: 2, text: 'Stock subtitle' }], time: 1 })

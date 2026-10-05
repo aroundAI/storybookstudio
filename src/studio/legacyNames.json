@@ -1,0 +1,12 @@
+{
+  "_why": "Names this app had before it was StorybookStudio (owner decision 2026-10-05). They are read only to carry over what a user already has, once, and are never written again. tests/studio/no-upstream-names.test.mjs allows them here and nowhere else.",
+  "userDataDir": "velorn",
+  "storagePrefixes": ["velorn-", "comfystudio-"],
+  "themeId": "velorn",
+  "projectFile": "project.comfystudio",
+  "projectExtension": ".comfystudio",
+  "fileUrlPrefix": "comfystudio://",
+  "lutDatabase": "comfystudio-luts",
+  "comfyBridgeDir": "comfystudio_bridge",
+  "comfyStdoutGuardDir": "_comfystudio_stdout_guard"
+}

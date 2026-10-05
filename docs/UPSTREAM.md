@@ -14,10 +14,17 @@ Update this line and the table at the bottom in the merge PR.
   merge never touches them. Never move our code into upstream's files; register it from
   them with a one-line import and call.
 - `tests/studio/` and `docs/` files named `STORYBOOKSTUDIO-*` or `UPSTREAM.md` are ours.
-- The user-facing name is StorybookStudio. Internal identifiers stay as upstream has them:
-  package `name`, the `.comfystudio` extension, the `comfystudio://` scheme, bridge ids,
-  `appId`, the `Velorn Bridge` ComfyUI extension, `Velorn_*` output prefixes, storage keys,
-  MCP tool names and the `velorn` MCP client alias in Settings.
+- The name is StorybookStudio everywhere, identifiers included (owner decision, 2026-10-05):
+  package `name` and `appId`, the `.storybookstudio` project file, the `storybookstudio://`
+  deep link and `storybookstudio-file://` protocol, the Studio Bridge ComfyUI extension,
+  output prefixes, storage keys, MCP tool names and env vars. Upstream's names survive only in
+  `LICENSE`, the licenses notice (`electron/studio/licenses/NOTICE.txt`), this file and
+  `src/studio/legacyNames.json`, which the one-time migrations read;
+  `tests/studio/no-upstream-names.test.mjs` fails on any other.
+- Merging upstream therefore conflicts wherever upstream changed a line that carries its
+  name. Resolve by keeping upstream's change and renaming as the rest of the tree does
+  (Velorn → StorybookStudio, ComfyStudio → StorybookStudio, `comfystudio://` →
+  `storybookstudio-file://`), then run the names test.
 
 ## Monthly merge
 

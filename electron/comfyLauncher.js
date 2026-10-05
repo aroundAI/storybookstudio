@@ -18,6 +18,7 @@
 
 const path = require('path')
 const fs = require('fs')
+const LEGACY_NAMES = require('../src/studio/legacyNames.json')
 const fsp = fs.promises
 const http = require('http')
 const net = require('net')
@@ -648,10 +649,8 @@ class ComfyLauncher extends EventEmitter {
    *      ComfyUI boot — which reads as "my computer has a virus" to
    *      non-technical users.
    *
-   * The directory name is kept as `_comfystudio_stdout_guard` for
-   * backwards compatibility with existing user installs (renaming would
-   * leave orphan directories behind). The name no longer tells the full
-   * story but the behavior is documented above.
+   * The guard under its earlier directory name is removed here, so an
+   * install from before the rename does not patch ComfyUI twice.
    */
   async _installStdoutGuard(launcherScript) {
     const portable = detectPortableLayout(launcherScript)
@@ -671,8 +670,9 @@ class ComfyLauncher extends EventEmitter {
       return
     }
 
-    const sourceDir = path.join(__dirname, 'comfyui-injected', '_comfystudio_stdout_guard')
-    const targetDir = path.join(customNodesDir, '_comfystudio_stdout_guard')
+    const sourceDir = path.join(__dirname, 'comfyui-injected', '_storybookstudio_stdout_guard')
+    const targetDir = path.join(customNodesDir, '_storybookstudio_stdout_guard')
+    await fsp.rm(path.join(customNodesDir, LEGACY_NAMES.comfyStdoutGuardDir), { recursive: true, force: true })
     await fsp.mkdir(targetDir, { recursive: true })
 
     let filenames

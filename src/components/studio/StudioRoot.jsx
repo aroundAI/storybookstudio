@@ -3,7 +3,7 @@
 // pulled project to its edit session and loads its StoryBook side files.
 // <StudioOverlays/> renders the picker, Review, Deliver and the prompts over
 // whichever screen is showing.
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import useProjectStore from '../../stores/projectStore'
 import { studioUiStore } from '../../studio/ui/studioStore'
 import { startStudioUiBridge } from '../../studio/ui/studioBridge'
@@ -12,6 +12,7 @@ import { guardProjectClose, loadProjectContext } from '../../studio/ui/studioRun
 import EpisodePicker from './EpisodePicker'
 import ReviewScreen from './ReviewScreen'
 import DeliverScreen from './DeliverScreen'
+import OpenSourceLicenses from './OpenSourceLicenses'
 import StudioDialog, { StudioButton } from './StudioDialog'
 import { studioApi, useStudioText, useStudioUi } from './studioUi'
 
@@ -81,8 +82,12 @@ export function StudioOverlays() {
   const review = useStudioUi((state) => state.review)
   const deliverOpen = useStudioUi((state) => state.deliverOpen)
   const prompt = useStudioUi((state) => state.prompt)
+  const [licensesOpen, setLicensesOpen] = useState(false)
+  // The app menu's Open-source licenses item arrives over IPC.
+  useEffect(() => studioApi()?.onShowLicenses?.(() => setLicensesOpen(true)), [])
   return (
     <>
+      {licensesOpen && <OpenSourceLicenses onClose={() => setLicensesOpen(false)} />}
       {pickerOpen && <EpisodePicker />}
       {review && <ReviewScreen />}
       {deliverOpen && <DeliverScreen />}

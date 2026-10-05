@@ -287,7 +287,7 @@ export function probeIssues(probe, targets, { expectedDuration = null } = {}) {
 // Caption cues against the preset's safe rectangle and for overlaps:
 // FILM-2016's checkCaptionSafeArea (captions/style.js), the same layout the
 // renderer draws, against the same rectangle. A cue not styled for the
-// aspect's safe area fails even where Velorn's default box happens to fit,
+// aspect's safe area fails even where the upstream editor's default box happens to fit,
 // because only a placed cue is guaranteed to stay there. One issue per
 // captions clip, naming its cues: one move_caption fixes the clip.
 export function captionIssues(project, { timelineId = null, targets } = {}) {

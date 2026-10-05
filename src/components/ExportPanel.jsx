@@ -41,7 +41,7 @@ import { useI18n } from '../i18n/I18nContext'
 import { hasUsableProxy } from '../services/proxyCache'
 import { normalizeTransparentExportSettings, supportsTransparentExport } from '../utils/alphaMedia.mjs'
 
-const EXPORT_SETTINGS_STORAGE_PREFIX = 'comfystudio-export-settings-v1'
+const EXPORT_SETTINGS_STORAGE_PREFIX = 'storybookstudio-export-settings-v1'
 
 const EXPORT_FORMATS = [
   { id: 'mp4', label: 'MP4 (H.264/H.265)' },
@@ -374,13 +374,13 @@ function isAbsoluteFilePath(filePath) {
 }
 
 function sanitizeExportBaseName(value) {
-  return String(value || 'Velorn_Timeline')
+  return String(value || 'StorybookStudio_Timeline')
     .trim()
     .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
     .replace(/\s+/g, '_')
     .replace(/_+/g, '_')
     .replace(/^_+|_+$/g, '')
-    || 'Velorn_Timeline'
+    || 'StorybookStudio_Timeline'
 }
 
 function ExportField({ id, label, children }) {
@@ -1313,7 +1313,7 @@ function ExportPanel({ active = true }) {
           }
         }
         const sourceOutputPath = shouldRunRtxUpscale
-          ? await window.electronAPI.pathJoin(outputFolder, `.velorn-rtx-source-${Date.now()}.mp4`)
+          ? await window.electronAPI.pathJoin(outputFolder, `.storybookstudio-rtx-source-${Date.now()}.mp4`)
           : finalOutputPath
         const postProcess = shouldRunRtxUpscale
           ? {

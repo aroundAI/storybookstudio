@@ -34,7 +34,7 @@ import {
 import { BUILTIN_WORKFLOW_PATHS } from '../../config/workflowRegistry'
 import CustomWorkflowSlotCard from './CustomWorkflowSlotCard'
 
-const DRAFT_STORAGE_KEY = 'comfystudio-music-video-easy-mode-draft-v1'
+const DRAFT_STORAGE_KEY = 'storybookstudio-music-video-easy-mode-draft-v1'
 const DRAFT_PROJECT_STORAGE_PREFIX = `${DRAFT_STORAGE_KEY}:project:`
 
 const STEPS = [
@@ -3218,7 +3218,7 @@ export default function MusicVideoEasyMode({
                   onClick={() => handleResolutionPresetChange(option.id)}
                   disabled={disabled}
                   title={customVideoWorkflowSelected
-                    ? 'Sent to your graph only when it uses VELORN_WIDTH and VELORN_HEIGHT.'
+                    ? 'Sent to your graph only when it uses STORYBOOKSTUDIO_WIDTH and STORYBOOKSTUDIO_HEIGHT.'
                     : disabled ? 'This video model is limited to 720p here.' : ''}
                   className={`rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold transition-colors ${
                     disabled
@@ -3274,12 +3274,12 @@ export default function MusicVideoEasyMode({
           : ` is used for new or regenerated videos at ${outputResolutionLabel} / ${videoFps} fps.`}
         {customVideoWorkflowSelected && (
           <span className="mt-1 block">
-            Resolution and FPS are controlled by StorybookStudio only when your graph uses <span className="font-mono text-sf-text-primary">VELORN_WIDTH</span>, <span className="font-mono text-sf-text-primary">VELORN_HEIGHT</span>, and <span className="font-mono text-sf-text-primary">VELORN_FPS</span>; otherwise your graph controls the final output.
+            Resolution and FPS are controlled by StorybookStudio only when your graph uses <span className="font-mono text-sf-text-primary">STORYBOOKSTUDIO_WIDTH</span>, <span className="font-mono text-sf-text-primary">STORYBOOKSTUDIO_HEIGHT</span>, and <span className="font-mono text-sf-text-primary">STORYBOOKSTUDIO_FPS</span>; otherwise your graph controls the final output.
           </span>
         )}
         {customVideoWorkflowSelected ? (
           <span className="mt-1 block text-amber-200">
-            Lip-sync is not automatic. StorybookStudio can pass song audio through <span className="font-mono text-amber-100">VELORN_AUDIO</span>, but your graph must use that audio in a lip-sync or audio-conditioned video workflow.
+            Lip-sync is not automatic. StorybookStudio can pass song audio through <span className="font-mono text-amber-100">STORYBOOKSTUDIO_AUDIO</span>, but your graph must use that audio in a lip-sync or audio-conditioned video workflow.
           </span>
         ) : selectedVideoWorkflowSupports1080 ? (
           <span className="mt-1 block text-sf-text-muted">

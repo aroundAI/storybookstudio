@@ -8,7 +8,7 @@ import { createMemoryEditsSink } from '../../../src/studio/editsSink.js'
 import { createOpLog, RESTORE_SNAPSHOT_TOOL } from '../../../src/studio/oplog.js'
 import { createVersionStore } from '../../../src/studio/versions.js'
 
-const sample = () => JSON.parse(readFileSync(new URL('../fixtures/velorn-sample-project.json', import.meta.url), 'utf8'))
+const sample = () => JSON.parse(readFileSync(new URL('../fixtures/storybookstudio-sample-project.json', import.meta.url), 'utf8'))
 
 test('replaceDocument sets the document, logs one op with its reason, and keeps the replaced one restorable', async () => {
   const sink = createMemoryEditsSink()

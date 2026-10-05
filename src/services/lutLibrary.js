@@ -1,4 +1,6 @@
 import { parseCubeLut, cubeLutToRgba8 } from '../utils/cubeLut'
+import LEGACY_NAMES from '../studio/legacyNames.json' with { type: 'json' }
+import { migrateLegacyIndexedDb } from '../studio/legacyMigration.js'
 
 // App-level LUT library: import a .cube once, use it in every project.
 // Storage is IndexedDB (LUT tables are megabytes-scale — far too big for the
@@ -11,16 +13,16 @@ import { parseCubeLut, cubeLutToRgba8 } from '../utils/cubeLut'
 // in-memory registry once, and the GPU hosts (gpuCompositor +
 // adjustmentsGpu) read synchronously via getLoadedLut() mid-frame.
 
-const DB_NAME = 'comfystudio-luts'
+const DB_NAME = 'storybookstudio-luts'
 const DB_VERSION = 1
 const STORE = 'luts'
 
-export const LUTS_CHANGED_EVENT = 'comfystudio-luts-changed'
+export const LUTS_CHANGED_EVENT = 'storybookstudio-luts-changed'
 
 const registry = new Map() // lutId -> { id, name, size, rgba8: Uint8Array }
 let loadPromise = null
 
-const openDb = () => new Promise((resolve, reject) => {
+const openCurrentDb = () => new Promise((resolve, reject) => {
   const request = indexedDB.open(DB_NAME, DB_VERSION)
   request.onupgradeneeded = () => {
     const db = request.result
@@ -31,6 +33,20 @@ const openDb = () => new Promise((resolve, reject) => {
   request.onsuccess = () => resolve(request.result)
   request.onerror = () => reject(request.error || new Error('Failed to open the LUT library.'))
 })
+
+// LUTs imported before the rename live in a database under the earlier name;
+// they are copied over the first time the library opens.
+let legacyCarriedOver = null
+const openDb = async () => {
+  legacyCarriedOver ||= migrateLegacyIndexedDb({
+    indexedDB: globalThis.indexedDB,
+    legacyName: LEGACY_NAMES.lutDatabase,
+    store: STORE,
+    openTarget: openCurrentDb,
+  }).catch((error) => console.warn('Could not carry over earlier LUTs:', error))
+  await legacyCarriedOver
+  return openCurrentDb()
+}
 
 const withStore = async (mode, run) => {
   const db = await openDb()

@@ -117,7 +117,7 @@ const CUE_MOTION_OPTIONS = [
   { id: 'frenetic', label: 'Frenetic' },
 ]
 
-const SAVED_CAPTION_STYLES_KEY = 'comfystudio-saved-caption-styles'
+const SAVED_CAPTION_STYLES_KEY = 'storybookstudio-saved-caption-styles'
 
 const VALID_VERTICAL_PLACEMENTS = new Set(CUE_VERTICAL_OPTIONS.map((option) => option.id))
 const VALID_HORIZONTAL_PLACEMENTS = new Set(CUE_HORIZONTAL_OPTIONS.map((option) => option.id))
@@ -1136,7 +1136,7 @@ function CaptionWorkspace({
     (tier) => installedModelIds.has(tier.id) && tier.id !== selectedTier.id
   )
   // The retired ComfyUI path stays reachable through a localStorage escape
-  // hatch only ('velorn-caption-engine' = 'comfyui') — no UI for it.
+  // hatch only ('storybookstudio-caption-engine' = 'comfyui') — no UI for it.
   const captionsUseComfy = getCaptionEnginePreference() === 'comfyui' || platformUsesComfy
   const engineReady = captionsUseComfy || selectedTierInstalled
   const showEngineInstall = !captionsUseComfy && localEngineSupported && !selectedTierInstalled

@@ -9,7 +9,7 @@ const {
   createMyWorkflowCatalogEntry,
   loadMyWorkflowCatalog,
 } = require('../electron/myWorkflowCatalog')
-const { createComfyStudioMcpServer } = require('../electron/mcpServer')
+const { createStorybookStudioMcpServer } = require('../electron/mcpServer')
 
 function makeRecord(nodes, overrides = {}) {
   return {
@@ -24,12 +24,12 @@ function makeRecord(nodes, overrides = {}) {
 
 test('marks a prompt-driven saved image workflow as MCP ready', () => {
   const record = makeRecord([
-    { id: 1, type: 'PrimitiveStringMultiline', title: 'VELORN_PROMPT' },
-    { id: 2, type: 'LoadImage', title: 'VELORN_REFERENCE_IMAGE_1' },
-    { id: 3, type: 'SaveImage', title: 'VELORN_OUTPUT_IMAGE' },
+    { id: 1, type: 'PrimitiveStringMultiline', title: 'STORYBOOKSTUDIO_PROMPT' },
+    { id: 2, type: 'LoadImage', title: 'STORYBOOKSTUDIO_REFERENCE_IMAGE_1' },
+    { id: 3, type: 'SaveImage', title: 'STORYBOOKSTUDIO_OUTPUT_IMAGE' },
   ])
 
-  const entry = createMyWorkflowCatalogEntry(record, 'C:/Velorn/custom-workflows/portrait-look.json')
+  const entry = createMyWorkflowCatalogEntry(record, 'C:/StorybookStudio/custom-workflows/portrait-look.json')
 
   assert.equal(entry.id, 'my-workflow:portrait-look')
   assert.equal(entry.source, 'my-workflows')
@@ -47,16 +47,16 @@ test('reports the markers missing from an arbitrary saved graph', () => {
 
   assert.equal(analysis.mcpRunnable, false)
   assert.equal(analysis.readiness, 'needs-setup')
-  assert.match(analysis.readinessMessage, /VELORN_PROMPT/)
-  assert.match(analysis.readinessMessage, /VELORN_OUTPUT_IMAGE/)
+  assert.match(analysis.readinessMessage, /STORYBOOKSTUDIO_PROMPT/)
+  assert.match(analysis.readinessMessage, /STORYBOOKSTUDIO_OUTPUT_IMAGE/)
 })
 
 test('detects video inputs and legacy marker aliases', () => {
   const analysis = analyzeMyWorkflowRecord(makeRecord([
-    { id: 1, type: 'PrimitiveStringMultiline', title: 'COMFYSTUDIO_PROMPT' },
-    { id: 2, type: 'LoadImage', title: 'COMFYSTUDIO_INPUT_IMAGE' },
-    { id: 3, type: 'LoadAudio', title: 'VELORN_AUDIO' },
-    { id: 4, type: 'SaveVideo', title: 'VELORN_OUTPUT_VIDEO' },
+    { id: 1, type: 'PrimitiveStringMultiline', title: 'STORYBOOKSTUDIO_PROMPT' },
+    { id: 2, type: 'LoadImage', title: 'STORYBOOKSTUDIO_INPUT_IMAGE' },
+    { id: 3, type: 'LoadAudio', title: 'STORYBOOKSTUDIO_AUDIO' },
+    { id: 4, type: 'SaveVideo', title: 'STORYBOOKSTUDIO_OUTPUT_VIDEO' },
   ]))
 
   assert.equal(analysis.mcpRunnable, true)
@@ -68,15 +68,15 @@ test('detects video inputs and legacy marker aliases', () => {
 })
 
 test('loads My Workflows records from the user-data library directory', async (t) => {
-  const userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'velorn-my-workflows-'))
+  const userDataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'storybookstudio-my-workflows-'))
   t.after(() => fs.rm(userDataDir, { recursive: true, force: true }))
   const libraryDir = path.join(userDataDir, 'custom-workflows')
   await fs.mkdir(libraryDir, { recursive: true })
   await fs.writeFile(
     path.join(libraryDir, 'portrait-look.json'),
     JSON.stringify(makeRecord([
-      { id: 1, type: 'PrimitiveStringMultiline', title: 'VELORN_PROMPT' },
-      { id: 2, type: 'SaveImage', title: 'VELORN_OUTPUT_IMAGE' },
+      { id: 1, type: 'PrimitiveStringMultiline', title: 'STORYBOOKSTUDIO_PROMPT' },
+      { id: 2, type: 'SaveImage', title: 'STORYBOOKSTUDIO_OUTPUT_IMAGE' },
     ])),
     'utf8'
   )
@@ -90,8 +90,8 @@ test('loads My Workflows records from the user-data library directory', async (t
 })
 
 test('builds a prompt-generation preview for an agent-ready My Workflows id', async () => {
-  const server = createComfyStudioMcpServer({
-    listComfyStudioWorkflows: async () => ({
+  const server = createStorybookStudioMcpServer({
+    listStorybookStudioWorkflows: async () => ({
       success: true,
       workflows: [{
         id: 'my-workflow:portrait-look',
@@ -129,8 +129,8 @@ test('builds a prompt-generation preview for an agent-ready My Workflows id', as
 
 test('forwards the My Workflows source filter through the public MCP listing tool', async () => {
   let receivedOptions = null
-  const server = createComfyStudioMcpServer({
-    listComfyStudioWorkflows: async (options) => {
+  const server = createStorybookStudioMcpServer({
+    listStorybookStudioWorkflows: async (options) => {
       receivedOptions = options
       return {
         success: true,
@@ -146,7 +146,7 @@ test('forwards the My Workflows source filter through the public MCP listing too
     },
   })
 
-  const result = await server.callTool('list_velorn_workflows', {
+  const result = await server.callTool('list_storybookstudio_workflows', {
     source: 'my-workflows',
     refresh: true,
   })
@@ -160,8 +160,8 @@ test('forwards the My Workflows source filter through the public MCP listing too
 
 test('dispatches an approved My Workflows generation through the renderer bridge', async () => {
   let dispatchedAction = null
-  const server = createComfyStudioMcpServer({
-    listComfyStudioWorkflows: async () => ({
+  const server = createStorybookStudioMcpServer({
+    listStorybookStudioWorkflows: async () => ({
       success: true,
       workflows: [{
         id: 'my-workflow:portrait-look',
@@ -203,15 +203,15 @@ test('dispatches an approved My Workflows generation through the renderer bridge
 })
 
 test('returns actionable setup blockers instead of queueing an incompatible saved graph', async () => {
-  const server = createComfyStudioMcpServer({
-    listComfyStudioWorkflows: async () => ({
+  const server = createStorybookStudioMcpServer({
+    listStorybookStudioWorkflows: async () => ({
       success: true,
       workflows: [{
         id: 'my-workflow:unfinished',
         libraryId: 'unfinished',
         label: 'Unfinished',
         mcpRunnable: false,
-        readinessMessage: 'Add a node titled VELORN_PROMPT.',
+        readinessMessage: 'Add a node titled STORYBOOKSTUDIO_PROMPT.',
       }],
     }),
   })
@@ -231,5 +231,5 @@ test('returns actionable setup blockers instead of queueing an incompatible save
 
   assert.equal(result.isError, true)
   assert.match(result.content[0].text, /visible but not agent-ready/i)
-  assert.match(result.content[0].text, /VELORN_PROMPT/)
+  assert.match(result.content[0].text, /STORYBOOKSTUDIO_PROMPT/)
 })

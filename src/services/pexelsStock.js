@@ -3,11 +3,11 @@ const PEXELS_VIDEOS_SEARCH_URL = 'https://api.pexels.com/videos/search'
 const PEXELS_CURATED_PHOTOS_URL = 'https://api.pexels.com/v1/curated'
 const PEXELS_POPULAR_VIDEOS_URL = 'https://api.pexels.com/videos/popular'
 
-export const PEXELS_STOCK_PANEL_STORAGE_KEY = 'comfystudio-stock-panel-state-v1'
+export const PEXELS_STOCK_PANEL_STORAGE_KEY = 'storybookstudio-stock-panel-state-v1'
 export const PEXELS_DEFAULT_PER_PAGE = 20
 export const PEXELS_MAX_PER_PAGE = 80
 export const PEXELS_MAX_MCP_IMPORT_ITEMS = 20
-export const VELORN_OPEN_STOCK_EVENT = 'velorn-open-stock-tab'
+export const STORYBOOKSTUDIO_OPEN_STOCK_EVENT = 'storybookstudio-open-stock-tab'
 
 function clampInteger(value, fallback, min, max) {
   const numeric = Number(value)

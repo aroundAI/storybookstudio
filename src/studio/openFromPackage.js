@@ -1,7 +1,7 @@
 // Opens a StoryBook edit package as a rough cut (FILM-2012). FILM-2011's
 // pull job downloads and probes the media, then calls openFromPackage: the
 // builder's project and side files are written into the project folder, the
-// project opens through Velorn's own openProject, and the result is saved as
+// project opens through the upstream editor's own openProject, and the result is saved as
 // the first version, 'Rough cut', by the AI.
 //
 // Pure module: the file writer, the opener and the version maker are passed
@@ -9,7 +9,7 @@
 // renderer (window.electronAPI, projectStore.openProject, createStudioVersion).
 import { buildProject } from './projectBuilder.js'
 
-export const PROJECT_FILENAME = 'project.comfystudio'
+export const PROJECT_FILENAME = 'project.storybookstudio'
 export const ROUGH_CUT_VERSION_NAME = 'Rough cut'
 
 const safeRelativePath = (relativePath) => {

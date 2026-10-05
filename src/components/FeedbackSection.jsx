@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { CheckCircle2, Loader2, MessageCircle, Send } from 'lucide-react'
+import { CheckCircle2, Loader2, Send } from 'lucide-react'
 import {
   FEEDBACK_CATEGORIES,
   FEEDBACK_MESSAGE_MAX_LENGTH,
   collectFeedbackDiagnostics,
+  isFeedbackConfigured,
   sendFeedback,
 } from '../services/feedback'
 import { useI18n } from '../i18n/I18nContext'
@@ -11,29 +12,6 @@ import { useI18n } from '../i18n/I18nContext'
 const DIAGNOSTIC_LABELS = [
   'appVersion', 'platform', 'os', 'gpu', 'comfyConnected', 'screen',
 ]
-
-const DISCORD_INVITE_URL = 'https://discord.gg/QWZUuUChVK'
-
-function DiscordCallout() {
-  const { t } = useI18n()
-  return (
-    <a
-      href={DISCORD_INVITE_URL}
-      target="_blank"
-      rel="noreferrer"
-      className="group flex items-center gap-3 rounded-lg border border-indigo-400/30 bg-indigo-500/10 px-3 py-2.5 transition-colors hover:border-indigo-400/60 hover:bg-indigo-500/15"
-    >
-      <MessageCircle className="h-5 w-5 flex-shrink-0 text-indigo-300" />
-      <span className="min-w-0 text-[11px] leading-snug text-sf-text-secondary">
-        <span className="font-semibold text-sf-text-primary">{t('feedback.discordTitle')}</span>{' '}
-        {t('feedback.discordBody')}
-      </span>
-      <span className="ml-auto flex-shrink-0 rounded bg-indigo-500/80 px-2 py-1 text-[10px] font-medium text-white transition-colors group-hover:bg-indigo-500">
-        {t('feedback.join')}
-      </span>
-    </a>
-  )
-}
 
 function formatDiagnosticValue(value, t) {
   if (value === null || value === undefined || value === '') return t('feedback.unknown')
@@ -99,14 +77,20 @@ export default function FeedbackSection() {
             {t('feedback.sendAnother')}
           </button>
         </div>
-        <DiscordCallout />
       </div>
+    )
+  }
+
+  if (!isFeedbackConfigured()) {
+    return (
+      <p className="rounded-lg border border-sf-dark-700 bg-sf-dark-900/60 px-3 py-3 text-[11px] text-sf-text-muted" data-test="feedback-not-configured">
+        {t('feedback.notConfigured')}
+      </p>
     )
   }
 
   return (
     <div className="space-y-4">
-      <DiscordCallout />
       <div className="rounded-lg border border-sf-dark-700 bg-sf-dark-900/60 px-3 py-3">
         <div className="text-sm font-medium text-sf-text-primary">{t('feedback.title')}</div>
         <p className="mt-1 text-[11px] text-sf-text-muted">

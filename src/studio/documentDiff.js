@@ -1,4 +1,4 @@
-// Structural diff and patch over Velorn project documents (FILM-2012). An
+// Structural diff and patch over upstream project documents (FILM-2012). An
 // array whose elements all carry a string `id` is a collection and is diffed
 // item by item (timelines, assets, clips, tracks, markers, transitions); any
 // other value is compared whole. diffDocuments(from, to) returns the patch

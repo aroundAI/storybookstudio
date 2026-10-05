@@ -1,4 +1,4 @@
-// FILM-2015: the renderer glue the five surfaces use, bound to Velorn's stores
+// FILM-2015: the renderer glue the five surfaces use, bound to the upstream editor's stores
 // and FILM-2012's edit log. Kept apart from the pure models (planCards,
 // sceneStrip, review, deliverySummary, pickerModel, sessionGuard) so those run
 // under node --test.
@@ -42,7 +42,7 @@ async function runStep(tool, args) {
 
 // The fallback apply path (planActions.applyLocally) until FILM-2013's
 // applyPlan lands: versions and op log through FILM-2012, steps through
-// Velorn's MCP action runner, the journal under edits/.
+// the upstream editor's MCP action runner, the journal under edits/.
 export function createLocalPlanRunner() {
   return {
     currentVersionId: () => getStudioEditLog()?.versions.current()?.id ?? null,
@@ -56,7 +56,7 @@ export function createLocalPlanRunner() {
 }
 
 // A StoryBook project's side files, for the scene strip, the Deliver screen
-// and crash recovery. Returns {} for a plain Velorn project.
+// and crash recovery. Returns {} for a plain upstream project.
 export async function loadProjectContext(projectPath) {
   if (typeof projectPath !== 'string' || !projectPath) return {}
   const [pkg, link, policy] = await Promise.all([
@@ -160,7 +160,7 @@ export async function returnToVersion(versionId, reason = 'Return to version bef
   return result
 }
 
-// Project close goes through Velorn's projectStore.closeProject; wrap it once
+// Project close goes through the upstream editor's projectStore.closeProject; wrap it once
 // so a waiting plan or a delivery in flight prompts first. Returns unwrap().
 export function guardProjectClose(projectStore, studioStore) {
   const original = projectStore.getState().closeProject

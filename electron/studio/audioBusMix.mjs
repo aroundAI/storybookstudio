@@ -1,5 +1,5 @@
 // FILM-2016 AC3: the export mix on buses. export:mixAudio hands over its
-// prepared inputs (each with Velorn's own per-clip filter chain) and the
+// prepared inputs (each with the upstream editor's own per-clip filter chain) and the
 // project's resolved audio buses; this module builds the FFmpeg graph:
 //
 //   clip chains → stem submixes (dialogue per language, music, sfx,

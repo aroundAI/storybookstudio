@@ -109,11 +109,11 @@ const getLocalStorageFlag = (key) => {
   }
 }
 
-// Kill switch: localStorage 'comfystudio-export-pipeline' = '0' restores
+// Kill switch: localStorage 'storybookstudio-export-pipeline' = '0' restores
 // lockstep pipe writes and synchronous GPU readback.
 const isExportPipelineEnabled = () => {
   try {
-    return typeof localStorage === 'undefined' || localStorage.getItem('comfystudio-export-pipeline') !== '0'
+    return typeof localStorage === 'undefined' || localStorage.getItem('storybookstudio-export-pipeline') !== '0'
   } catch {
     return true
   }
@@ -1303,7 +1303,7 @@ const runExportTimeline = async (options, onProgress, scheduler) => {
   // prepared sources live under that owned directory so a failed/cancelled
   // export can remove everything without ever touching the selected parent.
   const tempFolder = pngSequenceExport
-    ? await window.electronAPI.pathJoin(outputPath, '.velorn-export-temp')
+    ? await window.electronAPI.pathJoin(outputPath, '.storybookstudio-export-temp')
     : await window.electronAPI.pathJoin(outputFolder, `export_${Date.now()}`)
   if (pngSequenceExport) {
     const tempFolderResult = await window.electronAPI.createDirectory(tempFolder, { recursive: false })
@@ -1837,7 +1837,7 @@ const runExportTimeline = async (options, onProgress, scheduler) => {
   // <video> seeks dominate export time; qualifying clips route through a
   // per-clip sequential decoder instead, falling back to the element path
   // per clip on any doubt. Kill switch: localStorage
-  // 'comfystudio-export-webcodecs' = '0'.
+  // 'storybookstudio-export-webcodecs' = '0'.
   const FRAME_CURSOR_PREFETCH_SEC = 3
   // Per-phase wall-clock accumulators, surfaced in the completion payload so
   // a single export run shows where render time actually goes.
@@ -2043,12 +2043,12 @@ const runExportTimeline = async (options, onProgress, scheduler) => {
   // masks, GLSL/managed effects, velocity blur, text raster) still render
   // through the 2D helpers and composite as GPU textures. Only engages on
   // the frame-pipe path (the PNG fallback keeps the 2D compositor). Kill
-  // switch: localStorage 'comfystudio-export-gpu' = '0'.
+  // switch: localStorage 'storybookstudio-export-gpu' = '0'.
   let gpu = null
   if (framePipeSessionId && isGpuExportEnabled()) {
     gpu = createGpuCompositor({ width, height, transparent: !!transparent })
     if (gpu) {
-      console.log('[Export] GPU compositor active (WebGL2). Set localStorage comfystudio-export-gpu=0 to use the 2D compositor.')
+      console.log('[Export] GPU compositor active (WebGL2). Set localStorage storybookstudio-export-gpu=0 to use the 2D compositor.')
     } else {
       console.warn('[Export] WebGL2 unavailable; using the 2D compositor.')
     }
@@ -2225,7 +2225,7 @@ const runExportTimeline = async (options, onProgress, scheduler) => {
     const transitionInfo = soloClipSet ? null : timelineState.getTransitionAtTime(time)
 
     if (gpu?.isContextLost()) {
-      throw new Error('GPU compositor context lost mid-export. Re-run the export (set localStorage comfystudio-export-gpu=0 to force the 2D compositor).')
+      throw new Error('GPU compositor context lost mid-export. Re-run the export (set localStorage storybookstudio-export-gpu=0 to force the 2D compositor).')
     }
     if (gpu) {
       gpu.beginFrame()

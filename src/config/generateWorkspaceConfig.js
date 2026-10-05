@@ -374,7 +374,7 @@ const WORKFLOW_DISPLAY_LABELS = Object.freeze({
   'mask-gen': 'Mask Generation',
 })
 
-export const OPEN_COMFY_TAB_EVENT = 'comfystudio-open-comfyui-tab'
+export const OPEN_COMFY_TAB_EVENT = 'storybookstudio-open-comfyui-tab'
 
 export const HARDWARE_TIERS = Object.freeze({
   lite: {

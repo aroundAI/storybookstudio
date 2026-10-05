@@ -1,5 +1,5 @@
 // FILM-2015: a studio surface that throws must not unmount App (and with it
-// Velorn's MCP action bridge). StudioBoundary catches, logs, and renders its
+// the upstream editor's MCP action bridge). StudioBoundary catches, logs, and renders its
 // fallback; "Try again" clears the error. Exercised on the class directly:
 // react-dom/server does not run error boundaries.
 import test from 'node:test'

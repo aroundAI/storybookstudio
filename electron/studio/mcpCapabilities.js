@@ -1,6 +1,6 @@
 // The agent profile (FILM-2013): the capability tools the model sees instead
-// of Velorn's primitives (133 at 438fdb9; scripts/capability-matrix.mjs counts them). The server in electron/mcpServer.js serves them
-// at /mcp?profile=agent (the default); ?profile=expert serves Velorn's tools
+// of the upstream editor's primitives (133 at 438fdb9; scripts/capability-matrix.mjs counts them). The server in electron/mcpServer.js serves them
+// at /mcp?profile=agent (the default); ?profile=expert serves the upstream editor's tools
 // plus the lifecycle tools marked `expert` below. Both need the FILM-2010
 // bearer.
 //

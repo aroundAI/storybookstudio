@@ -1,4 +1,4 @@
-// The op log and versions wired into Velorn's real stores and MCP handlers.
+// The op log and versions wired into the upstream editor's real stores and MCP handlers.
 // The stores use extension-less imports, so they load through Vite's SSR
 // loader; the edits bridge is electron/studio/editsFiles.js over a temp dir.
 import assert from 'node:assert/strict'
@@ -88,12 +88,12 @@ beforeEach(async () => {
 
 test('normalizeOpenedProjectData accepts 1.0, 1.1 and 1.2 and keeps stock projects loading', () => {
   const { normalizeOpenedProjectData } = m.projectStore
-  const legacy = normalizeOpenedProjectData(fixture('velorn-legacy-1.0-project.json'))
+  const legacy = normalizeOpenedProjectData(fixture('storybookstudio-legacy-1.0-project.json'))
   assert.equal(legacy.projectData.version, '1.0')
   assert.equal(legacy.projectData.timelines.length, 1)
   assert.equal(legacy.currentTimelineId, 'timeline-1')
 
-  const stock = fixture('velorn-sample-project.json')
+  const stock = fixture('storybookstudio-sample-project.json')
   for (const version of ['1.0', '1.1']) {
     const opened = normalizeOpenedProjectData({ ...stock, version })
     assert.equal(opened.projectData.version, version)
@@ -102,9 +102,9 @@ test('normalizeOpenedProjectData accepts 1.0, 1.1 and 1.2 and keeps stock projec
   }
   const studio = normalizeOpenedProjectData({ ...stock, version: '1.2', studio: { schema: 'editgraph/1' } })
   assert.equal(studio.projectData.version, '1.2')
-  const savedByStockVelorn = normalizeOpenedProjectData({ ...stock, version: '1.0', studio: { schema: 'editgraph/1', episodeId: 'e' } })
-  assert.equal(savedByStockVelorn.projectData.version, '1.2')
-  assert.equal(savedByStockVelorn.projectData.studio.episodeId, 'e')
+  const savedByStockUpstream = normalizeOpenedProjectData({ ...stock, version: '1.0', studio: { schema: 'editgraph/1', episodeId: 'e' } })
+  assert.equal(savedByStockUpstream.projectData.version, '1.2')
+  assert.equal(savedByStockUpstream.projectData.studio.episodeId, 'e')
 
   const warnings = []
   const warn = console.warn
@@ -125,7 +125,7 @@ test('every logged hand-edit mutator exists in the real stores', () => {
 })
 
 test('a hand edit in the real timeline store is logged by: user, with a working inverse', async () => {
-  await openProject(fixture('velorn-sample-project.json'))
+  await openProject(fixture('storybookstudio-sample-project.json'))
   const active = m.runtime.getStudioEditLog()
   const before = active.getDocument()
   m.timelineStore.useTimelineStore.getState().removeClip('clip-3')
@@ -137,13 +137,13 @@ test('a hand edit in the real timeline store is logged by: user, with a working 
 })
 
 test('a real MCP write: preview appends nothing, apply appends one ai line, the mutators it calls are not logged again', async () => {
-  await openProject(fixture('velorn-sample-project.json'))
+  await openProject(fixture('storybookstudio-sample-project.json'))
   const { runMcpAction } = m.mcp
 
   const preview = await runMcpAction('delete_clips', { clipIds: ['clip-1'] })
   assert.equal(preview.previewOnly, true)
   await runMcpAction('add_timeline_markers', { markers: [{ time: 1, label: 'Hook' }], previewOnly: true, studioMeta: { reason: 'x' } })
-  // add_timeline_markers has no renderer preview branch (Velorn previews in the
+  // add_timeline_markers has no renderer preview branch (the upstream editor previews in the
   // main process), so the renderer only sees applied calls of it; a previewOnly
   // flag still keeps it out of the log.
   assert.deepEqual(await readLog(), [])
@@ -158,7 +158,7 @@ test('a real MCP write: preview appends nothing, apply appends one ai line, the 
 })
 
 test('versions on the real stores: snapshot, hand edit, restore (document equals the snapshot), restart', async () => {
-  const project = fixture('velorn-sample-project.json')
+  const project = fixture('storybookstudio-sample-project.json')
   project.studio = { schema: 'editgraph/1', episodeId: 'ep-1', currentVersion: null }
   await openProject(project)
   const v1 = await m.runtime.createStudioVersion('Rough cut', { by: 'ai' })
@@ -187,7 +187,7 @@ test('versions on the real stores: snapshot, hand edit, restore (document equals
 })
 
 test('after close, nothing is logged', async () => {
-  await openProject(fixture('velorn-sample-project.json'))
+  await openProject(fixture('storybookstudio-sample-project.json'))
   await m.runtime.stopStudioEditLog()
   m.timelineStore.useTimelineStore.getState().removeClip('clip-3')
   await m.mcp.runMcpAction('delete_clips', { clipIds: ['clip-1'], previewOnly: false, studioMeta: { reason: 'x' } })

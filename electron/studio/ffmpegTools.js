@@ -19,7 +19,7 @@ function defaultBinaries() {
 
 function resolveBinaries({ ffmpegPath, ffprobePath } = {}) {
   const defaults = defaultBinaries()
-  return { ffmpegPath: ffmpegPath || process.env.VELORN_FFMPEG_PATH || defaults.ffmpegPath, ffprobePath: ffprobePath || defaults.ffprobePath }
+  return { ffmpegPath: ffmpegPath || process.env.STORYBOOKSTUDIO_FFMPEG_PATH || defaults.ffmpegPath, ffprobePath: ffprobePath || defaults.ffprobePath }
 }
 
 // Runs a binary to completion. Resolves {code, stdout, stderr, ms}; never

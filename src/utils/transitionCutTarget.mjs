@@ -1,4 +1,4 @@
-export const TRANSITION_DRAG_TYPE = 'application/x-comfystudio-transition'
+export const TRANSITION_DRAG_TYPE = 'application/x-storybookstudio-transition'
 const VISUAL_TYPES = new Set(['video', 'image', 'text', 'shape'])
 
 // Drag payload contents are protected during native dragover. Only types are

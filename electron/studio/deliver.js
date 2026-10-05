@@ -31,7 +31,7 @@ const { renderDelivery } = require('./deliveryRender')
 const { checkDeliveredFile, combineQa } = require('./deliveryQa')
 const { detectClipSamples } = require('./subjectDetect')
 
-const PROJECT_FILE = 'project.comfystudio'
+const { PROJECT_FILE, projectFilePath, removeLegacyProjectFile } = require('./projectFile')
 const TOKEN_TTL_MS = 10 * 60 * 1000
 const MAX_PUT_ATTEMPTS = 3
 const STATE_FILE = '.delivery-state.json'
@@ -185,7 +185,7 @@ function createStudioDeliver({
       })
       if (live?.document?.timelines) return live.document
     }
-    const document = await readJson(path.join(projectDir, PROJECT_FILE))
+    const document = await readJson(projectFilePath(projectDir))
     if (!document?.timelines) throw fail('NOT_FOUND', `No ${PROJECT_FILE} in ${projectDir}.`)
     return document
   }
@@ -582,6 +582,7 @@ function createStudioDeliver({
         variants.embedKeyframes(built.timeline, reframed.map((entry) => entry.arguments))
         document.timelines.push(built.timeline)
         await writeJson(path.join(projectDir, PROJECT_FILE), document)
+        await removeLegacyProjectFile(projectDir)
       }
       return {
         ...response,
@@ -607,7 +608,10 @@ function createStudioDeliver({
         if (server()?.performAction) await performAction('studio_insert_timeline', { timeline, activate: false, previewOnly: false, studioMeta: { reason: `Hook opening ${timeline.studio.hookIndex}` } })
         else document.timelines.push(timeline)
       }
-      if (!server()?.performAction) await writeJson(path.join(projectDir, PROJECT_FILE), document)
+      if (!server()?.performAction) {
+        await writeJson(path.join(projectDir, PROJECT_FILE), document)
+        await removeLegacyProjectFile(projectDir)
+      }
       const files = []
       if (args.exportFiles !== false) {
         const presets = await studioModule('delivery/presets.js')

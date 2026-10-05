@@ -97,10 +97,10 @@ import {
 } from '../utils/layerCompositing'
 import { DEFAULT_LINE_THICKNESS, DEFAULT_POLYGON_SIDES, DEFAULT_SHAPE_PROPERTIES, SHAPE_FILL_TYPES, SHAPE_TYPES, normalizeShapeProperties } from '../utils/shapes'
 
-const TRANSITION_DEFAULT_DURATION_KEY = 'comfystudio-transition-default-duration-frames'
-const INSPECTOR_EXPANDED_SECTIONS_KEY = 'comfystudio-inspector-expanded-sections-v1'
-const INSPECTOR_ACTIVE_TAB_KEY = 'comfystudio-inspector-active-tab-v1'
-const INSPECTOR_EXPANDED_ADJUSTMENT_GROUPS_KEY = 'comfystudio-inspector-expanded-adjustment-groups-v1'
+const TRANSITION_DEFAULT_DURATION_KEY = 'storybookstudio-transition-default-duration-frames'
+const INSPECTOR_EXPANDED_SECTIONS_KEY = 'storybookstudio-inspector-expanded-sections-v1'
+const INSPECTOR_ACTIVE_TAB_KEY = 'storybookstudio-inspector-active-tab-v1'
+const INSPECTOR_EXPANDED_ADJUSTMENT_GROUPS_KEY = 'storybookstudio-inspector-expanded-adjustment-groups-v1'
 const DEFAULT_INSPECTOR_EXPANDED_SECTIONS = ['clipInfo', 'transform', 'compositing', 'crop', 'mask', 'timing', 'effects', 'text', 'style', 'shape', 'animation', 'adjustments', 'commit']
 const batchColorResetFields = (groupKey = 'all') => MULTI_CLIP_COLOR_FIELDS.filter(field => (
   groupKey === 'all' || (groupKey === 'global' ? !field.path.includes('.') : field.path.startsWith(`${groupKey}.`))
@@ -6706,7 +6706,7 @@ function InspectorPanel({ isExpanded, onToggleExpanded, isFullHeight = false, on
     const handleSetDefaultDuration = () => {
       try {
         localStorage.setItem(TRANSITION_DEFAULT_DURATION_KEY, String(durationFrames))
-        window.dispatchEvent(new CustomEvent('comfystudio-transition-default-duration-changed', { detail: durationFrames }))
+        window.dispatchEvent(new CustomEvent('storybookstudio-transition-default-duration-changed', { detail: durationFrames }))
       } catch (_) {}
     }
 

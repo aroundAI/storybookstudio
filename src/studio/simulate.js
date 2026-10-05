@@ -1,10 +1,10 @@
 // Runs an action plan on a copy of a timeline (FILM-2013), so a preview can
 // show per-scene durations and a draft explain-why report without touching
-// the project. Each step mirrors the timing rules of Velorn's own handler in
+// the project. Each step mirrors the timing rules of the upstream editor's own handler in
 // src/services/mcpActions.js (extract_range splits at the edges, removes the
 // inside and ripples later clips left; removing a clip removes its linked
 // partner). It is a model for cards, not a second editor: the applied result
-// is whatever Velorn's handlers do, and the report after apply is built from
+// is whatever the upstream editor's handlers do, and the report after apply is built from
 // the real document. Pure module: no Electron, no stores.
 
 const EPS = 1e-6

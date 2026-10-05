@@ -2,7 +2,7 @@
 
 Oct 3, 2026 · Shaurya
 
-Part 1 is the product requirements, organised around the closed user loop. Part 2 is the engineering design for the Velorn fork (the desktop app, StorybookStudio). Part 3 is the engineering design for the Storybook codebase (the web app). Part 4 ties the two into one closed loop.
+Part 1 is the product requirements, organised around the closed user loop. Part 2 is the engineering design for the StorybookStudio fork (the desktop app). Part 3 is the engineering design for the Storybook codebase (the web app). Part 4 ties the two into one closed loop.
 
 # Part 1: Product requirements
 
@@ -104,7 +104,7 @@ Every requirement sits on one stage of the loop. P0 is the MVP, P1 is v1, P2 is 
 
 | ID | Requirement | Priority |
 | --- | --- | --- |
-| R-40 | The full Velorn editor remains available: trims, moves, splits, speed, transitions, keyframes, text, shapes, effects | P0 |
+| R-40 | The full upstream editor remains available: trims, moves, splits, speed, transitions, keyframes, text, shapes, effects | P0 |
 | R-41 | Audio buses: dialogue, music, SFX, ambience, master with a limiter. Ducking under dialogue by default. Loudness normalised to the platform target | P1 |
 | R-42 | Captions from local transcription, styled by the brand preset, inside safe areas for each aspect ratio | P0 (captions), P1 (brand style) |
 | R-43 | Graphics by instruction: counters, callouts, lower thirds, charts, maps, timelines. "At 32 s show a counter to 87" produces a graphic, not keyframes | P2 |
@@ -181,13 +181,13 @@ QA        Loudness -14 LUFS  OK   Black frames 0   Captions in safe area  OK
 
 ## Screens and interaction model
 
-Five surfaces. Velorn's existing editor is one of them, unchanged in its essentials. The rest wrap it.
+Five surfaces. The upstream editor itself is one of them, unchanged in its essentials. The rest wrap it.
 
 | Screen | Purpose | Key elements |
 | --- | --- | --- |
 | Welcome | Start from Storybook or from a local project | "Open from Storybook" (signed in: episode picker; not: sign-in), recent projects, "Updates available" badges |
 | Episode picker | Choose what to open | Project → season → episode tree, status chips (`storyboard`, `generating`, `editing`, `ready`), size estimate, "On this machine" |
-| Editor | Velorn's timeline, preview, assets, with two additions | **AI panel** on the right (instruction box, plan cards per scene, Approve / Approve scene / Reject, report), **scene strip** above the timeline showing scene headings and target vs actual duration |
+| Editor | The upstream editor's timeline, preview, assets, with two additions | **AI panel** on the right (instruction box, plan cards per scene, Approve / Approve scene / Reject, report), **scene strip** above the timeline showing scene headings and target vs actual duration |
 | Review | Compare before and after a plan | Two timelines stacked, changed clips highlighted, scrub both in sync, per-scene accept, "Why this?" popover on any clip |
 | Deliver | Choose formats, see QA, send | Preset checklist, per-render QA badge with issues listed, "Fix with AI" on each issue, "Send to Storybook" with a confirmation summary, "Export to file" |
 
@@ -238,7 +238,7 @@ The product works when an episode goes from Storybook to published without the c
 - A timeline editor in the browser. Storybook reviews and publishes; it does not edit.
 - Cloud rendering as the default. It may come later as an option for machines below the hardware floor.
 - Generating video inside the Studio. Generation stays in Storybook (or ComfyUI for users who have it). The Studio asks Storybook to regenerate.
-- Replacing Velorn's editor UI. The fork adds around it.
+- Replacing the upstream editor's UI. The fork adds around it.
 
 **Release scope**
 
@@ -256,7 +256,7 @@ Each requirement is delivered by one owning component. **Fork** means Part 2 (St
 | --- | --- | --- |
 | R-01, R-03 | SB + Fork | Desktop tokens and OAuth PKCE (Part 3 Auth); auth vault (Part 2 Cloud client) |
 | R-02 | SB | `/api/v1/me`, project role checks (Part 3 API, Auth) |
-| R-10 | SB + Fork | "Open in Studio" button (Part 3 UI); `velorn://` protocol handler (Part 2 Cloud client) |
+| R-10 | SB + Fork | "Open in Studio" button (Part 3 UI); `storybookstudio://` protocol handler (Part 2 Cloud client) |
 | R-11, R-12, R-15 | SB + Fork | Edit package endpoint (Part 3 API); pull job and project builder (Part 2 Cloud client, Project format) |
 | R-13 | Fork | Project builder: rough-cut assembly rules (Part 2 Project format) |
 | R-14 | SB + Fork | Package `etag` and per-shot hashes (Part 3 API); re-sync (Part 2 Cloud client) |
@@ -266,7 +266,7 @@ Each requirement is delivered by one owning component. **Fork** means Part 2 (St
 | R-24, R-33 | Fork | Explain-why report generated from the op log (Part 2 Agent interface) |
 | R-25, R-44 | SB + Fork | Edit policy and brand package in the edit package (Part 3 Data model, API); applied by the compiler and caption styler (Part 2) |
 | R-30 | Fork | Review screen over versions (Part 2 Desktop architecture) |
-| R-40 | Fork | Velorn editor, unchanged (Part 2 Fork strategy) |
+| R-40 | Fork | Upstream editor, unchanged (Part 2 Fork strategy) |
 | R-41, R-42 | Fork | Audio buses and captions (Part 2 Audio, captions, compositions) |
 | R-43, R-45 | Fork | Composition clips and semantic effects (Part 2 Audio, captions, compositions) |
 | R-50, R-52 | Fork | Variant timelines, reframe, delivery batch (Part 2 Render pipeline) |
@@ -275,45 +275,45 @@ Each requirement is delivered by one owning component. **Fork** means Part 2 (St
 | R-62, R-70 | SB + Fork | Delivery package upload (Part 2 Cloud client); `episode_renders`, finalize endpoint, status machine, edit record UI (Part 3) |
 | R-71, R-72 | SB + Fork | Analytics markers in the edit package and edit events ingestion (Part 3 API, Workers); markers and intent (Part 2 Agent interface) |
 
-# Part 2: EDD, the Velorn fork (StorybookStudio desktop)
+# Part 2: EDD, the StorybookStudio fork (desktop)
 
 ## Fork strategy
 
-**StorybookStudio is Velorn plus a `studio/` layer. Upstream files change only at registration points, so upstream merges stay routine.** Velorn is Electron 28, React 18, Vite, Zustand, with bundled FFmpeg and ffprobe, and a 14.8k-line MCP server. All of that is kept.
+**StorybookStudio is the upstream editor plus a `studio/` layer. Upstream files change only at registration points, so upstream merges stay routine.** The upstream editor is Electron 28, React 18, Vite, Zustand, with bundled FFmpeg and ffprobe, and a 14.8k-line MCP server. All of that is kept.
 
-| Kept from Velorn as is | Added by the fork | Changed in place (small, registration only) |
+| Kept from upstream as is | Added by the fork | Changed in place (small, registration only) |
 | --- | --- | --- |
 | Timeline, preview, assets, export UI (`src/components/*`) | `electron/studio/` (cloud client, auth vault, pull job, render/QA pipeline, Remotion renderer) | `electron/main.js`: protocol handler, single-instance lock, `studio:*` IPC, MCP auth wiring |
 | Stores (`projectStore`, `timelineStore`, `assetsStore`) | `src/studio/` (project builder, op log, versions, intent compiler, report generator, AI panel, review screen, deliver screen) | `electron/preload.js`: expose `electronAPI.studio.*` |
 | 129 MCP tools and the renderer action bridge (`mcpActions.js`) | Capability tools registered as a second MCP profile | `electron/mcpServer.js`: tool profile switch, bearer check, Origin check |
 | Captions (whisper.cpp), audio graph, hardware export, media preparation queue | Audio buses, caption brand styling, composition clip type, language lanes | `src/App.jsx`: mount the AI panel and scene strip; `package.json`: protocol registration, product name |
-| Project folder format and autosave | Additive fields in `project.comfystudio`, plus `edits/` and `storybook/` folders | `docs/MCP.md`: document new tools and auth |
+| Project folder format and autosave | Additive fields in `project.storybookstudio`, plus `edits/` and `storybook/` folders | `docs/MCP.md`: document new tools and auth |
 
-**Naming:** user-facing name StorybookStudio. Internal identifiers stay `comfystudio` (file extension, protocol scheme, package name) for compatibility with existing Velorn projects, exactly as Velorn's own AGENTS.md prescribes for its legacy names.
+**Naming:** StorybookStudio everywhere a user or another program sees it: product and package name, app id, deep-link scheme `storybookstudio://`, file protocol `storybookstudio-file://`, project file `project.storybookstudio` (the loader still opens the upstream extension and renames it on save). The upstream name appears only in the Open-source licenses view, which GPL-3.0 §5 requires (owner, 2026-10-05; this reverses the first draft's rule of keeping the upstream internal identifiers).
 
-**Upstream cadence:** merge upstream Velorn monthly. Two changes (MCP auth, the `comfystudio://` path allowlist) are offered upstream as PRs so the fork carries less.
+**Upstream cadence:** merge upstream monthly. Two changes (MCP auth, the `storybookstudio-file://` path allowlist) are offered upstream as PRs so the fork carries less.
 
-**License:** Velorn is GPL-3.0-only. The fork is GPL too. Storybook's server code is a separate program communicating over HTTP, which keeps it outside the GPL boundary. If the fork is distributed to customers, its source is published; the repo is public from day one to make this a non-event.
+**License:** The upstream editor is GPL-3.0-only. The fork is GPL too. Storybook's server code is a separate program communicating over HTTP, which keeps it outside the GPL boundary. If the fork is distributed to customers, its source is published; the repo is public from day one to make this a non-event.
 
 ## Desktop architecture
 
-Velorn's Electron shape is kept: a main process that owns the filesystem, FFmpeg, jobs and the MCP server, and a renderer that owns the editor state. The fork adds a cloud client and job modules in main, and a studio layer plus five UI surfaces in the renderer.
+The upstream editor's Electron shape is kept: a main process that owns the filesystem, FFmpeg, jobs and the MCP server, and a renderer that owns the editor state. The fork adds a cloud client and job modules in main, and a studio layer plus five UI surfaces in the renderer.
 
 ![Desktop architecture: main process, renderer, MCP server and the new studio modules](images/studio-desktop-architecture.png)
 
 &#91;embedded content: Desktop architecture: main process, renderer, MCP server and the new studio modules\]
 
-The renderer opens and saves the project folder as Velorn always has. The cloud client writes into that same folder on pull and reads from it on deliver. The MCP server reaches the editor through the existing `mcp:action` bridge, which is why every AI change goes through the stores' normal undo, dirty tracking and autosave.
+The renderer opens and saves the project folder as the upstream editor always has. The cloud client writes into that same folder on pull and reads from it on deliver. The MCP server reaches the editor through the existing `mcp:action` bridge, which is why every AI change goes through the stores' normal undo, dirty tracking and autosave.
 
 ## Project format: EditGraph v1
 
-**EditGraph v1 is Velorn's `project.comfystudio` with four additive fields, an append-only operation log, and named versions.** Existing Velorn projects open unchanged; a Studio project opens in stock Velorn with the extra fields ignored.
+**EditGraph v1 is the upstream editor's project file (`project.storybookstudio` in the fork) with four additive fields, an append-only operation log, and named versions.** Existing upstream projects open unchanged; a Studio project opens in the stock upstream editor with the extra fields ignored.
 
 **Folder**
 
 ```text
 <Project> - E03 <Episode title>/
-  project.comfystudio          Velorn project JSON + EditGraph fields
+  project.storybookstudio          upstream project JSON + EditGraph fields
   assets/video/s01_sh02_<id8>.mp4
   assets/audio/dialogue/<lang>/s01_l07_MAYA.mp3
   assets/audio/music/  assets/audio/sfx/  assets/audio/ambience/
@@ -368,13 +368,13 @@ The renderer opens and saves the project folder as Velorn always has. The cloud 
  "reason":"Information already given by dialogue","scene":1,"versionId":"v2"}
 ```
 
-The log is written by a wrapper around `runMcpAction` and around the renderer's own store actions for hand edits (`by: "user"`). Velorn's in-memory undo stays as the fast path; the log is the durable one. `versions.json` maps `{id, name, parent, opRange:[from,to], createdBy, prompt, timelineSnapshotPath}`; a snapshot is taken at each version boundary so restore is O(1) rather than a replay.
+The log is written by a wrapper around `runMcpAction` and around the renderer's own store actions for hand edits (`by: "user"`). The upstream editor's in-memory undo stays as the fast path; the log is the durable one. `versions.json` maps `{id, name, parent, opRange:[from,to], createdBy, prompt, timelineSnapshotPath}`; a snapshot is taken at each version boundary so restore is O(1) rather than a replay.
 
 **Current timeline = version snapshot + ops since.** Restore a version by loading its snapshot. "What did the AI change?" is a filter on the log. Diff for the review screen is computed from clip `origin` fields.
 
 ## Agent interface
 
-**The agent sees 16 capability tools. Those compile to plans over Velorn's 129 primitives, which stay available in an expert profile.** Both profiles are served by the same MCP server (`electron/mcpServer.js`, HTTP JSON-RPC on `127.0.0.1:19790/mcp`), selected by a `profile` query parameter or header: `agent` (default) or `expert`.
+**The agent sees 16 capability tools. Those compile to plans over the upstream editor's 129 primitives, which stay available in an expert profile.** Both profiles are served by the same MCP server (`electron/mcpServer.js`, HTTP JSON-RPC on `127.0.0.1:19790/mcp`), selected by a `profile` query parameter or header: `agent` (default) or `expert`.
 
 **Capability tools (`agent` profile)**
 
@@ -404,11 +404,11 @@ Example, `tighten_pacing(scene 3)` compiles to: `find_timeline_items(scene 3)` �
 
 **Edit policy** (`storybook/policy.json`, from Storybook or defaults): `{targetDuration, minShotLength, maxShotLength, transitions:{preferred[], maxDuration}, music:{duckUnderDialogue, duckDb}, captions:{enabled, style}, visual:{avoidRepeatedShots, avoidExtremeZoom}}`. Compilers read it; the critic checks against it.
 
-**In-app agent:** `src/services/agentTools.js` already drives primitives from a local model via fenced `velorn-tool` blocks. It is pointed at the capability profile, so the built-in agent and an external Claude client have identical powers and produce identical plan cards.
+**In-app agent:** `src/services/agentTools.js` already drives primitives from a local model via fenced `storybookstudio-tool` blocks. It is pointed at the capability profile, so the built-in agent and an external Claude client have identical powers and produce identical plan cards.
 
 ## Render, QA and critic pipeline
 
-**The AI sees its own work through a local preview render, a deterministic QA pass and a critic pass. All three run on the user's GPU, so iteration is free.** Velorn's export path (hidden worker window, canvas compositing, FFmpeg frame pipe, hardware encoders in `hardwareExportFfmpeg.js`) is reused for every tier.
+**The AI sees its own work through a local preview render, a deterministic QA pass and a critic pass. All three run on the user's GPU, so iteration is free.** The upstream editor's export path (hidden worker window, canvas compositing, FFmpeg frame pipe, hardware encoders in `hardwareExportFfmpeg.js`) is reused for every tier.
 
 | Tier | Settings | When | Typical time (M1 Air, 90 s cut) |
 | --- | --- | --- | --- |
@@ -444,15 +444,15 @@ The vision step is the only one that costs tokens. It runs on keyframes, not vid
 
 **Loop control:** `studio_edit` with `autoRepair:true` runs apply → keyframes → QA → repair up to 3 times inside a draft version. Only the final state is shown as plan cards; intermediate states are in the op log for the audit trail.
 
-**Hardware policy:** VideoToolbox on macOS, NVENC on Windows and Linux, via Velorn's existing media-preparation queue (one encoder at a time, atomic publish). Software x264 fallback. Delivery renders go through the queue; preview renders bypass it so they are never blocked by a long export.
+**Hardware policy:** VideoToolbox on macOS, NVENC on Windows and Linux, via the upstream editor's existing media-preparation queue (one encoder at a time, atomic publish). Software x264 fallback. Delivery renders go through the queue; preview renders bypass it so they are never blocked by a long export.
 
 ## Audio, captions, compositions and localization
 
-**Audio buses** sit on top of Velorn's Web Audio preview graph (`audioMixerGraph.js`) and FFmpeg export mix (`export:mixAudio`). Each audio track gets a `bus` field; buses are `dialogue, music, sfx, ambience`, summed into `master` with a limiter. Ducking is a sidechain from the dialogue bus onto the music bus (gain `policy.music.duckDb`, 120 ms attack, 400 ms release), applied at preview as a Web Audio gain automation and at export as FFmpeg `sidechaincompress`. `studio_edit_audio` intents compile to `set_clip_audio`, `set_master_audio` and bus parameter changes. Bus stems are exported separately for localization.
+**Audio buses** sit on top of the upstream editor's Web Audio preview graph (`audioMixerGraph.js`) and FFmpeg export mix (`export:mixAudio`). Each audio track gets a `bus` field; buses are `dialogue, music, sfx, ambience`, summed into `master` with a limiter. Ducking is a sidechain from the dialogue bus onto the music bus (gain `policy.music.duckDb`, 120 ms attack, 400 ms release), applied at preview as a Web Audio gain automation and at export as FFmpeg `sidechaincompress`. `studio_edit_audio` intents compile to `set_clip_audio`, `set_master_audio` and bus parameter changes. Bus stems are exported separately for localization.
 
-**Captions** keep Velorn's path: whisper.cpp locally (`captionWhisper.js`) to word timings, cues on a `role:'captions'` track. Additions: a **caption style preset** from the brand package (font, size, colour, background, position, max chars per line, emphasis words), and **safe-area rules** per aspect ratio (9:16 keeps captions above the bottom 25% and clear of platform UI). `studio_add_captions` compiles to `transcribe_captions` → `update_caption_cues` with styling → QA safe-area check.
+**Captions** keep the upstream editor's path: whisper.cpp locally (`captionWhisper.js`) to word timings, cues on a `role:'captions'` track. Additions: a **caption style preset** from the brand package (font, size, colour, background, position, max chars per line, emphasis words), and **safe-area rules** per aspect ratio (9:16 keeps captions above the bottom 25% and clear of platform UI). `studio_add_captions` compiles to `transcribe_captions` → `update_caption_cues` with styling → QA safe-area check.
 
-**Compositions (R-43, v2):** a new clip type `composition` with `{engine:'remotion', compositionId, props, languageDependency}`. Remotion is **not** a live renderer in the preview. `electron/studio/compositionRenderer.js` renders a composition to an alpha WebM via `@remotion/renderer` (bundled Chromium) keyed by `sha256(compositionId + props)`, stored under `compositions/`, and the clip plays that file through Velorn's existing overlay path. The preview shows a placeholder until the render lands (seconds). Graphics primitives (counter, callout, lower third, chart, map, timeline, progress bar) are Remotion components in `src/studio/compositions/` that read brand tokens. Remotion's company license applies above 3 employees; confirm before v2.
+**Compositions (R-43, v2):** a new clip type `composition` with `{engine:'remotion', compositionId, props, languageDependency}`. Remotion is **not** a live renderer in the preview. `electron/studio/compositionRenderer.js` renders a composition to an alpha WebM via `@remotion/renderer` (bundled Chromium) keyed by `sha256(compositionId + props)`, stored under `compositions/`, and the clip plays that file through the upstream editor's existing overlay path. The preview shows a placeholder until the render lands (seconds). Graphics primitives (counter, callout, lower third, chart, map, timeline, progress bar) are Remotion components in `src/studio/compositions/` that read brand tokens. Remotion's company license applies above 3 employees; confirm before v2.
 
 **Semantic effects (R-45):** `punch_in, ken_burns, speed_ramp, freeze_frame, color_grade` are compilers to existing primitives (`set_clip_keyframes`, `set_clip_speed`, `split_clip`, `add_glsl_effect`). No new render code.
 
@@ -470,7 +470,7 @@ The vision step is the only one that costs tokens. It runs on keyframes, not vid
 | `sync.js` | Re-sync: fetch package with `If-None-Match`; diff by shot `sha256` and dialogue ids; download changed media under new names; produce a replacement plan (`replace_clip_with_asset` per changed clip) for the AI panel. Never auto-applies |
 | `deliver.js` | Builds the delivery package, requests presigned PUTs, uploads renders, captions, thumbnail, QA and report with resume, calls finalize |
 | `events.js` | Batches edit events (plan proposed, approved, rejected, version created, delivered) and posts them to `/api/v1/episodes/{id}/events` every 60 s or on delivery. Off when offline, flushed on reconnect |
-| `protocol.js` | `velorn://open?api=&episode=` and `velorn://auth/callback`. Registered via `app.setAsDefaultProtocolClient`, single-instance lock, `open-url` (macOS) and `second-instance` (Windows, Linux). Validates `api` against an allowlist of known Storybook hosts |
+| `protocol.js` | `storybookstudio://open?api=&episode=` and `storybookstudio://auth/callback`. Registered via `app.setAsDefaultProtocolClient`, single-instance lock, `open-url` (macOS) and `second-instance` (Windows, Linux). Validates `api` against an allowlist of known Storybook hosts |
 
 **Project builder** (`src/studio/projectBuilder.js`, pure, Electron-free, unit-tested): `(package, probedAssets, brand, policy) => projectJson`. Rules: one master timeline at the episode's aspect and fps; `video-1` for shots in `sequence_number` order at `timelineStart` or packed sequentially; `Dialogue` track per language; `Music`, `SFX`, `Ambience` tracks on their buses; a `captions` track from caption segments; one marker per scene named by heading; asset folders per scene; `semantic` on every clip and asset; Veo shot audio enabled on a `ShotAudio` track ducked under dialogue.
 
@@ -478,18 +478,18 @@ The vision step is the only one that costs tokens. It runs on keyframes, not vid
 
 ## Security hardening of the fork
 
-These ship before any cloud token is stored. Two are existing Velorn gaps.
+These ship before any cloud token is stored. Two are existing upstream gaps.
 
 | Issue | Today | Change |
 | --- | --- | --- |
 | MCP server has no auth | Loopback bind only on `127.0.0.1:19790`. Any local process can drive edits | Per-install secret generated on first run into `userData`, required as `Authorization: Bearer` on every request. Shown once in Settings with a ready `claude mcp add` command. Requests with a non-loopback `Origin` or `Host` rejected |
-| `comfystudio://` file protocol serves any path | `registerFileProtocol` decodes the path and `net.fetch`s it with no restriction (`main.js` \~3509), despite a comment saying otherwise | Allowlist: the open project folder, `userData`, the caches directory. Anything else returns 403 |
+| `storybookstudio-file://` file protocol serves any path | `registerFileProtocol` decodes the path and `net.fetch`s it with no restriction (`main.js` \~3509), despite a comment saying otherwise | Allowlist: the open project folder, `userData`, the caches directory. Anything else returns 403 |
 | Tokens | None stored today | `safeStorage` only, main process only, never in renderer state, never in the MCP snapshot, redacted from logs |
 | Deep link input | None today | `api` host allowlist, `episode` id format check, no automatic pull: the picker opens with the episode pre-selected and the user confirms |
 | Uploads | None today | Only `studio_deliver` with `confirm:true`, which requires a confirmation summary shown in the UI; the MCP tool cannot bypass the UI confirmation |
 | Checkpoints lost on restart | `MCP_PROJECT_CHECKPOINTS` in memory | Versions and snapshots on disk under `edits/` |
 
-## Files to change in the Velorn repo
+## Files to change in the StorybookStudio repo
 
 | Path | New or changed | What |
 | --- | --- | --- |
@@ -497,7 +497,7 @@ These ship before any cloud token is stored. Two are existing Velorn gaps.
 | `electron/studio/{qa,previewRender,compositionRenderer}.js` | New | QA checks, preview tiers, Remotion render-to-asset |
 | `electron/studio/mcpCapabilities.js` | New | The 16 capability tools, their schemas and the `profile` switch |
 | `electron/mcpServer.js` | Changed | Register profiles, bearer and Origin checks, persisted checkpoints, op-log hook on every write tool |
-| `electron/main.js` | Changed | Protocol handler, single-instance lock, `studio:*` IPC, `comfystudio://` allowlist, secret generation |
+| `electron/main.js` | Changed | Protocol handler, single-instance lock, `studio:*` IPC, `storybookstudio-file://` allowlist, secret generation |
 | `electron/preload.js` | Changed | `electronAPI.studio.*` |
 | `src/studio/projectBuilder.js` | New | Package → project JSON |
 | `src/studio/oplog.js`, `src/studio/versions.js` | New | Wrappers on `runMcpAction` and store actions; version snapshots and restore |
@@ -664,8 +664,8 @@ All under `apps/web/app/api/v1/`, built with `enhanceRouteHandler({auth:'bearer'
 
 **OAuth 2.0 with PKCE (v1):**
 
-1. The Studio generates `code_verifier`, opens the browser at `/oauth/desktop/authorize?client_id=storybookstudio&code_challenge=…&code_challenge_method=S256&redirect_uri=velorn://auth/callback&state=…&scope=…`.
-2. The page requires a cookie session (existing sign-in), shows the requested scopes and a workspace picker, and on approval stores a one-time code (Redis, 5 min, bound to the challenge and user) and redirects to `velorn://auth/callback?code=…&state=…`.
+1. The Studio generates `code_verifier`, opens the browser at `/oauth/desktop/authorize?client_id=storybookstudio&code_challenge=…&code_challenge_method=S256&redirect_uri=storybookstudio://auth/callback&state=…&scope=…`.
+2. The page requires a cookie session (existing sign-in), shows the requested scopes and a workspace picker, and on approval stores a one-time code (Redis, 5 min, bound to the challenge and user) and redirects to `storybookstudio://auth/callback?code=…&state=…`.
 3. `POST /oauth/desktop/token` with `grant_type=authorization_code`, `code`, `code_verifier` returns `{access_token (1 h), refresh_token (30 d, rotated on use), scopes, account_id}`. Both hashes go into one `desktop_access_tokens` row, `kind:'oauth'`.
 4. `grant_type=refresh_token` rotates. A reused refresh token revokes the row (replay detection).
 5. Fallback redirect for environments without protocol handlers: `http://127.0.0.1:<port>/callback` on a port the Studio opens for the duration of the flow.
@@ -708,7 +708,7 @@ Five touches, all inside the existing episode and project pages. No timeline in 
 
 | Where | Change |
 | --- | --- |
-| Episode header and Visual Studio (`.../visual-studio/_components/visual-studio-screen.tsx`) | **"Open in Studio"** button next to the ZIP export. Builds `velorn://open?api=<origin>&episode=<id>`. On a 2 s timeout with no handler, shows a sheet: download links for macOS and Windows, and "or create a token". Shows "Editing in Studio by \<name> since \<time>" while status is `editing` |
+| Episode header and Visual Studio (`.../visual-studio/_components/visual-studio-screen.tsx`) | **"Open in Studio"** button next to the ZIP export. Builds `storybookstudio://open?api=<origin>&episode=<id>`. On a 2 s timeout with no handler, shows a sheet: download links for macOS and Windows, and "or create a token". Shows "Editing in Studio by \<name> since \<time>" while status is `editing` |
 | New `.../episodes/[episodeSlug]/edit` page | **Edit record**: versions timeline, final duration vs target, AI vs hand changes, the explain-why report, renders per preset and language with QA badges and download, "Re-open in Studio" |
 | Publish page | Picks the primary render from `episode_renders` instead of a manually uploaded file; Shorts renders appear as publish candidates for TikTok, Reels and Shorts |
 | Project settings (`/studio/[projectSlug]/settings`) | **Brand** tab (fonts, colours, caption style preview, logo, intro/outro uploads) and **Edit policy** tab (target duration default, shot length bounds, transitions, music ducking, captions on/off) |
@@ -745,11 +745,11 @@ Analytics pages gain one card in v2: "Edit style" on the episode analytics page 
 
 **1. Open an episode (R-10 to R-13)**
 
-1. Browser: user clicks "Open in Studio" → `velorn://open?api=&episode=` → Studio `protocol.js` validates the host, opens the picker with the episode selected.
+1. Browser: user clicks "Open in Studio" → `storybookstudio://open?api=&episode=` → Studio `protocol.js` validates the host, opens the picker with the episode selected.
 2. Studio `api.js`: `POST /edit-sessions` → Storybook sets status `editing`, returns `sessionId`.
 3. Studio: `GET /edit-package` → Storybook assembles the package (about 300 ms for 20 shots) with 1-hour signed URLs and an `ETag`.
 4. Studio `pull.js`: downloads 4 at a time with resume, verifies sha256, ffprobes each file, writes `storybook/package.json`.
-5. Studio `projectBuilder.js`: writes `project.comfystudio` (rough cut), `storybook/brand.json`, `policy.json`; opens the project; Velorn's media-preparation queue starts proxies in the background.
+5. Studio `projectBuilder.js`: writes `project.storybookstudio` (rough cut), `storybook/brand.json`, `policy.json`; opens the project; the upstream editor's media-preparation queue starts proxies in the background.
 6. Studio `events.js` posts `session_opened`.
 
 **2. AI edit (R-20 to R-24, R-30 to R-32)**
@@ -811,20 +811,20 @@ Analytics pages gain one card in v2: "Edit style" on the episode analytics page 
 
 | Layer | Test | Where it runs |
 | --- | --- | --- |
-| Contracts | Edit package, EditGraph, delivery package validate against zod/JSON Schema; old Velorn projects open unchanged | Both repos, CI on every PR |
+| Contracts | Edit package, EditGraph, delivery package validate against zod/JSON Schema; old upstream projects open unchanged | Both repos, CI on every PR |
 | Storybook API | Bearer auth, scope matrix, RLS role matrix (viewer, member, admin, outsider), PKCE flow incl. replay, `deliver` version lock, 1,000-row paging | `supabase:web:test` with local Supabase |
-| Project builder | 3 fixture packages (5, 20, 60 shots incl. dubbed audio) → snapshot of `project.comfystudio` | Fork, Vitest, no Electron |
+| Project builder | 3 fixture packages (5, 20, 60 shots incl. dubbed audio) → snapshot of `project.storybookstudio` | Fork, Vitest, no Electron |
 | Op log and versions | Every write tool appends; restore returns the exact snapshot; hand edits logged as `user` | Fork, Vitest |
 | Pull and deliver jobs | Resume, checksum failure, 403 refresh, 409 handling, against a local fixture server | Fork, Node tests |
 | MCP contract | `tools/list` per profile, `previewOnly` default on every write, 401 without bearer, Origin rejection | Fork, HTTP tests |
 | QA checks | Known-bad fixture renders (clipping, black frames, out-of-safe-area captions) must fail; known-good must pass | Fork, uses bundled FFmpeg |
 | AI eval | 10 fixture episodes × 5 instructions (incl. the north-star sentence): duration hit rate, QA pass rate, script coverage, revisions, cost | Nightly, scores tracked per build; a release must not regress QA pass rate or raise cost over 20% |
-| Packaged app | Deep link, `safeStorage`, protocol registration, hardware encode paths | Manual checklist on macOS arm64 and Windows per release, following Velorn's release handoff |
+| Packaged app | Deep link, `safeStorage`, protocol registration, hardware encode paths | Manual checklist on macOS arm64 and Windows per release, following the upstream editor's release handoff |
 
 **Observability**
 
 - Storybook: request logs on `/api/v1` with token id (never the token), latency and status; counters for packages served, renders finalized, delivers, 409s; alerts on 5xx rate and on `uploading` renders older than 24 h.
-- Studio: local structured log under `userData/logs/` with job and plan ids; opt-in crash and usage reporting through Velorn's existing feedback service; token and AI cost per plan recorded in the op log and summarised in `edit_sessions.summary`.
+- Studio: local structured log under `userData/logs/` with job and plan ids; opt-in crash and usage reporting through the upstream editor's existing feedback service; token and AI cost per plan recorded in the op log and summarised in `edit_sessions.summary`.
 - Shared: `sessionId` on every event, render and log line so a problem can be followed from the panel to the database.
 
 **Rollout**

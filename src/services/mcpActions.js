@@ -45,7 +45,7 @@ import { getPexelsApiKey } from './pexelsSettings'
 import {
   PEXELS_DEFAULT_PER_PAGE,
   PEXELS_MAX_MCP_IMPORT_ITEMS,
-  VELORN_OPEN_STOCK_EVENT,
+  STORYBOOKSTUDIO_OPEN_STOCK_EVENT,
   buildDefaultPexelsFolderPath,
   buildPexelsAssetRecord,
   downloadPexelsMediaItem,
@@ -183,14 +183,14 @@ function resolveMcpGenerationResolution(payload = {}) {
 }
 
 function sanitizeExportBaseName(value) {
-  return String(value || 'Velorn_Timeline')
+  return String(value || 'StorybookStudio_Timeline')
     .trim()
     .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
     .replace(/\s+/g, '_')
     .replace(/_+/g, '_')
     .replace(/^_+|_+$/g, '')
     .slice(0, 120)
-    || 'Velorn_Timeline'
+    || 'StorybookStudio_Timeline'
 }
 
 function isAbsoluteMcpFilePath(filePath) {
@@ -1945,7 +1945,7 @@ async function handlePrepareGenerationFromTimelineContext(payload = {}) {
   useFrameForAIStore.getState().setFrame(framePayload)
 
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('comfystudio-mcp-prepare-generation', {
+    window.dispatchEvent(new CustomEvent('storybookstudio-mcp-prepare-generation', {
       detail: {
         mode,
         workflowId,
@@ -1963,7 +1963,7 @@ async function handlePrepareGenerationFromTimelineContext(payload = {}) {
       },
     }))
     if (payload.openGenerateTab !== false) {
-      window.dispatchEvent(new CustomEvent('comfystudio-open-generate-with-frame'))
+      window.dispatchEvent(new CustomEvent('storybookstudio-open-generate-with-frame'))
     }
   }
 
@@ -2008,7 +2008,7 @@ async function handleQueuePreparedGeneration(payload = {}) {
       finish(reject, new Error('Generate workspace did not respond to the MCP queue request. Open the Generate tab and try again.'))
     }, timeoutMs)
 
-    window.dispatchEvent(new CustomEvent('comfystudio-mcp-queue-prepared-generation', {
+    window.dispatchEvent(new CustomEvent('storybookstudio-mcp-queue-prepared-generation', {
       detail: {
         ...payload,
         respond: (result = {}) => {
@@ -2028,7 +2028,7 @@ async function waitForGenerateWorkspaceReady(timeoutMs = 30000) {
     throw new Error('Music Video tools are only available in the renderer.')
   }
 
-  window.dispatchEvent(new CustomEvent('comfystudio-open-generate-tab', {
+  window.dispatchEvent(new CustomEvent('storybookstudio-open-generate-tab', {
     detail: { source: 'mcp-generate-workspace' },
   }))
 
@@ -2044,7 +2044,7 @@ async function waitForGenerateWorkspaceReady(timeoutMs = 30000) {
       callback(value)
     }
     const probe = () => {
-      window.dispatchEvent(new CustomEvent('comfystudio-mcp-music-video-keyframe-probe', {
+      window.dispatchEvent(new CustomEvent('storybookstudio-mcp-music-video-keyframe-probe', {
         detail: {
           respond: () => finish(resolve),
         },
@@ -2104,7 +2104,7 @@ async function dispatchMusicVideoWorkspaceRequest(payload = {}, {
 async function handleInspectMusicVideoKeyframe(payload = {}) {
   return await dispatchMusicVideoWorkspaceRequest(payload, {
     operation: 'inspect',
-    eventName: 'comfystudio-mcp-music-video-keyframe',
+    eventName: 'storybookstudio-mcp-music-video-keyframe',
     errorLabel: 'Music Video keyframe inspection',
   })
 }
@@ -2112,7 +2112,7 @@ async function handleInspectMusicVideoKeyframe(payload = {}) {
 async function handleRegenerateMusicVideoKeyframe(payload = {}) {
   return await dispatchMusicVideoWorkspaceRequest(payload, {
     operation: 'regenerate',
-    eventName: 'comfystudio-mcp-music-video-keyframe',
+    eventName: 'storybookstudio-mcp-music-video-keyframe',
     errorLabel: 'Music Video keyframe regeneration',
   })
 }
@@ -2120,7 +2120,7 @@ async function handleRegenerateMusicVideoKeyframe(payload = {}) {
 async function handleGetMusicVideoPlan(payload = {}) {
   return await dispatchMusicVideoWorkspaceRequest(payload, {
     operation: 'get-plan',
-    eventName: 'comfystudio-mcp-music-video-workflow',
+    eventName: 'storybookstudio-mcp-music-video-workflow',
     errorLabel: 'Music Video plan inspection',
   })
 }
@@ -2128,7 +2128,7 @@ async function handleGetMusicVideoPlan(payload = {}) {
 async function handleInspectMusicVideoVideo(payload = {}) {
   return await dispatchMusicVideoWorkspaceRequest(payload, {
     operation: 'inspect-video',
-    eventName: 'comfystudio-mcp-music-video-workflow',
+    eventName: 'storybookstudio-mcp-music-video-workflow',
     errorLabel: 'Music Video Step 5 inspection',
   })
 }
@@ -2136,7 +2136,7 @@ async function handleInspectMusicVideoVideo(payload = {}) {
 async function handleRegenerateMusicVideoVideo(payload = {}) {
   return await dispatchMusicVideoWorkspaceRequest(payload, {
     operation: 'regenerate-video',
-    eventName: 'comfystudio-mcp-music-video-workflow',
+    eventName: 'storybookstudio-mcp-music-video-workflow',
     errorLabel: 'Music Video Step 5 regeneration',
   })
 }
@@ -2144,7 +2144,7 @@ async function handleRegenerateMusicVideoVideo(payload = {}) {
 async function handleMusicVideoWorkspaceOperation(operation, payload = {}, errorLabel = 'Music Video request') {
   return await dispatchMusicVideoWorkspaceRequest(payload, {
     operation,
-    eventName: 'comfystudio-mcp-music-video-workflow',
+    eventName: 'storybookstudio-mcp-music-video-workflow',
     errorLabel,
   })
 }
@@ -2276,7 +2276,7 @@ async function handleQueueTimelineGenerationBatch(payload = {}) {
       finish(reject, new Error('Generate workspace did not respond to the MCP batch queue request. Open the Generate tab and try again.'))
     }, timeoutMs)
 
-    window.dispatchEvent(new CustomEvent('comfystudio-mcp-queue-timeline-generation-batch', {
+    window.dispatchEvent(new CustomEvent('storybookstudio-mcp-queue-timeline-generation-batch', {
       detail: {
         ...payload,
         capturedFrame: prepared?.capturedFrame || null,
@@ -2311,7 +2311,7 @@ async function handleQueueTimelineTemplateGeneration(payload = {}) {
       finish(reject, new Error('Generate workspace did not respond to the MCP template generation request. Open the Generate tab and try again.'))
     }, timeoutMs)
 
-    window.dispatchEvent(new CustomEvent('comfystudio-mcp-queue-template-generation', {
+    window.dispatchEvent(new CustomEvent('storybookstudio-mcp-queue-template-generation', {
       detail: {
         ...payload,
         respond: (result = {}) => {
@@ -2345,7 +2345,7 @@ async function handleGetGenerationQueueStatus(payload = {}) {
       finish(reject, new Error('Generate workspace did not respond to the MCP queue-status request.'))
     }, timeoutMs)
 
-    window.dispatchEvent(new CustomEvent('comfystudio-mcp-get-generation-queue-status', {
+    window.dispatchEvent(new CustomEvent('storybookstudio-mcp-get-generation-queue-status', {
       detail: {
         ...payload,
         respond: (result = {}) => {
@@ -2753,7 +2753,7 @@ async function handleQueuePromptGenerationBatch(payload = {}) {
       finish(reject, new Error('Generate workspace did not respond to the MCP prompt batch queue request. Open the Generate tab and try again.'))
     }, timeoutMs)
 
-    window.dispatchEvent(new CustomEvent('comfystudio-mcp-queue-prompt-generation-batch', {
+    window.dispatchEvent(new CustomEvent('storybookstudio-mcp-queue-prompt-generation-batch', {
       detail: {
         ...payload,
         respond: (result = {}) => {
@@ -7793,7 +7793,7 @@ function publishPexelsSearchToStockTab(searchResult, { openStockTab = true } = {
   }
   writePexelsStockPanelState(stockState)
   if (openStockTab && typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent(VELORN_OPEN_STOCK_EVENT, { detail: { stockState } }))
+    window.dispatchEvent(new CustomEvent(STORYBOOKSTUDIO_OPEN_STOCK_EVENT, { detail: { stockState } }))
   }
   return stockState
 }

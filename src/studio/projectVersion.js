@@ -1,6 +1,6 @@
-// Project format versions (FILM-2012 AC9). 1.0 is Velorn's single-timeline
+// Project format versions (FILM-2012 AC9). 1.0 is the upstream editor's single-timeline
 // file, 1.1 its multi-timeline file, 1.2 a 1.1 file carrying EditGraph v1
-// fields. Stock Velorn never reads `version`, so writing 1.2 is safe for it.
+// fields. The stock upstream editor never reads `version`, so writing 1.2 is safe for it.
 // Pure module: no Electron, no stores.
 import { EDITGRAPH_SCHEMA } from './contracts/editgraph.schema.js'
 
@@ -37,7 +37,7 @@ export const stampProjectVersionForSave = (project) => {
   }
 }
 
-// Stock Velorn rewrites `version` on every save (it wrote '1.0' for years), so
+// The stock upstream editor rewrites `version` on every save (it wrote '1.0' for years), so
 // a Studio project it saved says 1.0 while keeping its studio block: the block
 // is the stronger signal.
 export const resolveOpenedProjectVersion = (project) => {

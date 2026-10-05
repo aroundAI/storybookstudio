@@ -6,7 +6,7 @@
 // file is the same, new when it is replaced); a re-signed URL is not a
 // change. Rows are matched by id. The plan is a proposal for the AI panel:
 // every step is previewOnly, carries its reason as arguments.studioMeta
-// (FILM-2012 op log), and uses Velorn primitives that run_mcp_action_plan
+// (FILM-2012 op log), and uses upstream primitives that run_mcp_action_plan
 // accepts (import_asset_from_path, replace_clip_with_asset, delete_clips,
 // add_asset_to_timeline).
 const crypto = require('crypto')
@@ -176,7 +176,7 @@ function buildResyncPlan({ diff, project, assetPaths = {}, session = null }) {
       continue
     }
     for (const clip of clips) step('replace_clip_with_asset', { clipId: clip.id, assetName }, reason, change.sceneNumber)
-    // Velorn replaces an audio clip only with an audio asset, so the shot's
+    // The upstream editor replaces an audio clip only with an audio asset, so the shot's
     // own sound (a separate clip of the old video) cannot be swapped here.
     const stale = index.shotAudio.get(change.id) || []
     if (stale.length) {

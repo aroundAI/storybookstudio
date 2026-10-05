@@ -1,7 +1,7 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
 
-const { createComfyStudioMcpServer } = require('../electron/mcpServer')
+const { createStorybookStudioMcpServer } = require('../electron/mcpServer')
 
 const imageAsset = {
   id: 'image-1',
@@ -20,7 +20,7 @@ const audioAsset = {
 
 function createSnapshot() {
   return {
-    app: { name: 'Velorn' },
+    app: { name: 'StorybookStudio' },
     project: { id: 'project-1', name: 'H3 MCP test', path: 'C:/test/project' },
     timelines: [],
     currentTimeline: null,
@@ -35,7 +35,7 @@ function parseTextResult(result) {
 
 test('queue_h3_reference_video previews a validated 2K image+audio job without dispatching', async () => {
   let dispatched = false
-  const server = createComfyStudioMcpServer({
+  const server = createStorybookStudioMcpServer({
     performAction: async () => {
       dispatched = true
       return { success: true }
@@ -69,7 +69,7 @@ test('queue_h3_reference_video previews a validated 2K image+audio job without d
 
 test('queue_h3_reference_video apply dispatches one direct Generate job', async () => {
   let dispatchedRequest = null
-  const server = createComfyStudioMcpServer({
+  const server = createStorybookStudioMcpServer({
     performAction: async (request) => {
       dispatchedRequest = request
       return { success: true, jobs: [{ id: 'job-1', status: 'queued' }] }
@@ -98,7 +98,7 @@ test('queue_h3_reference_video apply dispatches one direct Generate job', async 
 })
 
 test('queue_h3_reference_video rejects mismatched asset types before dispatch', async () => {
-  const server = createComfyStudioMcpServer({ performAction: async () => ({ success: true }) })
+  const server = createStorybookStudioMcpServer({ performAction: async () => ({ success: true }) })
   server.updateSnapshot(createSnapshot())
 
   const result = await server.callTool('queue_h3_reference_video', {

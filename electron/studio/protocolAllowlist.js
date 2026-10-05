@@ -1,16 +1,16 @@
-// FILM-2010: which files the comfystudio:// protocol may serve.
+// FILM-2010: which files the storybookstudio-file:// protocol may serve.
 // Pure: no Electron import, so `node --test` covers it.
 const fs = require('fs')
 const path = require('path')
 
-const COMFYSTUDIO_SCHEME_PREFIX = 'comfystudio://'
+const STORYBOOKSTUDIO_SCHEME_PREFIX = 'storybookstudio-file://'
 
-// "comfystudio://%2FUsers%2Fme%2Fp%2Fthumb.png?t=1" -> "/Users/me/p/thumb.png".
+// "storybookstudio-file://%2FUsers%2Fme%2Fp%2Fthumb.png?t=1" -> "/Users/me/p/thumb.png".
 // The query and fragment are cache-busters, never part of the path.
-function comfystudioUrlToPath(url, { platform = process.platform } = {}) {
+function storybookstudioUrlToPath(url, { platform = process.platform } = {}) {
   const value = String(url || '')
-  if (!value.startsWith(COMFYSTUDIO_SCHEME_PREFIX)) return null
-  const encoded = value.slice(COMFYSTUDIO_SCHEME_PREFIX.length).split(/[?#]/)[0]
+  if (!value.startsWith(STORYBOOKSTUDIO_SCHEME_PREFIX)) return null
+  const encoded = value.slice(STORYBOOKSTUDIO_SCHEME_PREFIX.length).split(/[?#]/)[0]
   let decoded
   try {
     decoded = decodeURIComponent(encoded)
@@ -77,8 +77,8 @@ function createGrantedFileSet({ limit = 2000 } = {}) {
 }
 
 module.exports = {
-  COMFYSTUDIO_SCHEME_PREFIX,
-  comfystudioUrlToPath,
+  STORYBOOKSTUDIO_SCHEME_PREFIX,
+  storybookstudioUrlToPath,
   resolveAllowedPath,
   createGrantedFileSet,
 }

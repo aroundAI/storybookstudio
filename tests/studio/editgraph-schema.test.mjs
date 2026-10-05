@@ -15,7 +15,7 @@ import {
 const readFixture = (name) => JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8'))
 
 const withStudioFields = () => {
-  const project = readFixture('velorn-sample-project.json')
+  const project = readFixture('storybookstudio-sample-project.json')
   project.studio = {
     schema: 'editgraph/1',
     episodeId: '3f1c2a9e-0000-4000-8000-000000000001',
@@ -50,13 +50,13 @@ const withStudioFields = () => {
   return project
 }
 
-test('a stock Velorn project with no Studio fields validates', () => {
-  const result = validateEditGraphProject(readFixture('velorn-sample-project.json'))
+test('a stock upstream project with no Studio fields validates', () => {
+  const result = validateEditGraphProject(readFixture('storybookstudio-sample-project.json'))
   assert.equal(result.success, true, JSON.stringify(result.error?.issues))
 })
 
-test('a legacy single-timeline Velorn project validates', () => {
-  const result = validateEditGraphProject(readFixture('velorn-legacy-1.0-project.json'))
+test('a legacy single-timeline upstream project validates', () => {
+  const result = validateEditGraphProject(readFixture('storybookstudio-legacy-1.0-project.json'))
   assert.equal(result.success, true, JSON.stringify(result.error?.issues))
 })
 
@@ -65,7 +65,7 @@ test('a project carrying every Studio field validates', () => {
   assert.equal(result.success, true, JSON.stringify(result.error?.issues))
 })
 
-test('validation keeps unknown Velorn fields (passthrough, nothing stripped)', () => {
+test('validation keeps unknown the upstream editor fields (passthrough, nothing stripped)', () => {
   const project = withStudioFields()
   const parsed = EditGraphProjectSchema.parse(project)
   assert.deepEqual(parsed, project)

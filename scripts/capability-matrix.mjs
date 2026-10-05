@@ -104,7 +104,7 @@ export function render(tools, writable, classes) {
   const verbLabel = (id) => `${id} ${classes.verbs[id]}`
   const lines = [START, '']
   lines.push(`**${summary.toolCount} tools** in \`createToolDefinitions()\`; ${summary.withPreviewOnly} accept \`previewOnly\`; ${summary.planWritable} are in \`MCP_ACTION_PLAN_WRITABLE_TOOLS\`; ${summary.withAnnotations} carry MCP \`annotations\`.`, '')
-  lines.push('### Every Velorn tool', '')
+  lines.push('### Every upstream tool', '')
   lines.push('| # | Tool | Group | Contract verbs | Class | previewOnly | In plans | What it does | Notes |')
   lines.push('| --- | --- | --- | --- | --- | --- | --- | --- | --- |')
   tools.forEach((tool, index) => {
@@ -112,7 +112,7 @@ export function render(tools, writable, classes) {
     const verbs = entry.verbs.length ? entry.verbs.map(verbLabel).join('; ') : '—'
     lines.push(`| ${index + 1} | \`${tool.name}\` | ${entry.group} | ${verbs} | ${entry.class} | ${previewSupport(tool)} | ${writable.has(tool.name) ? 'yes' : '—'} | ${cell(firstSentence(tool.description))} | ${cell(entry.note)} |`)
   })
-  lines.push('', '### Missing: what the contract needs that no Velorn tool provides (`build`)', '')
+  lines.push('', '### Missing: what the contract needs that no upstream tool provides (`build`)', '')
   lines.push('| Item | Contract verbs | Built by | Notes |', '| --- | --- | --- | --- |')
   for (const item of classes.build) {
     lines.push(`| \`${item.name}\` | ${item.verbs.map(verbLabel).join('; ')} | ${item.spec} | ${cell(item.note)} |`)
@@ -121,7 +121,7 @@ export function render(tools, writable, classes) {
   lines.push('| Class | Count |', '| --- | --- |')
   lines.push(`| exists | ${summary.byClass.exists} (of which ${summary.noVerb} serve no contract verb and stay in the expert profile) |`)
   lines.push(`| adapter | ${summary.byClass.adapter} |`)
-  lines.push(`| build | ${summary.byClass.build} (items above; none is a Velorn tool) |`)
+  lines.push(`| build | ${summary.byClass.build} (items above; none is a upstream tool) |`)
   lines.push('', '| Verb | `exists` tools | `adapter` tools | `build` items |', '| --- | --- | --- | --- |')
   for (const row of summary.verbRows) {
     lines.push(`| ${row.id} ${row.label} | ${row.exists.length} | ${row.adapter.length} | ${row.build.length ? row.build.join('; ') : '—'} |`)

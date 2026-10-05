@@ -78,7 +78,7 @@ const RESOLUTION_OPTIONS = [
 const FPS_OPTIONS = [24, 25, 30]
 const KEYFRAME_BUSY_STATUSES = new Set(['queued', 'paused', 'uploading', 'configuring', 'queuing', 'running', 'saving'])
 const VIDEO_BUSY_STATUSES = KEYFRAME_BUSY_STATUSES
-const BUSINESS_AD_DRAFT_STORAGE_KEY = 'comfystudio-business-ad-creator-draft-v1'
+const BUSINESS_AD_DRAFT_STORAGE_KEY = 'storybookstudio-business-ad-creator-draft-v1'
 const DEFAULT_BUSINESS_AD_DRAFT = Object.freeze({
   businessName: 'Bright Bite Dental',
   productService: 'new patient whitening and cleaning special',
@@ -1195,7 +1195,7 @@ export default function BusinessAdCreator({
               {customKeyframeWorkflowName || 'No custom workflow loaded'}
             </div>
             <p className="mt-1 text-[10px] leading-4 text-sf-text-muted">
-              Required: <span className="font-mono text-sf-text-secondary">VELORN_PROMPT</span> and <span className="font-mono text-sf-text-secondary">VELORN_OUTPUT_IMAGE</span>. Optional: <span className="font-mono text-sf-text-secondary">VELORN_INPUT_IMAGE</span>, <span className="font-mono text-sf-text-secondary">VELORN_SEED</span>, <span className="font-mono text-sf-text-secondary">VELORN_WIDTH</span>, <span className="font-mono text-sf-text-secondary">VELORN_HEIGHT</span>.
+              Required: <span className="font-mono text-sf-text-secondary">STORYBOOKSTUDIO_PROMPT</span> and <span className="font-mono text-sf-text-secondary">STORYBOOKSTUDIO_OUTPUT_IMAGE</span>. Optional: <span className="font-mono text-sf-text-secondary">STORYBOOKSTUDIO_INPUT_IMAGE</span>, <span className="font-mono text-sf-text-secondary">STORYBOOKSTUDIO_SEED</span>, <span className="font-mono text-sf-text-secondary">STORYBOOKSTUDIO_WIDTH</span>, <span className="font-mono text-sf-text-secondary">STORYBOOKSTUDIO_HEIGHT</span>.
             </p>
             <div className={`mt-2 text-[10px] ${customKeyframeValidation.ok ? 'text-emerald-300' : 'text-amber-200'}`}>
               {customKeyframeValidation.message}
@@ -1241,7 +1241,7 @@ export default function BusinessAdCreator({
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-sf-text-muted">Velorn bridge</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-sf-text-muted">StorybookStudio bridge</span>
                 <span className={`rounded-full border px-2 py-0.5 text-[10px] ${bridgeBadge.className}`}>
                   {bridgeBadge.label}
                 </span>
@@ -1261,7 +1261,7 @@ export default function BusinessAdCreator({
                 onClick={handleInstallYoloMusicCustomKeyframeBridge}
                 disabled={!canInstallBridge || yoloCustomKeyframeBridgeBusy}
                 className="inline-flex items-center justify-center gap-1.5 rounded border border-sf-accent/50 bg-sf-accent/10 px-2 py-1.5 text-[10px] font-semibold text-sf-accent transition-colors hover:bg-sf-accent/20 disabled:cursor-not-allowed disabled:border-sf-dark-600 disabled:bg-sf-dark-800 disabled:text-sf-text-muted"
-                title={bridgeState === 'unavailable' ? 'Choose a ComfyUI folder or configure the launcher first.' : 'Install the bundled Velorn Bridge into ComfyUI custom_nodes.'}
+                title={bridgeState === 'unavailable' ? 'Choose a ComfyUI folder or configure the launcher first.' : 'Install the bundled Studio Bridge into ComfyUI custom_nodes.'}
               >
                 {yoloCustomKeyframeBridgeBusy ? <Loader2 className="h-3 w-3 animate-spin" /> : <CheckCircle2 className="h-3 w-3" />}
                 {bridgeInstalled ? 'Installed' : 'Install Bridge'}

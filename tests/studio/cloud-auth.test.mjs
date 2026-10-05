@@ -1,5 +1,5 @@
 // FILM-2011 AC1: sign-in by pasted token (validated by whoami) and by PKCE
-// through the system browser with a loopback or velorn:// redirect; tokens
+// through the system browser with a loopback or storybookstudio:// redirect; tokens
 // only in the secrets store, keyed by API host; refresh 5 minutes before
 // expiry with the rotated refresh token saved; studio:auth-changed carries
 // no token.
@@ -184,11 +184,11 @@ test('PKCE with a loopback redirect: browser opened, code caught on 127.0.0.1, e
 test('the refresh fires on schedule, rotates the refresh token and re-arms; the old refresh token is gone', async () => {
   const log = []
   const h = harness({ sdkAuth: fakeSdkAuth(log) })
-  const signingIn = h.auth.signInWithBrowser(API, { redirect: 'velorn' })
+  const signingIn = h.auth.signInWithBrowser(API, { redirect: 'storybookstudio' })
   while (h.opened.length === 0) await new Promise((r) => setImmediate(r))
   const authorizeUrl = new URL(h.opened[0])
-  assert.equal(authorizeUrl.searchParams.get('redirect_uri'), 'velorn://auth/callback')
-  // velorn://auth/callback arrives through protocol.js.
+  assert.equal(authorizeUrl.searchParams.get('redirect_uri'), 'storybookstudio://auth/callback')
+  // storybookstudio://auth/callback arrives through protocol.js.
   assert.equal(h.auth.handleCallback({ code: 'c', state: 'nope' }), false)
   assert.equal(h.auth.handleCallback({ code: 'c', state: authorizeUrl.searchParams.get('state') }), true)
   await signingIn
@@ -207,7 +207,7 @@ test('the refresh fires on schedule, rotates the refresh token and re-arms; the 
 test('a token asked for inside the last five minutes is refreshed first', async () => {
   const log = []
   const h = harness({ sdkAuth: fakeSdkAuth(log) })
-  const signingIn = h.auth.signInWithBrowser(API, { redirect: 'velorn' })
+  const signingIn = h.auth.signInWithBrowser(API, { redirect: 'storybookstudio' })
   while (h.opened.length === 0) await new Promise((r) => setImmediate(r))
   h.auth.handleCallback({ code: 'c', state: new URL(h.opened[0]).searchParams.get('state') })
   await signingIn

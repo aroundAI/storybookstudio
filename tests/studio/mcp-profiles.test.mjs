@@ -1,5 +1,5 @@
 // FILM-2013 AC1: /mcp?profile=agent (the default) lists only the capability
-// tools; ?profile=expert lists Velorn's tools plus the studio_* lifecycle
+// tools; ?profile=expert lists the upstream editor's tools plus the studio_* lifecycle
 // tools; both need the FILM-2010 bearer. Tools other specs build answer
 // VALIDATION_FAILED "not available yet". Raw HTTP against the real server.
 import assert from 'node:assert/strict'
@@ -12,7 +12,7 @@ import { STUDIO_EDIT_INTENTS as COMPILER_INTENTS } from '../../src/studio/compil
 import { freePort } from './helpers/studio-harness.mjs'
 
 const require = createRequire(import.meta.url)
-const { createComfyStudioMcpServer } = require('../../electron/mcpServer.js')
+const { createStorybookStudioMcpServer } = require('../../electron/mcpServer.js')
 const capabilities = require('../../electron/studio/mcpCapabilities.js')
 
 const SECRET = 'profile-test-secret'
@@ -34,7 +34,7 @@ const callText = (body) => JSON.parse(body.result.content[0].text)
 
 before(async () => {
   const port = await freePort()
-  server = createComfyStudioMcpServer({ port, authSecret: SECRET, version: 'test' })
+  server = createStorybookStudioMcpServer({ port, authSecret: SECRET, version: 'test' })
   await server.start()
   base = `http://127.0.0.1:${port}/mcp`
 })
@@ -66,14 +66,14 @@ test('the agent profile is the default and lists only the 18 capability tools, e
   assert.equal(edit.inputSchema.properties.previewOnly.default, true)
 })
 
-test('the expert profile lists every Velorn tool plus the 6 lifecycle tools, by query or by header', async () => {
-  const velorn = extractTools(source).map((tool) => tool.name)
-  assert.ok(velorn.length >= 130, `${velorn.length} Velorn tools`)
+test('the expert profile lists every upstream tool plus the 6 lifecycle tools, by query or by header', async () => {
+  const upstream = extractTools(source).map((tool) => tool.name)
+  assert.ok(upstream.length >= 130, `${upstream.length} upstream tools`)
   for (const options of [{ profile: 'expert' }, { header: 'expert' }]) {
     const names = (await rpc('tools/list', {}, options)).body.result.tools.map((tool) => tool.name)
-    assert.equal(names.length, velorn.length + 6)
-    assert.deepEqual(names.slice(0, velorn.length), velorn)
-    assert.deepEqual(names.slice(velorn.length), ['studio_open_episode', 'studio_get_job_status', 'studio_check_readiness', 'studio_create_version', 'studio_restore_version', 'studio_deliver'])
+    assert.equal(names.length, upstream.length + 6)
+    assert.deepEqual(names.slice(0, upstream.length), upstream)
+    assert.deepEqual(names.slice(upstream.length), ['studio_open_episode', 'studio_get_job_status', 'studio_check_readiness', 'studio_create_version', 'studio_restore_version', 'studio_deliver'])
   }
 })
 

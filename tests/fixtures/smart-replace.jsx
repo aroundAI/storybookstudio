@@ -119,7 +119,7 @@ async function initializeMedia(media) {
 // is an in-memory stand-in. No filesystem API or production main is callable.
 async function exportFrameInMemory(time) {
   const previousApi = window.electronAPI, previousHandle = useProjectStore.getState().currentProjectHandle
-  const flags = ['comfystudio-export-webcodecs', 'comfystudio-export-gpu']
+  const flags = ['storybookstudio-export-webcodecs', 'storybookstudio-export-gpu']
   const previousFlags = flags.map(key => localStorage.getItem(key))
   const root = '/__smart_replace_memory__', frames = [], reads = [], calls = []
   let size = null

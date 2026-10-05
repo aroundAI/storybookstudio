@@ -1,4 +1,4 @@
-// FILM-2011 fallback: a stock Velorn project with the shots placed one after
+// FILM-2011 fallback: a stock upstream project with the shots placed one after
 // another on video-1, each dialogue line at its own start on one audio
 // track, and the music under them. Used only when FILM-2012's builder
 // (editLogRuntime.openStudioProjectFromPackage) is not in this build. Pure.

@@ -229,8 +229,8 @@ test('detects native protected-mode transition drags from types without reading 
 })
 
 test('does not mistake effect, asset, text or file drags for transitions', () => {
-  for (const types of [[], ['Files'], ['text/plain'], ['application/x-comfystudio-effect'],
-    ['application/x-comfystudio-asset-ids'], [`${TRANSITION_DRAG_TYPE}-extra`]]) {
+  for (const types of [[], ['Files'], ['text/plain'], ['application/x-storybookstudio-effect'],
+    ['application/x-storybookstudio-asset-ids'], [`${TRANSITION_DRAG_TYPE}-extra`]]) {
     assert.equal(isTransitionDrag({ types, getData() { throw new Error('must not inspect payload') } }), false, types.join(','))
   }
   assert.equal(isTransitionDrag(null), false)

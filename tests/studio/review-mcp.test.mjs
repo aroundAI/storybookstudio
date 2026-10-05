@@ -39,7 +39,7 @@ const call = async (name, args, { profile = null } = {}) => {
   return { result, body: parseToolResult(result) }
 }
 
-// The music bed 20 dB hot, as a hand edit through Velorn's own primitive.
+// The music bed 20 dB hot, as a hand edit through the upstream editor's own primitive.
 const plantLoudMusic = () => call('set_clip_audio', { clipId: 'clip-80', gainDb: 20, previewOnly: false }, { profile: 'expert' })
 
 test('studio_review finds the loud music; studio_repair previews and applies one plan into a version; the next review passes it', async () => {

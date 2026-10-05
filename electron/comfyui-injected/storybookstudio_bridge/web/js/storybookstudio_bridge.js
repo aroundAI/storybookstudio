@@ -1,14 +1,14 @@
 import { app } from "../../../scripts/app.js";
 
-const BRIDGE_SOURCE = "comfystudio-comfyui-bridge";
+const BRIDGE_SOURCE = "storybookstudio-comfyui-bridge";
 const BRIDGE_VERSION = "0.1.0";
 
 function getBridgeContainer() {
-  let container = document.getElementById("comfystudio-bridge-container");
+  let container = document.getElementById("storybookstudio-bridge-container");
   if (container) return container;
 
   container = document.createElement("div");
-  container.id = "comfystudio-bridge-container";
+  container.id = "storybookstudio-bridge-container";
   container.style.position = "fixed";
   container.style.right = "12px";
   container.style.bottom = "12px";
@@ -22,7 +22,7 @@ function getBridgeContainer() {
 }
 
 function setStatus(text, tone = "idle") {
-  const status = document.getElementById("comfystudio-bridge-status");
+  const status = document.getElementById("storybookstudio-bridge-status");
   if (!status) return;
   status.textContent = text || "";
   status.style.display = text ? "inline-flex" : "none";
@@ -48,7 +48,7 @@ async function getCurrentApiWorkflow() {
   };
 }
 
-function postWorkflowToComfyStudio(payload) {
+function postWorkflowToStorybookStudio(payload) {
   const message = {
     source: BRIDGE_SOURCE,
     type: "api-workflow",
@@ -71,10 +71,10 @@ function postWorkflowToComfyStudio(payload) {
 
 function createBridgeButton() {
   const container = getBridgeContainer();
-  if (document.getElementById("comfystudio-bridge-send")) return;
+  if (document.getElementById("storybookstudio-bridge-send")) return;
 
   const status = document.createElement("span");
-  status.id = "comfystudio-bridge-status";
+  status.id = "storybookstudio-bridge-status";
   status.style.display = "none";
   status.style.alignItems = "center";
   status.style.maxWidth = "320px";
@@ -87,10 +87,10 @@ function createBridgeButton() {
   container.appendChild(status);
 
   const button = document.createElement("button");
-  button.id = "comfystudio-bridge-send";
+  button.id = "storybookstudio-bridge-send";
   button.type = "button";
-  button.textContent = "Send to Velorn";
-  button.title = "Export this graph as API JSON and send it back to Velorn.";
+  button.textContent = "Send to StorybookStudio";
+  button.title = "Export this graph as API JSON and send it back to StorybookStudio.";
   button.style.border = "1px solid rgba(59, 130, 246, 0.65)";
   button.style.borderRadius = "8px";
   button.style.background = "rgba(15, 23, 42, 0.92)";
@@ -114,11 +114,11 @@ function createBridgeButton() {
     setStatus("", "idle");
     try {
       const exported = await getCurrentApiWorkflow();
-      const sent = postWorkflowToComfyStudio(exported);
-      setStatus(sent ? "Sent to Velorn." : "Open ComfyUI inside Velorn to send directly.", sent ? "ok" : "error");
+      const sent = postWorkflowToStorybookStudio(exported);
+      setStatus(sent ? "Sent to StorybookStudio." : "Open ComfyUI inside StorybookStudio to send directly.", sent ? "ok" : "error");
       window.setTimeout(() => setStatus("", "idle"), sent ? 2500 : 6500);
     } catch (error) {
-      setStatus(error?.message || "Could not send workflow to Velorn.", "error");
+      setStatus(error?.message || "Could not send workflow to StorybookStudio.", "error");
     } finally {
       button.disabled = false;
       button.textContent = previousText;
@@ -129,7 +129,7 @@ function createBridgeButton() {
 }
 
 app.registerExtension({
-  name: "Velorn.Bridge",
+  name: "StorybookStudio.Bridge",
   setup() {
     createBridgeButton();
   },

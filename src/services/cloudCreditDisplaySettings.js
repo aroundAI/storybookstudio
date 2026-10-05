@@ -1,6 +1,6 @@
-const CLOUD_CREDIT_DISPLAY_STORAGE_KEY = 'velorn-show-cloud-credit-balance'
+const CLOUD_CREDIT_DISPLAY_STORAGE_KEY = 'storybookstudio-show-cloud-credit-balance'
 
-export const CLOUD_CREDIT_DISPLAY_CHANGED_EVENT = 'velorn-cloud-credit-display-changed'
+export const CLOUD_CREDIT_DISPLAY_CHANGED_EVENT = 'storybookstudio-cloud-credit-display-changed'
 
 export function getShowCloudCreditBalance() {
   if (typeof localStorage === 'undefined') return true

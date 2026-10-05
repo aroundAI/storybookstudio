@@ -37,7 +37,7 @@ import { startMcpSnapshotPublisher } from './services/mcpSnapshot'
 import { MCP_ACTION_BRIDGE_VERSION, startMcpActionBridge } from './services/mcpActions'
 import { startPlanProposedSink } from './studio/planProposedSink'
 import { attachProjectDirtyWatchers, isProjectDirty } from './services/projectDirtyTracker'
-import { VELORN_OPEN_STOCK_EVENT } from './services/pexelsStock'
+import { STORYBOOKSTUDIO_OPEN_STOCK_EVENT } from './services/pexelsStock'
 import {
   DISCOVER_TAB_VISIBILITY_CHANGED_EVENT,
   getShowDiscoverTab,
@@ -122,7 +122,7 @@ function App() {
   const MIN_VERTICAL_PREVIEW = 280
   const MAX_VERTICAL_PREVIEW = 1200
 
-  const LAYOUT_STORAGE_KEY = 'comfystudio-editor-layout'
+  const LAYOUT_STORAGE_KEY = 'storybookstudio-editor-layout'
   const [comfyIframeUrl, setComfyIframeUrl] = useState(() => getLocalComfyHttpBaseSync())
   // Bumped to force-remount the ComfyUI iframe (e.g. when the user clicks the
   // reload button in the tab header). Necessary because the iframe is kept
@@ -373,20 +373,20 @@ function App() {
   // When user sends timeline frame to Generate (right-click preview → Extend with AI / Starting keyframe for AI)
   useEffect(() => {
     const handler = () => setMainTab('generate')
-    window.addEventListener('comfystudio-open-generate-with-frame', handler)
-    return () => window.removeEventListener('comfystudio-open-generate-with-frame', handler)
+    window.addEventListener('storybookstudio-open-generate-with-frame', handler)
+    return () => window.removeEventListener('storybookstudio-open-generate-with-frame', handler)
   }, [])
 
   useEffect(() => {
     const handler = () => setMainTab('generate')
-    window.addEventListener('comfystudio-open-generate-tab', handler)
-    return () => window.removeEventListener('comfystudio-open-generate-tab', handler)
+    window.addEventListener('storybookstudio-open-generate-tab', handler)
+    return () => window.removeEventListener('storybookstudio-open-generate-tab', handler)
   }, [])
 
   useEffect(() => {
     const handler = () => setMainTab('stock')
-    window.addEventListener(VELORN_OPEN_STOCK_EVENT, handler)
-    return () => window.removeEventListener(VELORN_OPEN_STOCK_EVENT, handler)
+    window.addEventListener(STORYBOOKSTUDIO_OPEN_STOCK_EVENT, handler)
+    return () => window.removeEventListener(STORYBOOKSTUDIO_OPEN_STOCK_EVENT, handler)
   }, [])
 
   // Reveal-in-assets (timeline clip menu / Shift+F): make sure the Assets
@@ -398,8 +398,8 @@ function App() {
       setLeftPanelTab('assets')
       setLeftPanelExpanded(true)
     }
-    window.addEventListener('comfystudio-reveal-asset', handler)
-    return () => window.removeEventListener('comfystudio-reveal-asset', handler)
+    window.addEventListener('storybookstudio-reveal-asset', handler)
+    return () => window.removeEventListener('storybookstudio-reveal-asset', handler)
   }, [])
 
   // Allow Generate tab to open ComfyUI directly (used for workflow import guidance).
@@ -407,8 +407,8 @@ function App() {
     const handler = () => {
       setMainTab('comfyui')
     }
-    window.addEventListener('comfystudio-open-comfyui-tab', handler)
-    return () => window.removeEventListener('comfystudio-open-comfyui-tab', handler)
+    window.addEventListener('storybookstudio-open-comfyui-tab', handler)
+    return () => window.removeEventListener('storybookstudio-open-comfyui-tab', handler)
   }, [])
 
   // Load persisted layout on mount (single read)
@@ -815,7 +815,7 @@ function App() {
         </div>
         {/* Generate tab – mounted on first visit, then kept mounted so
             queue/progress survives tab switches. MCP music-video tools open
-            this tab via the comfystudio-open-generate-tab event before their
+            this tab via the storybookstudio-open-generate-tab event before their
             readiness probe, so first mount happens before they need it. */}
         {hasMountedGenerate && (
           <div

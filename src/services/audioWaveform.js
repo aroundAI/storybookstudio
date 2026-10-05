@@ -49,7 +49,7 @@ function buildWaveformPeaks(audioBuffer, sampleCount = DEFAULT_AUDIO_WAVEFORM_SA
 }
 
 function isNativeMediaUrl(url) {
-  return /^file:\/\//i.test(url) || /^comfystudio:\/\//i.test(url)
+  return /^file:\/\//i.test(url) || /^storybookstudio-file:\/\//i.test(url)
 }
 
 function isAbsoluteMediaPath(value) {

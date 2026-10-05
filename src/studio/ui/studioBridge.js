@@ -1,6 +1,6 @@
 // FILM-2015: the renderer's half of FILM-2011's studio:* IPC. Subscribes to
 // main's events for the app's lifetime, feeds the studio store, and calls
-// rendererReady only once every listener is attached (main holds velorn://
+// rendererReady only once every listener is attached (main holds storybookstudio://
 // links until then). Replaces FILM-2011's placeholder panel's wiring.
 import { normalizePlan, planAnnouncement } from './planCards.js'
 import { pendingWorkPrompt } from './sessionGuard.js'

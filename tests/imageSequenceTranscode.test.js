@@ -24,7 +24,7 @@ test('transparent PNG sequences become alpha-flagged VP9 WebM masters', async (t
     return
   }
 
-  const tempDirectory = await fsp.mkdtemp(path.join(os.tmpdir(), 'velorn-alpha-sequence-'))
+  const tempDirectory = await fsp.mkdtemp(path.join(os.tmpdir(), 'storybookstudio-alpha-sequence-'))
   const framePattern = path.join(tempDirectory, 'frame_%02d.png')
   try {
     run(ffmpegPath, [

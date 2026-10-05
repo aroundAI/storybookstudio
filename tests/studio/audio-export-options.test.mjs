@@ -1,4 +1,4 @@
-// FILM-2016: what the exporter adds to export:mixAudio. A plain Velorn project
+// FILM-2016: what the exporter adds to export:mixAudio. A plain upstream project
 // adds nothing (its mix is unchanged); a Studio project sends its resolved
 // buses, the loudness target and, when asked, stems beside the render with
 // the muted dialogue languages as stem-only tracks.
@@ -15,7 +15,7 @@ const tracks = [
   { id: 'a4', type: 'audio', muted: true },
 ]
 
-test('a plain Velorn project sends no studio block', () => {
+test('a plain upstream project sends no studio block', () => {
   assert.equal(studioAudioExportOptions({ name: 'x' }), null)
   assert.deepEqual(studioMixRequest(null, { tracks, outputPath: '/p/renders/a.mp4' }), {})
 })

@@ -1024,7 +1024,7 @@ const PRELOAD_LOOKAHEAD = 2.5
 // Give the incoming clip a little extra time to warm up before a transition
 // becomes visible. This helps avoid the first-frame flash at the seam.
 const TRANSITION_PREROLL_LOOKAHEAD = 0.4
-const PLAYBACK_DIAG_KEY = 'comfystudio-playback-diag'
+const PLAYBACK_DIAG_KEY = 'storybookstudio-playback-diag'
 
 function isPlaybackDiagEnabled() {
   if (typeof localStorage === 'undefined') return false
@@ -1223,7 +1223,7 @@ const VideoLayer = memo(function VideoLayer({
       ...details,
     })
 
-    if (typeof localStorage !== 'undefined' && localStorage.getItem('comfystudio-debug-playback') === '1') {
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('storybookstudio-debug-playback') === '1') {
       console.warn('[PlaybackCache] Falling back to source media', {
         clipId: clip.id,
         assetId: asset.id,
@@ -1548,7 +1548,7 @@ const VideoLayer = memo(function VideoLayer({
 
     videoElementRef.current = cachedVideo
 
-    if (typeof localStorage !== 'undefined' && localStorage.getItem('comfystudio-debug-playback') === '1') {
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('storybookstudio-debug-playback') === '1') {
       console.log('[PlaybackCache] VideoLayer attached:', { clipId: clip?.id, readyState: cachedVideo.readyState, srcHint: (clipUrl || '').slice(0, 50) + '...' })
     }
 
@@ -1639,7 +1639,7 @@ const VideoLayer = memo(function VideoLayer({
     // Calculate time difference
     const timeDiff = Math.abs(video.currentTime - clampedTime)
     const debugPlayback = (
-      (typeof localStorage !== 'undefined' && localStorage.getItem('comfystudio-debug-playback') === '1')
+      (typeof localStorage !== 'undefined' && localStorage.getItem('storybookstudio-debug-playback') === '1')
       || isPlaybackDiagEnabled()
     )
 

@@ -21,7 +21,7 @@ const { createCapabilityTools } = require('../../electron/studio/mcpCapabilities
 
 test('a short variant follows the subject in each shot and flags the shot it cannot frame', async (t) => {
   const { dir } = makePulledProject(t)
-  const doc = JSON.parse(fs.readFileSync(path.join(dir, 'project.comfystudio'), 'utf8'))
+  const doc = JSON.parse(fs.readFileSync(path.join(dir, 'project.storybookstudio'), 'utf8'))
   const shots = doc.timelines[0].clips.filter((clip) => clip.type === 'video' && clip.startTime < 12 && clip.startTime + clip.duration > 4)
   assert.ok(shots.length >= 2)
   // First shot in range: a lone bright subject at the right; the rest: flat grey (nothing to follow).
@@ -34,17 +34,17 @@ test('a short variant follows the subject in each shot and flags the shot it can
     const asset = doc.assets.find((entry) => entry.id === shot.assetId)
     Object.assign(asset, { path: index === 0 ? 'assets/video/subject.mp4' : 'assets/video/flat.mp4', width: 640, height: 360 })
   }
-  fs.writeFileSync(path.join(dir, 'project.comfystudio'), JSON.stringify(doc))
+  fs.writeFileSync(path.join(dir, 'project.storybookstudio'), JSON.stringify(doc))
 
   const deliver = createStudioDeliver({ jobs: createJobRegistry(), getMcpServer: () => ({ lastSnapshot: { project: { path: dir } } }), getFfmpegPath: () => ffmpegPath })
   const preview = await deliver.createVariant({ kind: 'short', source: { range: [4, 12] } })
   assert.equal(preview.previewOnly, true)
-  assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'project.comfystudio'), 'utf8')).timelines.length, 1, 'a preview writes nothing')
+  assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'project.storybookstudio'), 'utf8')).timelines.length, 1, 'a preview writes nothing')
 
   const result = await deliver.createVariant({ kind: 'short', source: { range: [4, 12] }, previewOnly: false })
   assert.equal(result.expectedDuration, 8)
   assert.equal(result.overMaxDuration, false)
-  const saved = JSON.parse(fs.readFileSync(path.join(dir, 'project.comfystudio'), 'utf8'))
+  const saved = JSON.parse(fs.readFileSync(path.join(dir, 'project.storybookstudio'), 'utf8'))
   const variant = saved.timelines.find((timeline) => timeline.id === result.timelineId)
   assert.equal(variant.studio.kind, 'variant')
   assert.equal(variant.studio.aspect, '9:16')
@@ -115,6 +115,6 @@ test('hook variants are added to the project and each exported as its own file',
   assert.equal(result.variants.length, 2)
   assert.deepEqual(result.files.map((file) => path.relative(dir, file.file)), ['renders/latest/hooks/hook-1-en.mp4', 'renders/latest/hooks/hook-2-en.mp4'])
   assert.deepEqual(exported.map((entry) => entry.timelineId), ['timeline-hook-1', 'timeline-hook-2'])
-  const saved = JSON.parse(fs.readFileSync(path.join(dir, 'project.comfystudio'), 'utf8'))
+  const saved = JSON.parse(fs.readFileSync(path.join(dir, 'project.storybookstudio'), 'utf8'))
   assert.deepEqual(saved.timelines.map((timeline) => timeline.studio?.variantKind ?? timeline.studio?.kind), ['master', 'hook', 'hook'])
 })

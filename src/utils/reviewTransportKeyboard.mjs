@@ -3,7 +3,7 @@ import { getShuttleKeyAction } from './shuttlePlayback.js'
 
 const MODAL_SELECTOR = '[aria-modal="true"], [role="dialog"], .fixed.inset-0'
 const BLOCKED_ROLES = new Set(['textbox', 'combobox', 'spinbutton', 'slider', 'separator', 'menu', 'menuitem', 'listbox'])
-const SPACE_MODIFIER_USED_EVENT = 'comfystudio-space-modifier-used'
+const SPACE_MODIFIER_USED_EVENT = 'storybookstudio-space-modifier-used'
 const tagName = (element) => String(element?.tagName || '').toUpperCase()
 const keyName = (event) => String(event?.key || '').toLowerCase()
 const isSpace = (event) => event?.code === 'Space' || [' ', 'space', 'spacebar'].includes(keyName(event))

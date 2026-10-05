@@ -28,11 +28,11 @@
  *     unsupported media, and seek() throws on runtime errors — callers
  *     fall back to the existing <video>-element path per clip.
  *
- * Kill switch: set localStorage 'comfystudio-export-webcodecs' = '0'.
+ * Kill switch: set localStorage 'storybookstudio-export-webcodecs' = '0'.
  */
 import { createFile, DataStream, MP4BoxBuffer } from 'mp4box'
 
-const WEBCODECS_EXPORT_FLAG_KEY = 'comfystudio-export-webcodecs'
+const WEBCODECS_EXPORT_FLAG_KEY = 'storybookstudio-export-webcodecs'
 
 const MICROS = 1e6
 export const WEBCODECS_EXPORT_MAX_SOURCE_DURATION_SEC = 20 * 60

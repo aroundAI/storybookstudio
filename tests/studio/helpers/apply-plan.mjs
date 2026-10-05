@@ -1,4 +1,4 @@
-// A test stand-in for Velorn's primitives: applies the steps studio_repair
+// A test stand-in for the upstream editor's primitives: applies the steps studio_repair
 // emits to a project document the way the renderer's tools would, so the
 // render → QA → repair loop can run under `node --test` without a window.
 // Only the arguments repair.js uses are implemented; anything else throws, so

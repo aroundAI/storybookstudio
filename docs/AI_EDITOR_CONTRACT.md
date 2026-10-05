@@ -1,19 +1,19 @@
 # StorybookStudio AI Editor Contract
 
-This contract states what an AI client may read and do in StorybookStudio, and what the editor guarantees in return. It is the interface every Phase 20 Studio spec (FILM-2010..2019, in the StoryBook repo under `specs/phase-20-storybookstudio/`) implements. [CAPABILITY_MATRIX.md](CAPABILITY_MATRIX.md) maps each of Velorn's MCP tools onto the verbs below.
+This contract states what an AI client may read and do in StorybookStudio, and what the editor guarantees in return. It is the interface every Phase 20 Studio spec (FILM-2010..2019, in the StoryBook repo under `specs/phase-20-storybookstudio/`) implements. [CAPABILITY_MATRIX.md](CAPABILITY_MATRIX.md) maps each of the upstream editor's MCP tools onto the verbs below.
 
 Each clause has an id, its inputs (**In**), its outputs (**Out**), the invariant it guarantees (**Guarantees**) and the spec that implements it (**Built by**). Where this document and a spec disagree, the spec wins and this document is corrected in the same PR. A field or guarantee marked † is introduced here and not yet stated in the implementing spec; that spec adopts it or corrects this line.
 
 ## 0. Terms
 
-- **Primitive**: one of Velorn's MCP tools in `electron/mcpServer.js` (`createToolDefinitions()`). Served by the `expert` profile.
+- **Primitive**: one of the upstream editor's MCP tools in `electron/mcpServer.js` (`createToolDefinitions()`). Served by the `expert` profile.
 - **Capability tool**: a `studio_*` tool in `electron/studio/mcpCapabilities.js`. Served by the `agent` profile, the default (FILM-2013).
 - **Intent**: a named editing goal (`tighten_pacing`). An **intent compiler** is a pure function `(context, scope, params, policy) => ActionPlan` in `src/studio/intents/`.
 - **Action plan**: an ordered list of primitive calls with one reason per step (A1).
 - **Version**: a named snapshot of the timeline document plus the op range since its parent (FILM-2012).
 - **Scope**: `{ scene?: number, scenes?: number[], range?: [start, end], clipIds?: string[], timelineId?: string }`. An empty scope means the active timeline. An unknown scene, or a timeline other than the active one, is `VALIDATION_FAILED` (FILM-2013 adopted this shape and added `scene`).
 
-Both profiles are served on `http://127.0.0.1:19790/mcp`, chosen by `?profile=agent|expert` or the `X-MCP-Profile` header (any other value is a `400`), and both require the bearer secret (S1). `agent`, the default, lists the 18 capability tools; `expert` lists Velorn's tools (133 with FILM-2016's `set_audio_buses` and FILM-2017's `set_auto_reframe` and `set_focal_point`) plus the 6 lifecycle tools (`studio_open_episode`, `studio_get_job_status`, `studio_check_readiness`, `studio_create_version`, `studio_restore_version`, `studio_deliver`). Each profile refuses the other's tools.
+Both profiles are served on `http://127.0.0.1:19790/mcp`, chosen by `?profile=agent|expert` or the `X-MCP-Profile` header (any other value is a `400`), and both require the bearer secret (S1). `agent`, the default, lists the 18 capability tools; `expert` lists the upstream editor's tools (133 with FILM-2016's `set_audio_buses` and FILM-2017's `set_auto_reframe` and `set_focal_point`) plus the 6 lifecycle tools (`studio_open_episode`, `studio_get_job_status`, `studio_check_readiness`, `studio_create_version`, `studio_restore_version`, `studio_deliver`). Each profile refuses the other's tools.
 
 ## 1. Inputs
 
@@ -42,9 +42,9 @@ Both profiles are served on `http://127.0.0.1:19790/mcp`, chosen by `?profile=ag
 - **Built by:** FILM-2011 (`electron/studio/pull.js`).
 
 ### IN5 Project document
-- **In:** `project.comfystudio` with the EditGraph v1 additive fields.
+- **In:** `project.storybookstudio` with the EditGraph v1 additive fields.
 - **Out:** `asset.role`, `asset.semantic {scene, shotId, characters[], purpose, emotion, prompt, continuationFrom}`, `asset.analysis {loudnessLufs, silences[], bpm, keyframes[], semanticsVersion}`, `asset.languageDependency`, `clip.metadata.semantic {scene, shotId, role}`, `clip.metadata.origin {versionId, opId, by: ai|user}`, `timeline.studio {kind, variantOf, aspect, language}`, `project.studio {schema: 'editgraph/1', episodeId, currentVersion, audioBuses}`. Also `edits/oplog.jsonl` and `edits/versions.json`.
-- **Guarantees:** Stock Velorn opens a Studio project and ignores the extra fields. The Studio opens any Velorn project. Every clip the builder places carries `semantic`.
+- **Guarantees:** The stock upstream editor opens a Studio project and ignores the extra fields. The Studio opens any upstream project. Every clip the builder places carries `semantic`.
 - **Built by:** FILM-2012.
 
 ## 2. Perception
@@ -72,19 +72,19 @@ Perception never changes the document. Every perception verb is callable at any 
 ### P4 Inspect visual
 - **In:** `inspect_clip`, `inspect_timeline_frame`, `inspect_timeline_range`, `inspect_visible_shots`.
 - **Out:** Stills, contact sheets and shot boundaries with clip context.
-- **Guarantees:** Unchanged Velorn behaviour.
-- **Built by:** Velorn.
+- **Guarantees:** Unchanged upstream behaviour.
+- **Built by:** The upstream editor.
 
 ### P5 Inspect audio
 - **In:** `get_audio_analysis({clipId|assetId, silenceThresholdDb?, minSilenceSeconds?})`.
 - **Out:** Silence spans, beats and BPM, approximate integrated LUFS, loudness curve. With `clipId`, times are on the timeline.
-- **Guarantees:** This is the compile-time silence source. Velorn has no `detect_silence` tool; the name in the design's `tighten_pacing` example means this call. Its loudness is approximate and is not a QA verdict (V1 is).
-- **Built by:** Velorn; FILM-2013 wraps it for compilers.
+- **Guarantees:** This is the compile-time silence source. The upstream editor has no `detect_silence` tool; the name in the design's `tighten_pacing` example means this call. Its loudness is approximate and is not a QA verdict (V1 is).
+- **Built by:** The upstream editor; FILM-2013 wraps it for compilers.
 
 ### P6 Health
 - **In:** `check_media_health`, `check_export_readiness`, `analyze_timeline`.
 - **Out:** Missing or offline media, blockers and warnings for a target, gaps, tiny clips and overlaps.
-- **Built by:** Velorn.
+- **Built by:** The upstream editor.
 
 ### P7 Review
 - **In:** `studio_review({scope, versionId?})`.
@@ -100,7 +100,7 @@ Perception never changes the document. Every perception verb is callable at any 
 
 ## 3. Editing primitives
 
-These are Velorn's tools, grouped by verb. An action plan (A1) is built only from them. The matrix lists every tool and its class.
+These are the upstream editor's tools, grouped by verb. An action plan (A1) is built only from them. The matrix lists every tool and its class.
 
 | Id | Verb | Primitives | Notes |
 | --- | --- | --- | --- |
@@ -180,7 +180,7 @@ Every intent compiles to an action plan (A1) and reads its bounds from the polic
 - **Out:** `QaResultSchema`: `{pass, issues: [{type, severity 0..1, timeRange, scene, detail, repairIntent?}]}`.
 - **Checks:** ebur128 loudness and true peak against the preset (-14 LUFS YouTube, -16 Reels); astats clipping; blackdetect; freezedetect; silencedetect longer than policy; ffprobe duration within ±5% of `targetDurationSeconds`; codec, fps and resolution against the preset; caption cues inside safe rectangles and not overlapping; `check_media_health`; script coverage (every scene has a clip, every dialogue line is placed or logged as cut).
 - **Guarantees:** No model is involved, so the same render gives the same result. Every issue a repair can fix names its `repairIntent`.
-- **Thresholds:** Loudness ±1 LU of the preset target (`src/studio/review/presetTargets.js`, FILM-2016's per-preset values); true peak at most -1 dBTP; black at least 0.5 s; frozen at least 2 s; silence longer than `policy.maxSilenceSeconds`, 1.5 s while EditPolicySchema has no such field. Per-preset loudness and the caption safe areas come from FILM-2016 (`audio/buses.js`, `captions/layout.js`); the caption check is its `checkCaptionSafeArea`, so a cue not placed for the aspect fails even where Velorn's default box happens to fit. An issue of severity 0.5 or more fails the render; below that it is advice.
+- **Thresholds:** Loudness ±1 LU of the preset target (`src/studio/review/presetTargets.js`, FILM-2016's per-preset values); true peak at most -1 dBTP; black at least 0.5 s; frozen at least 2 s; silence longer than `policy.maxSilenceSeconds`, 1.5 s while EditPolicySchema has no such field. Per-preset loudness and the caption safe areas come from FILM-2016 (`audio/buses.js`, `captions/layout.js`); the caption check is its `checkCaptionSafeArea`, so a cue not placed for the aspect fails even where the upstream editor's default box happens to fit. An issue of severity 0.5 or more fails the render; below that it is advice.
 - **Built by:** FILM-2014 (`electron/studio/qa.js` runs FFmpeg and ffprobe; the checks are `src/studio/review/qaChecks.js`). The schema is defined in `@kit/desktop-integration` (FILM-2003) and copied in. The export regression runner runs the same QA on its fixture render (`electron/studio/exportRegressionQa.js`).
 
 ### V2 Critic analysers
@@ -193,7 +193,7 @@ Every intent compiles to an action plan (A1) and reads its bounds from the polic
 - **In:** `studio_repair({issues[]})`.
 - **Out:** One action plan. Repair intents are `duck_music`, `trim_silence`, `normalize_loudness`, `move_caption`, `replace_missing_media`, `add_fade` and `re-time`.
 - **Guarantees:** Repair is a plan with reasons, not a prompt. It follows A3 and A4 like any other edit. Targets are found in the document at the issue's time range when the plan compiles. What no primitive can fix comes back in `unrepaired` with why.
-- **Steps:** `normalize_loudness` → `set_audio_buses` master target (a plain Velorn project: `set_master_audio` volume and a limiter); `duck_music` → `set_audio_buses` ducks the music bus deeper toward 12 dB dialogue-over-music, FILM-2016's target (plain project: `set_clip_audio` gain); `trim_silence` → `extract_range` keeping 0.25 s each side; `move_caption` → `update_caption_cues` with the cues FILM-2016's placement styles for the aspect's safe area; `replace_missing_media` → `replace_clip_with_asset` onto the shot's own still; `add_fade` → `set_clip_audio` fades of FILM-2016's per-bus length; `re-time` → `extract_range` over a gap or `update_caption_cues` on an overlap (a length change is left to `hit_duration`).
+- **Steps:** `normalize_loudness` → `set_audio_buses` master target (a plain upstream project: `set_master_audio` volume and a limiter); `duck_music` → `set_audio_buses` ducks the music bus deeper toward 12 dB dialogue-over-music, FILM-2016's target (plain project: `set_clip_audio` gain); `trim_silence` → `extract_range` keeping 0.25 s each side; `move_caption` → `update_caption_cues` with the cues FILM-2016's placement styles for the aspect's safe area; `replace_missing_media` → `replace_clip_with_asset` onto the shot's own still; `add_fade` → `set_clip_audio` fades of FILM-2016's per-bus length; `re-time` → `extract_range` over a gap or `update_caption_cues` on an overlap (a length change is left to `hit_duration`).
 - **Built by:** FILM-2014 (`src/studio/intents/repair.js`, an intent compiler FILM-2013 registers as `repair`).
 
 ### V4 Auto-repair loop
@@ -206,7 +206,7 @@ Every intent compiles to an action plan (A1) and reads its bounds from the polic
 The order is L1 to L8. L9 can happen at any point after L3.
 
 ### L1 Open episode
-- **In:** `studio_open_episode({episodeId})` or the picker. A `velorn://open?api=&episode=` deep link opens the picker with the episode selected.
+- **In:** `studio_open_episode({episodeId})` or the picker. A `storybookstudio://open?api=&episode=` deep link opens the picker with the episode selected.
 - **Out:** `jobId`. When the job completes, the project is open.
 - **Guarantees:** A deep link never starts a pull by itself. The `api` host must be on the allowlist. Pulling is idempotent, so a re-run skips verified files.
 - **Built by:** FILM-2011 (pull, protocol), FILM-2013 (tool), FILM-2015 (picker).
@@ -219,7 +219,7 @@ The order is L1 to L8. L9 can happen at any point after L3.
 ### L3 Rough cut
 - **In:** IN1..IN4.
 - **Out:** A project document (IN5) built by `buildProject({package, probedAssets, brand, policy})` in `src/studio/projectBuilder.js`, which returns `{project, files, warnings}`: `files` are `storybook/{package,link,brand,policy}.json`, `warnings` what could not be placed as planned. The project has one master timeline at the episode's aspect and fps, shots on `video-1` (at `timelineStartSeconds`, else packed by `sequenceNumber`), a dialogue track per language (dubs at their `timingAdjustment` speed; non-primary languages muted), Shot audio, Music, SFX and Ambience tracks with `bus` fields and `audio_tracks.volume` as clip gain, a live captions track per language (the primary one visible), one marker per scene at its first shot, an asset folder per scene, and Veo shot audio linked to its picture and ducked under dialogue (`project.studio.audioBuses`). `openStudioProjectFromPackage(package, probedAssets, {projectPath})` in `src/studio/editLogRuntime.js` writes it, opens it and saves the version `Rough cut` by `ai`.
-- **Guarantees:** The builder is pure, so the same inputs produce the same project. Clips are on frames and within their files, so opening the project moves nothing; stock Velorn v0.3.36 opens it and keeps the Studio fields through a save.
+- **Guarantees:** The builder is pure, so the same inputs produce the same project. Clips are on frames and within their files, so opening the project moves nothing; the stock upstream editor (v0.3.36) opens it and keeps the Studio fields through a save.
 - **Built by:** FILM-2012.
 
 ### L4 Plan and preview
@@ -231,7 +231,7 @@ The order is L1 to L8. L9 can happen at any point after L3.
 ### L6 Version
 - **In:** `studio_create_version({name})`, `studio_restore_version({versionId})`.
 - **Out:** `{id, name, parent, opRange, createdBy, createdAt, prompt}`. The snapshot is stored at `edits/snapshots/<id>.json`.
-- **Guarantees:** A version is created before any apply. Restore loads the snapshot in O(1) and appends a restore op. Versions survive a restart. Velorn's in-memory undo remains the fast path.
+- **Guarantees:** A version is created before any apply. Restore loads the snapshot in O(1) and appends a restore op. Versions survive a restart. The upstream editor's in-memory undo remains the fast path.
 - **Built by:** FILM-2012 (`versions.js`), FILM-2013 (tools).
 
 ### L7 Render
@@ -248,7 +248,7 @@ The order is L1 to L8. L9 can happen at any point after L3.
 
 ### L9 Re-sync
 - **In:** `studio_check_updates()`, `studio_apply_updates()`. Polling runs every 5 minutes while a project is open.
-- **Out:** Changed shots (by media `key`) and dialogue (by id), and a plan of previewOnly `import_asset_from_path`, `replace_clip_with_asset`, `delete_clips` and `add_asset_to_timeline` steps with a reason each, sent to the AI panel as `studio:plan-proposed`. A regenerated shot's separate shot-audio clip is listed as unresolved: Velorn replaces an audio clip only with an audio asset.
+- **Out:** Changed shots (by media `key`) and dialogue (by id), and a plan of previewOnly `import_asset_from_path`, `replace_clip_with_asset`, `delete_clips` and `add_asset_to_timeline` steps with a reason each, sent to the AI panel as `studio:plan-proposed`. A regenerated shot's separate shot-audio clip is listed as unresolved: the upstream editor replaces an audio clip only with an audio asset.
 - **Guarantees:** Changed media lands under new file names. Nothing is applied without approval (A3, A4). The newer package waits in `storybook/package.next.json`.
 - **Built by:** FILM-2011 (`sync.js`), FILM-2013 (tools: `studio_apply_updates` previews and applies `storybook/resync-plan.json` into a "Sync from StoryBook" version, then promotes `package.next.json`).
 
@@ -259,17 +259,17 @@ The order is L1 to L8. L9 can happen at any point after L3.
 - **S3 Delivery confirmation:** See L8. `studio_deliver` is never in `MCP_ACTION_PLAN_WRITABLE_TOOLS`. Every other `studio_*` write tool is.
 - **S4 Not available yet:** A capability tool whose spec has not landed returns `VALIDATION_FAILED "not available yet"` with `details.availableAfter`, never a partial result. This covers `studio_review` and `studio_render_preview` on a server started without the preview renderer (FILM-2014's `reviewTools`); `studio_edit_audio` and `studio_add_captions` in a build without FILM-2016's `src/studio/intents/{audio,captions}.js` (the renderer registers them when present); and `studio_add_graphic` until FILM-2018.
 - **S5 Error codes:** `VALIDATION_FAILED` (bad input or not available), `TARGET_CHANGED` (document or episode changed since preview or pull), `NOT_FOUND`, `FORBIDDEN` (role), `UNAUTHORIZED` (sign in again). StoryBook-side codes pass through unchanged.
-- **S6 Local files:** `comfystudio://` serves only files under the open project folder, `userData` and the app's temp caches, plus exact files the app's own windows asked a URL for through `media:getFileUrl`. Paths are resolved through symlinks first, and any `..` segment is refused. Everything else gets 403. Built by FILM-2010 (`electron/studio/protocolAllowlist.js`).
+- **S6 Local files:** `storybookstudio-file://` serves only files under the open project folder, `userData` and the app's temp caches, plus exact files the app's own windows asked a URL for through `media:getFileUrl`. Paths are resolved through symlinks first, and any `..` segment is refused. Everything else gets 403. Built by FILM-2010 (`electron/studio/protocolAllowlist.js`).
 
 ## 9. Gaps found while writing this contract
 
-These come from reading `electron/mcpServer.js` at fork commit 233f35f (Velorn v0.3.36). Each is assigned to the spec that has to close it.
+These come from reading `electron/mcpServer.js` at fork commit 233f35f (the upstream editor v0.3.36). Each is assigned to the spec that has to close it.
 
 - **G1 Tool count.** There are 130 upstream tools, not the 129 the design and specs state; `docs/MCP.md` said 125 (corrected by FILM-2013). FILM-2016 added `set_audio_buses` and FILM-2017 `set_auto_reframe` and `set_focal_point`, making 133. `node scripts/capability-matrix.mjs` prints the count.
 - **G2 Plan preview does not preview steps.** `run_mcp_action_plan` with `previewOnly` checks step names and returns them unexecuted. Per-step previews are the compiler's job (A3, FILM-2013).
 - **G3 Write tools missing from the writable set.** `split_clip`, `extract_range`, `set_clip_speed`, `set_clip_audio`, `update_caption_cues` and `generate_captions` accept `previewOnly` but `run_mcp_action_plan` refused them. Closed: FILM-2013 added the first five, and every `studio_*` write tool but `studio_deliver`; caption generation stays a sequenced job.
-- **G4 No ducking primitive.** Closed by FILM-2016: ducking is a bus setting (`set_audio_buses`), applied at preview by gain automation from the dialogue bus's analyser and at export by `sidechaincompress` keyed from the dialogue bus. Velorn's UI ducking (`src/utils/audioDucking.mjs`) still writes a volume envelope on one clip and is unchanged. `set_master_audio` had no route in `callTool` (it answered Unknown tool); FILM-2016 routes it.
+- **G4 No ducking primitive.** Closed by FILM-2016: ducking is a bus setting (`set_audio_buses`), applied at preview by gain automation from the dialogue bus's analyser and at export by `sidechaincompress` keyed from the dialogue bus. The upstream editor's UI ducking (`src/utils/audioDucking.mjs`) still writes a volume envelope on one clip and is unchanged. `set_master_audio` had no route in `callTool` (it answered Unknown tool); FILM-2016 routes it.
 - **G5 No `detect_silence`.** The design's `tighten_pacing` example names it. `get_audio_analysis` is the compile-time equivalent (P5); QA-grade `silencedetect` is FILM-2014.
-- **G6 No MCP annotations.** No Velorn tool declares `readOnlyHint` or `destructiveHint`. Read and write are inferred from `previewOnly` and the writable set; every capability tool declares annotations (FILM-2013).
+- **G6 No MCP annotations.** No upstream tool declares `readOnlyHint` or `destructiveHint`. Read and write are inferred from `previewOnly` and the writable set; every capability tool declares annotations (FILM-2013).
 - **G7 Plan steps lost their reason in some handlers (closed by FILM-2013).** Handlers that rebuild their renderer payload (for example `set_timeline_marker_properties`) dropped `studioMeta`, so the op-log line had no reason. `run_mcp_action_plan` now re-attaches the running step's `studioMeta` to every renderer action the step makes.
 - **G8 A split dropped the clip's metadata (closed by FILM-2013).** `split_clip` and `extract_range` gave the right piece no `metadata`, so it left its scene. The right piece now keeps the clip's metadata.

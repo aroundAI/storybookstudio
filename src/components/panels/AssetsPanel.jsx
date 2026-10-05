@@ -223,13 +223,13 @@ function AssetsPanel({ isActive = true }) {
     })
   }
 
-  const ASSET_DRAG_TYPE = 'application/x-comfystudio-asset-ids'
-  const SEQUENCE_DRAG_TYPE = 'application/x-comfystudio-sequence-ids'
+  const ASSET_DRAG_TYPE = 'application/x-storybookstudio-asset-ids'
+  const SEQUENCE_DRAG_TYPE = 'application/x-storybookstudio-sequence-ids'
 
   const notifyAssetDragStart = (assetId, assetIds) => {
     if (typeof window === 'undefined') return
     try {
-      window.dispatchEvent(new CustomEvent('comfystudio-assets-drag-start', {
+      window.dispatchEvent(new CustomEvent('storybookstudio-assets-drag-start', {
         detail: { assetId, assetIds }
       }))
     } catch (_) {}
@@ -238,7 +238,7 @@ function AssetsPanel({ isActive = true }) {
   const notifyAssetDragEnd = () => {
     if (typeof window === 'undefined') return
     try {
-      window.dispatchEvent(new Event('comfystudio-assets-drag-end'))
+      window.dispatchEvent(new Event('storybookstudio-assets-drag-end'))
     } catch (_) {}
   }
 
@@ -1260,8 +1260,8 @@ function AssetsPanel({ isActive = true }) {
         window.setTimeout(() => el.classList.remove('asset-reveal-flash'), 1700)
       }, 60)
     }
-    window.addEventListener('comfystudio-reveal-asset', handleReveal)
-    return () => window.removeEventListener('comfystudio-reveal-asset', handleReveal)
+    window.addEventListener('storybookstudio-reveal-asset', handleReveal)
+    return () => window.removeEventListener('storybookstudio-reveal-asset', handleReveal)
   }, [searchQuery])
 
   // Handle double-click: flip the preview monitor to asset mode. For
@@ -1447,8 +1447,8 @@ function AssetsPanel({ isActive = true }) {
         active.blur()
       }
     }
-    window.addEventListener('comfystudio-timeline-assets-dropped', handleTimelineAssetsDropped)
-    return () => window.removeEventListener('comfystudio-timeline-assets-dropped', handleTimelineAssetsDropped)
+    window.addEventListener('storybookstudio-timeline-assets-dropped', handleTimelineAssetsDropped)
+    return () => window.removeEventListener('storybookstudio-timeline-assets-dropped', handleTimelineAssetsDropped)
   }, [])
   
   // Handle folder click

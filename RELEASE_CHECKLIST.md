@@ -1,4 +1,4 @@
-# Velorn Release Checklist
+# StorybookStudio Release Checklist
 
 Use this as the single "ship it" playbook when preparing a public release.
 Update this file as process changes so future chats and future contributors can continue from the same source of truth.
@@ -79,7 +79,7 @@ npm run starter-pack:build
   - `docs/workflow-starter-pack/workflows/*.md`
 - [ ] Review generated files for accuracy (IDs, tier labels, model paths, node names).
 - [ ] Add/update ComfyUI-importable setup workflow JSON files (replace `setupWorkflowFile: pending` entries when available).
-- [ ] Package starter pack as a versioned zip for release assets (example: `velorn-workflow-starter-pack-vX.Y.Z.zip`).
+- [ ] Package starter pack as a versioned zip for release assets (example: `storybookstudio-workflow-starter-pack-vX.Y.Z.zip`).
 - [ ] Upload starter pack zip to GitHub Release assets.
 - [ ] Ensure release notes point users to starter pack download.
 
@@ -174,7 +174,7 @@ Run `node scripts/studio-render-timings.mjs` on each reference machine and paste
 | delivery queue encode 1080p, h264_videotoolbox | 32.78 s | 3.0x |
 | Deliver render path (deliveryPath.js): 94 s cut at 1080p, intermediate + queued h264_videotoolbox | 13.5 s | 7.0x |
 
-The canvas exporter's own throughput is measured by `VELORN_TEST_NATIVE_ENCODE=1 npm run check:export-worker-scheduling` (one still image, 720p24, 6 s): 144 frames in 1.27 s on the same machine.
+The canvas exporter's own throughput is measured by `STORYBOOKSTUDIO_TEST_NATIVE_ENCODE=1 npm run check:export-worker-scheduling` (one still image, 720p24, 6 s): 144 frames in 1.27 s on the same machine.
 
 ---
 
@@ -203,7 +203,7 @@ The canvas exporter's own throughput is measured by `VELORN_TEST_NATIVE_ENCODE=1
 
 ### Getting Started Guide
 
-- [x] Implement manual `Getting Started` guide accessible from `Velorn > Getting Started`.
+- [x] Implement manual `Getting Started` guide accessible from `StorybookStudio > Getting Started`.
 - [x] Guide covers projects folder, ComfyUI port, connection test, workflow setup expectations, and a basic app tour.
 - [ ] Include clear "where files go" guidance (models/nodes/workflows/output folders).
 - [x] Add a replayable entry point so users can reopen onboarding later.
@@ -251,7 +251,7 @@ Notes:
 Use this when starting a new chat so the next assistant has exact context:
 
 ```md
-Project: Velorn (Electron + React + ComfyUI local integration)
+Project: StorybookStudio (Electron + React + ComfyUI local integration)
 Goal for this session:
 Current branch:
 Latest commit:

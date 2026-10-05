@@ -6,7 +6,7 @@ import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
 const { authorizeMcpRequest, isLoopbackHost, isLoopbackOrigin } = require('../../electron/studio/mcpAuth.js')
-const { createComfyStudioMcpServer } = require('../../electron/mcpServer.js')
+const { createStorybookStudioMcpServer } = require('../../electron/mcpServer.js')
 
 const SECRET = 'a'.repeat(64)
 const base = { host: '127.0.0.1:19790' }
@@ -69,7 +69,7 @@ function request(port, { method = 'POST', headers = {}, body } = {}) {
 }
 
 test('the running server answers 401 / 401 / 403 / 200 over HTTP', async (t) => {
-  const server = createComfyStudioMcpServer({ port: 0, version: 'test', authSecret: SECRET })
+  const server = createStorybookStudioMcpServer({ port: 0, version: 'test', authSecret: SECRET })
   await server.start()
   t.after(() => server.stop())
   const { port } = server.server.address()
@@ -92,7 +92,7 @@ test('the running server answers 401 / 401 / 403 / 200 over HTTP', async (t) => 
 
   const ok = await request(port, { headers: { ...json, Authorization: `Bearer ${SECRET}` }, body })
   assert.equal(ok.status, 200)
-  // FILM-2013: the agent profile (18 capability tools) is the default; Velorn's are at ?profile=expert.
+  // FILM-2013: the agent profile (18 capability tools) is the default; the upstream editor's are at ?profile=expert.
   assert.equal(JSON.parse(ok.body).result.tools.length, 18)
 
   const loopbackOrigin = await request(port, { headers: { ...json, Authorization: `Bearer ${SECRET}`, Origin: 'http://localhost:5173' }, body })
@@ -102,7 +102,7 @@ test('the running server answers 401 / 401 / 403 / 200 over HTTP', async (t) => 
 })
 
 test('a server constructed without a secret refuses every request', async (t) => {
-  const server = createComfyStudioMcpServer({ port: 0, version: 'test' })
+  const server = createStorybookStudioMcpServer({ port: 0, version: 'test' })
   await server.start()
   t.after(() => server.stop())
   const { port } = server.server.address()

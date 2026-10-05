@@ -6,7 +6,7 @@ import { createMemoryEditsSink } from '../../src/studio/editsSink.js'
 import { OPLOG_PATH, applyInverse, createOpLog, wrapMcpActionRunner } from '../../src/studio/oplog.js'
 import { VERSIONS_PATH, createVersionStore } from '../../src/studio/versions.js'
 
-const sample = () => JSON.parse(readFileSync(new URL('./fixtures/velorn-sample-project.json', import.meta.url), 'utf8'))
+const sample = () => JSON.parse(readFileSync(new URL('./fixtures/storybookstudio-sample-project.json', import.meta.url), 'utf8'))
 
 const makeEditor = () => {
   const project = sample()

@@ -43,7 +43,7 @@ test('replaces a case-insensitive existing YouTube Referer', () => {
 test('does not add identity headers to unrelated remote requests', () => {
   const original = { Accept: 'application/json' }
   const headers = rewriteAppRequestHeaders({
-    url: 'https://velorn.ai/discover/catalog.json',
+    url: 'https://raw.githubusercontent.com/aroundAI/storybookstudio/main/public/discover/catalog.json',
     requestHeaders: original,
   })
 

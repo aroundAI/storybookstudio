@@ -32,7 +32,7 @@ export const reads = () => []
 
 // A cut keeps this much of a silence on each side so lines do not collide.
 export const KEEP_PAUSE_SECONDS = 0.25
-// Velorn's master fader tops out at 200 (+6 dB).
+// The upstream editor's master fader tops out at 200 (+6 dB).
 export const MASTER_MAX_DB = 20 * Math.log10(2)
 export const LIMITER_CEILING_DB = TRUE_PEAK_MAX_DBTP - 0.5
 export const MAX_PLAN_STEPS = 50
@@ -121,7 +121,7 @@ export function compile(context, scope = {}, params = {}, policy = context?.poli
   // master.limiterLufs (FILM-2016's loudnorm pass), so a level off target is
   // a target change on the master bus; peaks are kept under -1 dBTP by the
   // same pass, so clipping left in a Studio render is in the source. A plain
-  // Velorn project moves its master fader and gets a limiter insert.
+  // upstream project moves its master fader and gets a limiter insert.
   const loudness = byIntent.get('normalize_loudness') || []
   if (loudness.length && studioBuses) {
     const level = loudness.find((i) => i.type === 'loudness')

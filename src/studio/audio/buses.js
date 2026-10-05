@@ -84,7 +84,7 @@ export function defaultAudioBuses(policy = null, { preset = null } = {}) {
 
 // A stored config with every bus present and the dialogue bus never ducked.
 // A ducked bus missing its timing gets the defaults. null in, null out (a
-// plain Velorn project has no buses and mixes as it always has).
+// plain upstream project has no buses and mixes as it always has).
 export function resolveAudioBuses(stored, { policy = null, preset = null } = {}) {
   if (!stored || typeof stored !== 'object') return null
   const defaults = defaultAudioBuses(policy, { preset })

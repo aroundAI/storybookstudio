@@ -1,7 +1,7 @@
 // FILM-2014 AC8: the export regression runner's QA pass fails a render with
 // black frames, the wrong loudness or the wrong length, and passes a good one.
 // (The runner itself, check:export-worker-scheduling with
-// VELORN_TEST_NATIVE_ENCODE=1, calls the same function on its MP4.)
+// STORYBOOKSTUDIO_TEST_NATIVE_ENCODE=1, calls the same function on its MP4.)
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 import path from 'node:path'

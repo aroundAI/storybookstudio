@@ -1,4 +1,4 @@
-// FILM-2011 AC7: velorn:// links. An open link names a StoryBook host on the
+// FILM-2011 AC7: storybookstudio:// links. An open link names a StoryBook host on the
 // allowlist and a well-formed episode id, and only ever pre-selects the
 // picker; the auth callback goes to auth.js; anything else is ignored.
 import test from 'node:test'
@@ -7,21 +7,21 @@ import { EventEmitter } from 'node:events'
 import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
-const { parseVelornUrl, normalizeApiOrigin, registerVelornProtocol } = require('../../electron/studio/protocol.js')
+const { parseStorybookStudioUrl, normalizeApiOrigin, registerStorybookStudioProtocol } = require('../../electron/studio/protocol.js')
 
 const EPISODE = '6f1c2a9e-4b7d-4e85-9a3b-1c2d3e4f5a6b'
 const ALLOWED = ['https://app.storybook.example', 'http://localhost:3306']
 const open = (api, episode = EPISODE) =>
-  `velorn://open?api=${encodeURIComponent(api)}&episode=${encodeURIComponent(episode)}`
+  `storybookstudio://open?api=${encodeURIComponent(api)}&episode=${encodeURIComponent(episode)}`
 
 test('an open link on the allowlist pre-selects the episode', () => {
-  assert.deepEqual(parseVelornUrl(open('https://app.storybook.example'), { allowedOrigins: ALLOWED }), {
+  assert.deepEqual(parseStorybookStudioUrl(open('https://app.storybook.example'), { allowedOrigins: ALLOWED }), {
     kind: 'open',
     api: 'https://app.storybook.example',
     episodeId: EPISODE,
   })
   // The web app sends an origin; a trailing slash or path is normalised to it.
-  assert.equal(parseVelornUrl(open('http://localhost:3306/'), { allowedOrigins: ALLOWED }).api, 'http://localhost:3306')
+  assert.equal(parseStorybookStudioUrl(open('http://localhost:3306/'), { allowedOrigins: ALLOWED }).api, 'http://localhost:3306')
 })
 
 test('a hostile api host is refused', () => {
@@ -35,7 +35,7 @@ test('a hostile api host is refused', () => {
     'file:///etc/passwd',
     '',
   ]) {
-    const result = parseVelornUrl(open(api), { allowedOrigins: ALLOWED })
+    const result = parseStorybookStudioUrl(open(api), { allowedOrigins: ALLOWED })
     assert.equal(result.kind, 'ignored', `expected ${JSON.stringify(api)} to be refused`)
     assert.match(result.reason, /api/)
   }
@@ -43,20 +43,20 @@ test('a hostile api host is refused', () => {
 
 test('a malformed episode id is refused', () => {
   for (const episode of ['', '42', 'not-a-uuid', `${EPISODE}x`, `${EPISODE}/../x`, '../../etc/passwd']) {
-    const result = parseVelornUrl(open('https://app.storybook.example', episode), { allowedOrigins: ALLOWED })
+    const result = parseStorybookStudioUrl(open('https://app.storybook.example', episode), { allowedOrigins: ALLOWED })
     assert.equal(result.kind, 'ignored', `expected ${JSON.stringify(episode)} to be refused`)
     assert.match(result.reason, /episode/)
   }
 })
 
 test('the auth callback is routed with its parameters; other paths and schemes are ignored', () => {
-  assert.deepEqual(parseVelornUrl('velorn://auth/callback?code=abc&state=xyz', { allowedOrigins: [] }), {
+  assert.deepEqual(parseStorybookStudioUrl('storybookstudio://auth/callback?code=abc&state=xyz', { allowedOrigins: [] }), {
     kind: 'auth-callback',
     params: { code: 'abc', state: 'xyz' },
   })
-  assert.equal(parseVelornUrl('velorn://settings?x=1', { allowedOrigins: ALLOWED }).kind, 'ignored')
-  assert.equal(parseVelornUrl('comfystudio://open?api=x', { allowedOrigins: ALLOWED }).kind, 'ignored')
-  assert.equal(parseVelornUrl('not a url', { allowedOrigins: ALLOWED }).kind, 'ignored')
+  assert.equal(parseStorybookStudioUrl('storybookstudio://settings?x=1', { allowedOrigins: ALLOWED }).kind, 'ignored')
+  assert.equal(parseStorybookStudioUrl('storybookstudio-file://open?api=x', { allowedOrigins: ALLOWED }).kind, 'ignored')
+  assert.equal(parseStorybookStudioUrl('not a url', { allowedOrigins: ALLOWED }).kind, 'ignored')
 })
 
 test('normalizeApiOrigin keeps http(s) origins only', () => {
@@ -79,7 +79,7 @@ test('registration claims the scheme and the single-instance lock, and routes op
   const app = fakeApp()
   const seen = []
   const logged = []
-  const handle = registerVelornProtocol({
+  const handle = registerStorybookStudioProtocol({
     app,
     platform: 'darwin',
     argv: ['/Applications/StorybookStudio.app/Contents/MacOS/StorybookStudio'],
@@ -89,14 +89,14 @@ test('registration claims the scheme and the single-instance lock, and routes op
     log: (line) => logged.push(line),
   })
   assert.equal(handle.primary, true)
-  assert.deepEqual(app.calls[0].slice(0, 2), ['setAsDefaultProtocolClient', 'velorn'])
+  assert.deepEqual(app.calls[0].slice(0, 2), ['setAsDefaultProtocolClient', 'storybookstudio'])
   handle.ready()
 
   let prevented = false
   app.emit('open-url', { preventDefault: () => { prevented = true } }, open('http://localhost:3306'))
   assert.equal(prevented, true)
   // Windows/Linux deliver the link in the second instance's argv.
-  app.emit('second-instance', {}, ['StorybookStudio.exe', '--flag', 'velorn://auth/callback?code=c1&state=s1'])
+  app.emit('second-instance', {}, ['StorybookStudio.exe', '--flag', 'storybookstudio://auth/callback?code=c1&state=s1'])
   app.emit('open-url', { preventDefault() {} }, open('https://evil.example'))
   assert.deepEqual(seen, [
     ['open', { kind: 'open', api: 'http://localhost:3306', episodeId: EPISODE }],
@@ -110,7 +110,7 @@ test('registration claims the scheme and the single-instance lock, and routes op
 
 test('a second instance that cannot take the lock quits and handles nothing', () => {
   const app = fakeApp({ lock: false })
-  const handle = registerVelornProtocol({ app, platform: 'win32', argv: [], getAllowedOrigins: () => ALLOWED, onOpen() {}, onAuthCallback() {}, log() {} })
+  const handle = registerStorybookStudioProtocol({ app, platform: 'win32', argv: [], getAllowedOrigins: () => ALLOWED, onOpen() {}, onAuthCallback() {}, log() {} })
   assert.equal(handle.primary, false)
   assert.ok(app.calls.some(([name]) => name === 'quit'))
 })
@@ -118,7 +118,7 @@ test('a second instance that cannot take the lock quits and handles nothing', ()
 test('a link in the first instance argv (Windows cold start) is handled once the app is ready', () => {
   const app = fakeApp()
   const seen = []
-  const handle = registerVelornProtocol({
+  const handle = registerStorybookStudioProtocol({
     app,
     platform: 'win32',
     argv: ['StorybookStudio.exe', open('http://localhost:3306')],

@@ -1,5 +1,5 @@
-const EDITOR_HOTKEYS_STORAGE_KEY = 'comfystudio-editor-hotkeys-v1'
-export const EDITOR_HOTKEYS_CHANGED_EVENT = 'comfystudio-editor-hotkeys-changed'
+const EDITOR_HOTKEYS_STORAGE_KEY = 'storybookstudio-editor-hotkeys-v1'
+export const EDITOR_HOTKEYS_CHANGED_EVENT = 'storybookstudio-editor-hotkeys-changed'
 
 export const EDITOR_HOTKEY_IDS = {
   TOGGLE_SNAPPING: 'timeline.toggleSnapping',
@@ -189,7 +189,7 @@ export const DEFAULT_EDITOR_HOTKEYS = EDITOR_HOTKEY_DEFINITIONS.reduce((acc, def
 
 export const EDITOR_HOTKEY_PRESETS = [
   {
-    id: 'comfystudio',
+    id: 'storybookstudio',
     label: 'StorybookStudio',
     description: 'Current default editor bindings.',
     bindings: { ...DEFAULT_EDITOR_HOTKEYS },

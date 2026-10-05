@@ -35,7 +35,7 @@ const ENGINE_BINARY_DOWNLOADS = {
     approxBytes: 9379235,
   },
   darwin: {
-    url: `https://github.com/VelornLabs/velorn/releases/download/whisper-cli-${WHISPER_RELEASE_TAG}-mac/whisper-cli-macos-universal-${WHISPER_RELEASE_TAG}.zip`,
+    url: `https://github.com/aroundAI/storybookstudio/releases/download/whisper-cli-${WHISPER_RELEASE_TAG}-mac/whisper-cli-macos-universal-${WHISPER_RELEASE_TAG}.zip`,
     archiveName: `whisper-cli-macos-universal-${WHISPER_RELEASE_TAG}.zip`,
     approxBytes: 2451938,
   },
@@ -308,7 +308,7 @@ async function ensureDir(dir) {
 }
 
 function tempFilePath(suffix) {
-  const dir = path.join(os.tmpdir(), 'velorn-captions')
+  const dir = path.join(os.tmpdir(), 'storybookstudio-captions')
   const name = `caption-${Date.now()}-${Math.random().toString(36).slice(2, 8)}${suffix}`
   return { dir, filePath: path.join(dir, name) }
 }

@@ -1,4 +1,6 @@
 import { stampProjectVersionForSave } from '../studio/projectVersion.js'
+import LEGACY_NAMES from '../studio/legacyNames.json' with { type: 'json' }
+import { isProjectSnapshotName, normalizeLegacyFileUrls } from '../studio/legacyMigration.js'
 
 /**
  * File System Service
@@ -105,8 +107,10 @@ export const createProjectFolder = async (baseDir, projectName) => {
   return projectDir
 }
 
-const PROJECT_FILENAME = 'project.comfystudio'
+const PROJECT_FILENAME = 'project.storybookstudio'
 const PROJECT_FILENAME_LEGACY = 'project.storyflow'
+// The project file's name before the rename: opened, then replaced on save.
+const PROJECT_FILENAME_PREVIOUS = LEGACY_NAMES.projectFile
 const PROJECT_AUTOSAVE_DIRNAME = 'autosave'
 const MAX_PROJECT_AUTOSAVE_SNAPSHOTS = 10
 
@@ -164,7 +168,7 @@ const createProjectSnapshotFilename = (timestamp = new Date()) => {
     padNumber(date.getSeconds()),
     '-',
     padNumber(date.getMilliseconds(), 3),
-    '.comfystudio',
+    '.storybookstudio',
   ].join('')
 }
 
@@ -194,7 +198,7 @@ const writeProjectSnapshotElectron = async (projectDir, projectJson, timestamp) 
   }
 
   const snapshots = sortSnapshotsNewestFirst(
-    listing.items.filter((item) => item.isFile && item.name.endsWith('.comfystudio'))
+    listing.items.filter((item) => item.isFile && isProjectSnapshotName(item.name, LEGACY_NAMES))
   )
 
   await Promise.all(
@@ -214,7 +218,7 @@ const writeProjectSnapshotWeb = async (projectDir, projectJson, timestamp) => {
 
   const snapshots = []
   for await (const [name, handle] of autosaveDir.entries()) {
-    if (handle.kind !== 'file' || !name.endsWith('.comfystudio')) continue
+    if (handle.kind !== 'file' || !isProjectSnapshotName(name, LEGACY_NAMES)) continue
     const file = await handle.getFile()
     snapshots.push({
       name,
@@ -236,7 +240,7 @@ const writeProjectSnapshot = async (projectDir, projectJson, timestamp) => {
 }
 
 /**
- * Save project data to .comfystudio file
+ * Save project data to .storybookstudio file
  * @param {string|FileSystemDirectoryHandle} projectDir - The project directory
  * @param {object} projectData - The project data to save
  */
@@ -254,6 +258,8 @@ export const saveProject = async (projectDir, projectData) => {
     if (!result.success) {
       throw new Error(result.error)
     }
+    const previousPath = await window.electronAPI.pathJoin(projectDir, PROJECT_FILENAME_PREVIOUS)
+    if (await window.electronAPI.exists(previousPath)) await window.electronAPI.deleteFile(previousPath)
     try {
       await writeProjectSnapshot(projectDir, serializedProject, saveTimestamp)
     } catch (snapshotError) {
@@ -267,6 +273,7 @@ export const saveProject = async (projectDir, projectData) => {
   const writable = await fileHandle.createWritable()
   await writable.write(serializedProject)
   await writable.close()
+  await projectDir.removeEntry(PROJECT_FILENAME_PREVIOUS).catch(() => {})
   try {
     await writeProjectSnapshot(projectDir, serializedProject, saveTimestamp)
   } catch (snapshotError) {
@@ -351,18 +358,21 @@ const parseProjectJson = (rawText, sourceLabel) => {
 }
 
 /**
- * Load project data from .comfystudio file (or legacy .storyflow)
+ * Load project data from .storybookstudio file (or legacy .storyflow)
  * @param {string|FileSystemDirectoryHandle} projectDir - The project directory
  * @returns {Promise<object|null>} - The project data or null if not found
  */
 export const loadProject = async (projectDir) => {
   if (isElectron()) {
     const basePath = projectDir
-    const primaryPath = await window.electronAPI.pathJoin(basePath, PROJECT_FILENAME)
-    const legacyPath = await window.electronAPI.pathJoin(basePath, PROJECT_FILENAME_LEGACY)
-    const primaryExists = await window.electronAPI.exists(primaryPath)
-    const legacyExists = await window.electronAPI.exists(legacyPath)
-    const filePath = primaryExists ? primaryPath : legacyExists ? legacyPath : null
+    let filePath = null
+    for (const name of [PROJECT_FILENAME, PROJECT_FILENAME_PREVIOUS, PROJECT_FILENAME_LEGACY]) {
+      const candidate = await window.electronAPI.pathJoin(basePath, name)
+      if (await window.electronAPI.exists(candidate)) {
+        filePath = candidate
+        break
+      }
+    }
     if (!filePath) {
       throw new Error(`Project file not found. This folder does not contain ${PROJECT_FILENAME} or ${PROJECT_FILENAME_LEGACY} — the project may have been moved or the path is wrong. Try opening the project folder with "Open project".`)
     }
@@ -372,12 +382,12 @@ export const loadProject = async (projectDir) => {
     }
     const projectData = parseProjectJson(result.data, filePath)
     if (!projectData) {
-      throw new Error(`Project file is empty or invalid (corrupted JSON). The ${filePath.endsWith(PROJECT_FILENAME_LEGACY) ? PROJECT_FILENAME_LEGACY : PROJECT_FILENAME} file may be damaged.`)
+      throw new Error(`Project file is empty or invalid (corrupted JSON). The ${filePath} file may be damaged.`)
     }
-    return projectData
+    return normalizeLegacyFileUrls(projectData, LEGACY_NAMES)
   }
   
-  // Web fallback: try comfystudio first, then legacy storyflow
+  // Web fallback: the current name first, then the earlier ones
   const tryLoad = async (filename) => {
     const fileHandle = await projectDir.getFileHandle(filename)
     const file = await fileHandle.getFile()
@@ -385,28 +395,23 @@ export const loadProject = async (projectDir) => {
   }
   let text
   let sourceLabel = PROJECT_FILENAME
-  try {
-    text = await tryLoad(PROJECT_FILENAME)
-  } catch (e1) {
-    if (e1.name === 'NotFoundError') {
-      try {
-        text = await tryLoad(PROJECT_FILENAME_LEGACY)
-        sourceLabel = PROJECT_FILENAME_LEGACY
-      } catch (e2) {
-        if (e2.name === 'NotFoundError') {
-          throw new Error(`Project file not found. This folder does not contain ${PROJECT_FILENAME} or ${PROJECT_FILENAME_LEGACY}.`)
-        }
-        throw e2
-      }
-    } else {
-      throw e1
+  for (const name of [PROJECT_FILENAME, PROJECT_FILENAME_PREVIOUS, PROJECT_FILENAME_LEGACY]) {
+    try {
+      text = await tryLoad(name)
+      sourceLabel = name
+      break
+    } catch (error) {
+      if (error.name !== 'NotFoundError') throw error
     }
+  }
+  if (text === undefined) {
+    throw new Error(`Project file not found. This folder does not contain ${PROJECT_FILENAME} or ${PROJECT_FILENAME_LEGACY}.`)
   }
   const projectData = parseProjectJson(text, sourceLabel)
   if (!projectData) {
     throw new Error(`Project file is empty or invalid (corrupted JSON). The ${sourceLabel} file may be damaged.`)
   }
-  return projectData
+  return normalizeLegacyFileUrls(projectData, LEGACY_NAMES)
 }
 
 /**
@@ -428,7 +433,7 @@ export const loadLatestProjectAutosave = async (projectDir) => {
     }
 
     const latestSnapshot = sortSnapshotsNewestFirst(
-      listing.items.filter((item) => item.isFile && item.name.endsWith('.comfystudio'))
+      listing.items.filter((item) => item.isFile && isProjectSnapshotName(item.name, LEGACY_NAMES))
     )[0]
 
     if (!latestSnapshot) {
@@ -453,7 +458,7 @@ export const loadLatestProjectAutosave = async (projectDir) => {
     const snapshots = []
 
     for await (const [name, handle] of autosaveDir.entries()) {
-      if (handle.kind !== 'file' || !name.endsWith('.comfystudio')) continue
+      if (handle.kind !== 'file' || !isProjectSnapshotName(name, LEGACY_NAMES)) continue
       const file = await handle.getFile()
       snapshots.push({
         name,
@@ -488,23 +493,22 @@ export const loadLatestProjectAutosave = async (projectDir) => {
  */
 export const isValidProject = async (dir) => {
   if (isElectron()) {
-    const primaryPath = await window.electronAPI.pathJoin(dir, PROJECT_FILENAME)
-    const legacyPath = await window.electronAPI.pathJoin(dir, PROJECT_FILENAME_LEGACY)
-    return (await window.electronAPI.exists(primaryPath)) || (await window.electronAPI.exists(legacyPath))
+    for (const name of [PROJECT_FILENAME, PROJECT_FILENAME_PREVIOUS, PROJECT_FILENAME_LEGACY]) {
+      if (await window.electronAPI.exists(await window.electronAPI.pathJoin(dir, name))) return true
+    }
+    return false
   }
   
   // Web fallback
-  try {
-    await dir.getFileHandle(PROJECT_FILENAME)
-    return true
-  } catch {
+  for (const name of [PROJECT_FILENAME, PROJECT_FILENAME_PREVIOUS, PROJECT_FILENAME_LEGACY]) {
     try {
-      await dir.getFileHandle(PROJECT_FILENAME_LEGACY)
+      await dir.getFileHandle(name)
       return true
     } catch {
-      return false
+      // try the next name
     }
   }
+  return false
 }
 
 /**
@@ -1155,7 +1159,7 @@ export const deleteProjectFile = async (projectDir, relativePath) => {
 // Directory Handle Storage (Web only - not needed in Electron)
 // ============================================
 
-const DB_NAME = 'comfystudio-handles'
+const DB_NAME = 'storybookstudio-handles'
 const DB_VERSION = 1
 const STORE_NAME = 'directory-handles'
 

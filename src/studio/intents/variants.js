@@ -311,7 +311,7 @@ export function buildHookVariants(project, { variants = 3, timelineId = null, la
   }
 }
 
-// Set keyframes on a timeline document the way Velorn's set_clip_keyframes
+// Set keyframes on a timeline document the way the upstream editor's set_clip_keyframes
 // (replaceKeyframes: true) stores them: clip.keyframes[property] =
 // [{time, value, easing}] sorted by time. For a document that is not open in
 // the editor (a headless delivery, tests); the open editor goes through the

@@ -1,6 +1,6 @@
 // FILM-2015 renderer integration: the real AI panel, scene strip and send
 // confirmation, bundled with esbuild and rendered to markup with a plan
-// delivered over the bridge. Velorn's stores and the Electron runtime are
+// delivered over the bridge. The upstream editor's stores and the Electron runtime are
 // replaced by small stand-ins; the studio store, models and components are
 // the shipped ones. Clicks and focus are covered by the packaged-app e2e.
 import test from 'node:test'
@@ -122,7 +122,7 @@ test('the scene strip renders one segment per scene and marks a scene over its t
   assert.match(html, /data-test="studio-strip-total">102\.0 s of 99\.0 s</)
 })
 
-test('a plain Velorn project has no scene strip', () => {
+test('a plain upstream project has no scene strip', () => {
   mod.studioUiStore.getState().reset()
   mod.useTimelineStore.setState({ clips: [{ id: 'c1', trackId: 't1', startTime: 0, duration: 5 }], tracks: [{ id: 't1', type: 'video' }], markers: [] })
   assert.equal(mod.render('strip'), '')

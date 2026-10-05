@@ -6,10 +6,10 @@
 // argument, so the swap is one line). What it draws, so a reviewer knows
 // what a delivered file can and cannot show:
 // - picture: the top visible video or image clip at each moment (earlier
-//   video track wins, captions tracks excluded), drawn as Velorn draws it:
+//   video track wins, captions tracks excluded), drawn as the upstream editor draws it:
 //   fit inside the frame, then scaleX/scaleY and positionX/positionY from the
 //   clip transform or its keyframes. Position keyframes are interpolated
-//   linearly (Velorn's easing curves are not reproduced). Gaps are black.
+//   linearly (the upstream editor's easing curves are not reproduced). Gaps are black.
 //   Not drawn: transitions, effects, text and shape clips, masks, opacity.
 // - audio: every enabled audio clip on an audible track of the render's
 //   language (or no language), at clip gain and track volume, mixed and
@@ -170,7 +170,7 @@ async function renderSegment({ segment, preset, fps, ffmpegPath, outFile, signal
   const scaleY = propertyAt(clip, 'scaleY', clipTimeAtStart, 100) / 100
   const drawnW = Math.max(2, Math.round((srcW * fit * scaleX) / 2) * 2)
   const drawnH = Math.max(2, Math.round((srcH * fit * scaleY) / 2) * 2)
-  // overlay x/y: top-left of the drawn media; Velorn centres it, then moves it by positionX/Y.
+  // overlay x/y: top-left of the drawn media; the upstream editor centres it, then moves it by positionX/Y.
   const x = propertyExpression(clip, 'positionX', clipTimeAtStart, 0, (value) => (width - drawnW) / 2 + value)
   const y = propertyExpression(clip, 'positionY', clipTimeAtStart, 0, (value) => (height - drawnH) / 2 + value)
   const input = segment.clip.type === 'image'

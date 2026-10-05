@@ -11,7 +11,7 @@ import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
 const secrets = require('../../electron/studio/secrets.js')
-const { createComfyStudioMcpServer } = require('../../electron/mcpServer.js')
+const { createStorybookStudioMcpServer } = require('../../electron/mcpServer.js')
 
 const PLANTED = 'sk-planted-6b1f0c9e4a7d2e85'
 const REPO = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..')
@@ -121,7 +121,7 @@ test('the MCP snapshot, its responses and the server logs never carry a stored s
   secrets.setSecret('storybook.accessToken', PLANTED)
 
   const mcpSecret = 'c'.repeat(64)
-  const server = createComfyStudioMcpServer({ port: 0, version: 'test', authSecret: mcpSecret })
+  const server = createStorybookStudioMcpServer({ port: 0, version: 'test', authSecret: mcpSecret })
   let transcript = ''
   const output = await captureOutput(async () => {
     await server.start()

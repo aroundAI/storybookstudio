@@ -20,7 +20,7 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
-      # Stock Velorn v0.3.36, which the rough-cut test opens a built project in
+      # The stock upstream editor (v0.3.36), which the rough-cut test opens a built project in
       # (tests/studio/rough-cut-opens.test.mjs); the checkout is shallow.
       - run: git fetch --no-tags --depth=1 origin fdd8255fb717db024688a2582022aa048dd16e84
       - run: npm test

@@ -1,4 +1,4 @@
-// FILM-2012 AC4: a built rough cut opens in this app and in stock Velorn
+// FILM-2012 AC4: a built rough cut opens in this app and in the stock upstream editor
 // v0.3.36 without error.
 //
 // Both sides run the real code paths over a real project folder, through a
@@ -6,10 +6,10 @@
 // - this app: openStudioProjectFromPackage (the studio:buildProject entry
 //   FILM-2011's pull job calls) writes the folder, opens it with
 //   projectStore.openProject and saves the 'Rough cut' version;
-// - stock Velorn: upstream's src/ and electron/ at fdd8255 (v0.3.36, where
+// - the stock upstream editor: upstream's src/ and electron/ at fdd8255 (v0.3.36, where
 //   the fork branched), extracted with `git archive`, open the same folder
 //   with its own projectStore.openProject and save it with saveProject; this
-//   app then reopens what stock Velorn saved.
+//   app then reopens what the stock upstream editor saved.
 // Stores load through Vite's SSR loader (extension-less imports), as in
 // edit-log-runtime.test.mjs. CI fetches the stock commit; the stock tests
 // skip only where git cannot produce it.
@@ -24,11 +24,13 @@ import { fileURLToPath } from 'node:url'
 
 import { createServer } from 'vite'
 
+import LEGACY from '../../src/studio/legacyNames.json' with { type: 'json' }
+
 import { buildProject } from '../../src/studio/projectBuilder.js'
 import { createElectronProjectFs, writeRoughCutProject } from '../../src/studio/openFromPackage.js'
 import { FIXTURE_SIZES, loadFixture, probesFor } from './helpers/rough-cut.mjs'
 
-export const STOCK_VELORN_COMMIT = 'fdd8255fb717db024688a2582022aa048dd16e84'
+export const STOCK_UPSTREAM_COMMIT = 'fdd8255fb717db024688a2582022aa048dd16e84'
 
 const root = fileURLToPath(new URL('../../', import.meta.url))
 const require = createRequire(import.meta.url)
@@ -63,7 +65,7 @@ const bridge = {
   deleteFile: async (target) => { fs.rmSync(target, { force: true }); return { success: true } },
   setSetting: async () => ({ success: true }),
   getSetting: async () => null,
-  getFileUrlDirect: async (target) => `comfystudio://${target}`,
+  getFileUrlDirect: async (target) => `storybookstudio-file://${target}`,
   studioEdits,
 }
 
@@ -74,7 +76,7 @@ Object.defineProperty(globalThis, 'localStorage', { value: { getItem: () => null
 
 const stockAvailable = (() => {
   try {
-    execFileSync('git', ['-C', root, 'cat-file', '-e', `${STOCK_VELORN_COMMIT}^{commit}`], { stdio: 'ignore' })
+    execFileSync('git', ['-C', root, 'cat-file', '-e', `${STOCK_UPSTREAM_COMMIT}^{commit}`], { stdio: 'ignore' })
     return true
   } catch {
     return false
@@ -90,9 +92,9 @@ const runChecked = (command, args) => {
 }
 
 const extractStock = () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'velorn-stock-'))
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'upstream-stock-'))
   const archive = path.join(dir, '..', `${path.basename(dir)}.tar`)
-  runChecked('git', ['-C', root, 'archive', '--format=tar', '-o', archive, STOCK_VELORN_COMMIT, 'src', 'electron', 'package.json'])
+  runChecked('git', ['-C', root, 'archive', '--format=tar', '-o', archive, STOCK_UPSTREAM_COMMIT, 'src', 'electron', 'package.json'])
   try {
     runChecked('tar', ['-xf', archive, '-C', dir])
   } finally {
@@ -147,7 +149,7 @@ const inputs = (shots) => {
   return { pkg, probes: probesFor(pkg), project: buildProject({ package: pkg, probedAssets: probesFor(pkg) }).project }
 }
 
-// A failed open shows in Velorn as a console error and a store error.
+// A failed open shows in the upstream editor as a console error and a store error.
 const quietly = async (fn) => {
   const errors = []
   const error = console.error
@@ -180,7 +182,7 @@ const assertLoaded = (app, project) => {
   assert.equal(library.folders.length, project.folders.length)
   const offline = library.assets.filter((asset) => asset.offline)
   assert.ok(offline.length > 0 && offline.every((asset) => asset.url === null))
-  assert.ok(library.assets.filter((asset) => !asset.offline).every((asset) => asset.url?.startsWith('comfystudio://')))
+  assert.ok(library.assets.filter((asset) => !asset.offline).every((asset) => asset.url?.startsWith('storybookstudio-file://')))
 }
 
 for (const shots of FIXTURE_SIZES) {
@@ -189,7 +191,7 @@ for (const shots of FIXTURE_SIZES) {
     const projectPath = path.join(scratch, `studio-${shots}`)
     const { result, errors } = await quietly(() => fork.runtime.openStudioProjectFromPackage(pkg, probes, { projectPath }))
     assert.deepEqual(errors, [])
-    assert.deepEqual(result.written, ['storybook/package.json', 'storybook/link.json', 'storybook/brand.json', 'storybook/policy.json', 'project.comfystudio'])
+    assert.deepEqual(result.written, ['storybook/package.json', 'storybook/link.json', 'storybook/brand.json', 'storybook/policy.json', 'project.storybookstudio'])
     for (const file of result.written) assert.ok(fs.existsSync(path.join(projectPath, file)), file)
     assert.deepEqual(result.project, project)
     assert.ok(result.warnings.some((warning) => warning.code === 'media_offline'))
@@ -209,24 +211,27 @@ for (const shots of FIXTURE_SIZES) {
     assert.ok(fs.existsSync(path.join(projectPath, `edits/snapshots/${result.version.id}.json`)))
   })
 
-  test(`${shots}-shot package: the rough cut opens in stock Velorn v0.3.36 without error, and its Studio fields survive a stock save`, { skip: stockAvailable ? false : `stock Velorn ${STOCK_VELORN_COMMIT.slice(0, 7)} is not in this clone (git fetch origin ${STOCK_VELORN_COMMIT})` }, async () => {
+  test(`${shots}-shot package: the rough cut opens in the stock upstream editor (v0.3.36) without error, and its Studio fields survive a stock save`, { skip: stockAvailable ? false : `the stock upstream editor ${STOCK_UPSTREAM_COMMIT.slice(0, 7)} is not in this clone (git fetch origin ${STOCK_UPSTREAM_COMMIT})` }, async () => {
     const { pkg, probes, project } = inputs(shots)
     const projectPath = path.join(scratch, `stock-${shots}`)
     await writeRoughCutProject({ package: pkg, probedAssets: probes, projectPath, fs: createElectronProjectFs(bridge) })
+    // The format is shared; only the file name differs. The stock editor
+    // reads its own name, which this app opens too (and renames on save).
+    fs.renameSync(path.join(projectPath, 'project.storybookstudio'), path.join(projectPath, LEGACY.projectFile))
 
     const stockStore = stock.projectStore.useProjectStore
     const { result: opened, errors } = await quietly(() => stockStore.getState().openProject(projectPath))
     assert.deepEqual(errors, [])
     assert.equal(stockStore.getState().error, null)
-    assert.ok(opened, 'stock Velorn returned no project')
+    assert.ok(opened, 'the stock upstream editor returned no project')
     assert.equal(stockStore.getState().currentTimelineId, 'tl-master')
     assertLoaded(stock, project)
 
     const { result: saved, errors: saveErrors } = await quietly(() => stockStore.getState().saveProject())
     assert.equal(saved, true)
     assert.deepEqual(saveErrors, [])
-    const onDisk = JSON.parse(fs.readFileSync(path.join(projectPath, 'project.comfystudio'), 'utf8'))
-    assert.equal(onDisk.version, '1.0') // stock Velorn stamps 1.0 on every save
+    const onDisk = JSON.parse(fs.readFileSync(path.join(projectPath, LEGACY.projectFile), 'utf8'))
+    assert.equal(onDisk.version, '1.0') // the stock upstream editor stamps 1.0 on every save
 
     // Reopened here: still a 1.2 Studio project with every Studio field.
     const reopened = await quietly(() => fork.projectStore.useProjectStore.getState().openProject(projectPath))

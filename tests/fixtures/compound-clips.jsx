@@ -113,7 +113,7 @@ async function initializeMedia(media) {
 // explicit in-memory stand-ins. The root's native tests verify real FFmpeg.
 async function exportInMemory(time, options = {}) {
   const previousApi = window.electronAPI, previousHandle = useProjectStore.getState().currentProjectHandle
-  const flags = ['comfystudio-export-webcodecs', 'comfystudio-export-gpu']
+  const flags = ['storybookstudio-export-webcodecs', 'storybookstudio-export-gpu']
   const previousFlags = flags.map(key => localStorage.getItem(key))
   const root = '/__compound_memory__', frames = [], reads = [], calls = [], mixes = []
   let size = null

@@ -1,6 +1,6 @@
 // FILM-2011: the cloud client's main-process wiring. studioMain.js creates
 // it; it owns sign-in, the MCP client per StoryBook host, the job registry,
-// the pull job, re-sync, edit events and the velorn:// handler, and exposes
+// the pull job, re-sync, edit events and the storybookstudio:// handler, and exposes
 // them to the renderer as studio:* IPC (never a token, never a signed URL).
 //
 // Renderer → main (invoke):
@@ -22,7 +22,7 @@ const { createJobRegistry } = require('./jobs')
 const { runPullJob } = require('./pull')
 const { createResync } = require('./sync')
 const { createEditEventQueue } = require('./events')
-const { registerVelornProtocol, normalizeApiOrigin, UUID_PATTERN } = require('./protocol')
+const { registerStorybookStudioProtocol, normalizeApiOrigin, UUID_PATTERN } = require('./protocol')
 const { createProbe } = require('./probe')
 
 const CONFIG_FILE = 'studio-cloud.json'
@@ -58,7 +58,7 @@ function createStudioCloud({ app, ipcMain, shell, secrets, getMainWindow, isMain
 
   const envAllowlist = () => String(env.STUDIO_API_ALLOWLIST || '').split(',').map(normalizeApiOrigin).filter(Boolean)
   const activeOrigin = () => normalizeApiOrigin(readConfig().apiOrigin) || normalizeApiOrigin(env.STUDIO_API_URL) || null
-  // The hosts a velorn://open link may name: configured ones plus the host
+  // The hosts a storybookstudio://open link may name: configured ones plus the host
   // the user signed in to.
   const allowedOrigins = () => {
     const config = readConfig()
@@ -216,7 +216,7 @@ function createStudioCloud({ app, ipcMain, shell, secrets, getMainWindow, isMain
     return { jobId: job.id, existing: false }
   }
 
-  const protocol = registerVelornProtocol({
+  const protocol = registerStorybookStudioProtocol({
     app,
     getAllowedOrigins: allowedOrigins,
     onOpen: (link) => {

@@ -2,7 +2,7 @@
 // Signed in: "Open from StoryBook" opens the episode picker. Signed out:
 // "Sign in with StoryBook" (browser, PKCE, FILM-2011) or "Paste a token".
 // Recent projects show their StoryBook episode and "Updates available" when a
-// re-sync plan is waiting. Velorn's own start screen stays one click away.
+// re-sync plan is waiting. The upstream editor's own start screen stays one click away.
 import { useEffect, useState } from 'react'
 import { BookOpen, FolderOpen, LogOut, RefreshCw } from 'lucide-react'
 import WelcomeScreen from '../WelcomeScreen'
@@ -116,7 +116,7 @@ function RecentProjects({ onOpen }) {
   const [scan, setScan] = useState({ links: new Map(), pulled: [] })
 
   // The badges read each project's storybook/ files. Episodes pulled into the
-  // Studio's projects folder are listed too: Velorn writes its recent list
+  // Studio's projects folder are listed too: the upstream editor writes its recent list
   // lazily, so after a crash the project being edited may be missing from it.
   useEffect(() => {
     let cancelled = false
@@ -170,13 +170,13 @@ export default function Welcome() {
   const signedIn = useStudioUi((state) => Boolean(state.auth?.signedIn))
   const openRecentProject = useProjectStore((state) => state.openRecentProject)
   const openProject = useProjectStore((state) => state.openProject)
-  const [showVelornStart, setShowVelornStart] = useState(false)
+  const [showUpstreamStart, setShowUpstreamStart] = useState(false)
 
-  if (showVelornStart) {
+  if (showUpstreamStart) {
     return (
       <>
         <WelcomeScreen />
-        <StudioButton className="fixed bottom-4 left-4 z-[70] shadow-lg" onClick={() => setShowVelornStart(false)} data-test="studio-back-to-welcome">
+        <StudioButton className="fixed bottom-4 left-4 z-[70] shadow-lg" onClick={() => setShowUpstreamStart(false)} data-test="studio-back-to-welcome">
           {t('welcome.backToStoryBook')}
         </StudioButton>
       </>
@@ -206,7 +206,7 @@ export default function Welcome() {
         <section aria-labelledby="studio-recent-title" className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 id="studio-recent-title" className="text-sm font-semibold">{t('welcome.recentTitle')}</h2>
-            <button type="button" className="text-xs text-sf-text-secondary hover:text-sf-text-primary" onClick={() => setShowVelornStart(true)} data-test="studio-velorn-start">
+            <button type="button" className="text-xs text-sf-text-secondary hover:text-sf-text-primary" onClick={() => setShowUpstreamStart(true)} data-test="studio-upstream-start">
               {t('welcome.allProjects')}
             </button>
           </div>

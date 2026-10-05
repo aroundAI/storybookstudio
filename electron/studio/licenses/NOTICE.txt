@@ -1,0 +1,13 @@
+StorybookStudio
+Copyright © 2026 aroundAI
+
+StorybookStudio is a modified version of Velorn, an open-source video editor
+(https://github.com/VelornLabs/velorn).
+Velorn is Copyright © 2024-2026 Velorn contributors.
+aroundAI has modified it since October 2026; the source of this version is at
+https://github.com/aroundAI/storybookstudio.
+
+Both are free software: you can redistribute and/or modify them under the
+terms of the GNU General Public License, version 3 only, as published by the
+Free Software Foundation. They come with NO WARRANTY, to the extent permitted
+by law. The full license text follows.

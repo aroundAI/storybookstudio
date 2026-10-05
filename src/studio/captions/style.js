@@ -1,5 +1,5 @@
 // FILM-2016 AC5, AC6: brand captions. BrandSchema.captionStyle (FILM-2004)
-// becomes the style of Velorn's live captions clip (clip.captions.preset)
+// becomes the style of the upstream editor's live captions clip (clip.captions.preset)
 // plus per-cue globalOverrides, which kineticCaptionRenderer's subtitle path
 // reads: colours, box or outline, size, the safe rectangle for the aspect,
 // max characters per line, and emphasis words. checkCaptionSafeArea is the

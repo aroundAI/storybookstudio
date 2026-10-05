@@ -1229,7 +1229,7 @@ export const useAssetsStore = create(
     // Use playback cache URL when available (Flame-style: optimized for playback)
     const useCache = !!asset.playbackCacheUrl && hasUsablePlaybackCache(asset)
     const url = useCache ? asset.playbackCacheUrl : (asset.url || null)
-    if (typeof localStorage !== 'undefined' && localStorage.getItem('comfystudio-debug-playback') === '1' && asset.type === 'video') {
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('storybookstudio-debug-playback') === '1' && asset.type === 'video') {
       console.log('[PlaybackCache] getAssetUrl:', { assetId, useCache, urlHint: url ? (url.startsWith('file:') ? 'file:// (cache or original)' : url.slice(0, 50) + '...') : 'null' })
     }
     return url
@@ -1332,7 +1332,7 @@ export const useAssetsStore = create(
   markPlaybackCacheBroken: (assetId, reason = 'unknown') => {
     if (!assetId) return
 
-    if (typeof localStorage !== 'undefined' && localStorage.getItem('comfystudio-debug-playback') === '1') {
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('storybookstudio-debug-playback') === '1') {
       console.warn('[PlaybackCache] Marking cache broken, fallback to source', { assetId, reason })
     }
 
@@ -1448,7 +1448,7 @@ export const useAssetsStore = create(
   }
     }),
     {
-      name: 'comfystudio-assets', // localStorage key
+      name: 'storybookstudio-assets', // localStorage key
       partialize: (state) => ({
         // Only persist these fields (exclude transient playback state)
         assets: state.assets,
