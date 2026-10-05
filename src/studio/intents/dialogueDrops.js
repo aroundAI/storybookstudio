@@ -12,11 +12,11 @@ import {
   subtractIntervals, toFrame, voicedIntervals,
 } from './shared.js'
 import { lineImportance } from './common.js'
+import { DEFAULT_DIALOGUE_CUT_MODE, DIALOGUE_CUT_MODES, dialogueCutModeOf } from '../policyFields.js'
 
-export const DIALOGUE_CUT_MODES = Object.freeze(['never', 'ask', 'allow'])
-export const DEFAULT_DIALOGUE_CUT_MODE = 'ask'
+export { DIALOGUE_CUT_MODES, DEFAULT_DIALOGUE_CUT_MODE }
 
-export const dialogueCutMode = (context) => (DIALOGUE_CUT_MODES.includes(context?.policy?.allowDialogueCuts) ? context.policy.allowDialogueCuts : DEFAULT_DIALOGUE_CUT_MODE)
+export const dialogueCutMode = (context) => dialogueCutModeOf(context?.policy)
 
 const quote = (text, length = 60) => {
   const value = String(text || '').trim()

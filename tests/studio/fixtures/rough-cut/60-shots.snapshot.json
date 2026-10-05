@@ -45522,12 +45522,12 @@
       "sha256": "2ff06f95334a2338847306d1008ee9b928e1a9bd2a5c473f8414527063d71aae"
     },
     "storybook/brand.json": {
-      "bytes": 599,
-      "sha256": "0c84938632bdb76ee6e6ef357ba715818f2ab4bb514c26d9c24088c423147d25"
+      "bytes": 624,
+      "sha256": "07671be8edcf4d2774b37933dfbf42f53b8023a71da67ab984bb3d76e4fa2218"
     },
     "storybook/policy.json": {
-      "bytes": 443,
-      "sha256": "0cac32de84615b6dddac171b4d54cc3e62c9294b18b3b690a84600f73a90c972"
+      "bytes": 501,
+      "sha256": "6f35d35aadfcc2df174ab07972c068983f9c1b09aa518c4e4776135992b77ace"
     }
   }
 }
