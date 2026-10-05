@@ -65,6 +65,10 @@ git push origin refs/tags/v0.1.12
 9. Ask the user to check `Actions > Release Desktop Builds`.
 10. When the jobs are green, ask the user to review and publish the draft release.
 
+## Remotion blocks a release
+
+The app ships `@remotion/renderer` for composition clips (FILM-2018). Remotion is used under its Free License for an internal tool that is never distributed (owner decision, 2026-10-05), so the release preflight stops at "Refuse an installer that contains Remotion" and no installer is built or uploaded. Do not work around it. Releasing an installer needs that decision revisited first; then the owner sets the repository variable `REMOTION_RELEASE_APPROVED` to `true`.
+
 ## If GitHub Actions Fails
 
 Open the failed job and inspect the last failing step.
