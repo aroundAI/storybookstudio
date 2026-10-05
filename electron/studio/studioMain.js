@@ -12,6 +12,8 @@ const { createAudioReads, utilityProcessAnalysis } = require('./audioReads')
 const { createStudioUiMain } = require('./studioUi')
 const { applyAppBranding, APP_NAME } = require('./appBranding')
 const { readLicenses, buildAppMenuTemplate } = require('./licenses')
+const { createCompositionRenderer } = require('./compositionRenderer')
+const { createRemotionEngine, packagedRemotionPaths } = require('./compositionEngines/remotion')
 
 // The upstream editor's own temp working directories; Electron has no "cache" path name.
 const CACHE_DIR_NAMES = ['storybookstudio-shot-audio', 'storybookstudio-caption-audio']
@@ -122,6 +124,17 @@ function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, get
   // KB-190: get_audio_analysis decodes and analyses in a utility process.
   const audioReads = createAudioReads({ getFfmpegPath, runAnalysis: utilityProcess ? utilityProcessAnalysis(utilityProcess) : null })
 
+  // FILM-2018: composition clips render here, once per key, into
+  // <project>/compositions/; the renderer asks for the key and the file.
+  const remotionEngine = createRemotionEngine(packagedRemotionPaths({ isPackaged: Boolean(app.isPackaged), resourcesPath: process.resourcesPath }))
+  const compositions = createCompositionRenderer({ engines: { remotion: remotionEngine }, log: (line) => console.warn(line) })
+  app.on?.('will-quit', () => { remotionEngine.close() })
+  ipcMain.handle('studio:compositionResolve', deliverGuard((args) => compositions.resolve(args)))
+  ipcMain.handle('studio:compositionRender', deliverGuard(async (args) => {
+    const { propsHash, renderPath, cached, ms } = await compositions.render(args)
+    return { propsHash, renderPath, cached, ms }
+  }))
+
   // FILM-2015: the quit prompt when a plan or a delivery is in flight.
   createStudioUiMain({ app, ipcMain, getMainWindow, isMainWindowSender })
 
@@ -136,6 +149,7 @@ function createStudioMain({ app, ipcMain, safeStorage, shell, getMainWindow, get
     },
     getMcpSecret,
     cloud,
+    compositions,
     deliver,
     isPrimaryInstance: cloud.protocol.primary,
     onReady() {

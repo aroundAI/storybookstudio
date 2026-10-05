@@ -36,6 +36,8 @@ import { startComfyAutoImport } from './services/comfyAutoImport'
 import { startMcpSnapshotPublisher } from './services/mcpSnapshot'
 import { MCP_ACTION_BRIDGE_VERSION, startMcpActionBridge } from './services/mcpActions'
 import { startPlanProposedSink } from './studio/planProposedSink'
+import { startCompositionRenderSync } from './studio/compositions/renderSync'
+import { getProjectFileUrl } from './services/fileSystem'
 import { attachProjectDirtyWatchers, isProjectDirty } from './services/projectDirtyTracker'
 import { STORYBOOKSTUDIO_OPEN_STOCK_EVENT } from './services/pexelsStock'
 import {
@@ -261,6 +263,8 @@ function App() {
 
   // FILM-2013: plan cards from any client (FILM-2015's AI panel renders them).
   useEffect(() => startPlanProposedSink(), [])
+  // FILM-2018: composition clips render in the main process and attach here.
+  useEffect(() => startCompositionRenderSync({ timelineStore: useTimelineStore, projectStore: useProjectStore, getProjectFileUrl }), [])
 
   useLayoutEffect(() => {
     const previousTab = mainTabRef.current
