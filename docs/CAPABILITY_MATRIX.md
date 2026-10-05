@@ -175,7 +175,7 @@ After an upstream merge adds or removes a tool, `--check` fails (and so does `te
 | --- | --- | --- | --- |
 | `studio_get_context` | P1 context; P2 scene map | FILM-2013 | Built: agent profile (electron/studio/mcpCapabilities.js, src/studio/context.js). Script, scene map, policy, brand, timeline summary, versions, user edits, last QA in one call. |
 | `studio_search_assets` | P3 search | FILM-2013 | Built: ranks by name, transcript, then semantic fields. |
-| `studio_get_job_status` | P8 job status | FILM-2013 | Built over FILM-2011's job registry (studioMain.cloud.getJobStatus); jobs run in main. |
+| `studio_get_job_status` | P8 job status | FILM-2013 | Built: autoRepair edit jobs (electron/studio/jobs.js in mcpCapabilities.js, phase and round per QA and repair) and FILM-2011's pull and deliver jobs (studioMain.cloud.getJobStatus); jobs run in main. |
 | `studio_review` | P7 review (critic); V2 critic analysers | FILM-2014 | electron/studio/reviewTools.js review: renders the scope's keyframes, a 720p preview and the bus mix with stems, runs QA then the critic; returns {pass, issues, qa, critic, skipped}. |
 | `electron/studio/qa.js checks` | V1 QA checks | FILM-2014 | ebur128 loudness and true peak, astats clipping, blackdetect, freezedetect, silencedetect, caption safe areas, script coverage. No upstream tool does these at QA grade. |
 | `src/studio/critic/{pacing,audio,visual}.js` | V2 critic analysers | FILM-2014 | Analysers return issues in the QA shape. |

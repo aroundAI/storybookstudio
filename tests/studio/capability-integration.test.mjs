@@ -170,7 +170,15 @@ test('a clip edited by hand since the last plan is left alone, or listed under "
 
 test('autoRepair runs one round inside the version and says QA is FILM-2014\'s; readiness, versions and deliver summary over MCP', async () => {
   const { body: preview } = await call('studio_edit', { intent: 'remove_dead_air', scope: { scene: 2 } })
-  const { body: applied } = await call('studio_edit', { intent: 'remove_dead_air', scope: { scene: 2 }, previewOnly: false, planId: preview.planId, autoRepair: true })
+  const { body: started } = await call('studio_edit', { intent: 'remove_dead_air', scope: { scene: 2 }, previewOnly: false, planId: preview.planId, autoRepair: true })
+  let job
+  for (;;) {
+    ;({ body: job } = await call('studio_get_job_status', { jobId: started.jobId }))
+    if (job.status !== 'running') break
+    await new Promise((resolve) => setTimeout(resolve, 20))
+  }
+  assert.equal(job.status, 'done', JSON.stringify(job))
+  const applied = job.result
   assert.equal(applied.autoRepair.rounds.length, 1)
   assert.match(applied.autoRepair.stoppedBecause, /FILM-2014/)
   const versions = JSON.parse(await readFile(path.join(harness.dir, 'edits/versions.json'), 'utf8'))

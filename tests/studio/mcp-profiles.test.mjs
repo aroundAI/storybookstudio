@@ -111,7 +111,6 @@ test('tools another spec builds answer VALIDATION_FAILED "not available yet", na
     studio_create_variant: ['FILM-2017', { kind: 'short' }],
     studio_add_graphic: ['FILM-2018', { kind: 'lower_third', text: 'x', at: 1, duration: 2 }],
     studio_open_episode: ['FILM-2011', { episodeId: 'e' }],
-    studio_get_job_status: ['FILM-2011', { jobId: 'j' }],
     studio_check_updates: ['FILM-2011', {}],
   }
   for (const [name, [owner, args]] of Object.entries(stubs)) {
@@ -121,6 +120,8 @@ test('tools another spec builds answer VALIDATION_FAILED "not available yet", na
     assert.equal(error.code, 'VALIDATION_FAILED', name)
     assert.match(error.message, new RegExp(`not available yet: ${owner}`), name)
   }
+  // Edit jobs are the server's own, so an unknown id is NOT_FOUND even without FILM-2011's client.
+  assert.equal(callText((await rpc('tools/call', { name: 'studio_get_job_status', arguments: { jobId: 'j' } })).body).error.code, 'NOT_FOUND')
   // These compile in the window (the re-sync plan, FILM-2016's compilers), so a bare server says so.
   for (const [name, args] of [['studio_apply_updates', {}], ['studio_edit_audio', { intent: 'duck' }], ['studio_add_captions', { language: 'en' }], ['studio_repair', { issues: [] }]]) {
     assert.match(callText((await rpc('tools/call', { name, arguments: args })).body).error.message, /window is not connected/, name)

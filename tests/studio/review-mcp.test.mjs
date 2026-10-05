@@ -29,12 +29,11 @@ afterEach(async () => {
   await harness?.close()
 })
 
-// Reviews render the whole cut; a 3-core CI runner needs more than the SDK's 60 s default.
-const REQUEST_TIMEOUT_MS = 10 * 60 * 1000
-
+// The SDK's default 60 s request timeout: an autoRepair edit renders and
+// reviews for minutes, so it answers with a job the client polls.
 const call = async (name, args, { profile = null } = {}) => {
   const target = profile ? await connectSdkClient(harness, { profile }) : client
-  const result = await target.callTool({ name, arguments: args }, undefined, { timeout: REQUEST_TIMEOUT_MS })
+  const result = await target.callTool({ name, arguments: args })
   if (profile) await target.close()
   return { result, body: parseToolResult(result) }
 }
@@ -87,15 +86,28 @@ test('studio_edit autoRepair: the loop reviews and repairs with FILM-2014\'s han
   await plantLoudMusic()
   const args = { intent: 'remove_dead_air', scope: { scene: 2 } }
   const { body: preview } = await call('studio_edit', args)
-  const { result, body: applied } = await call('studio_edit', { ...args, previewOnly: false, planId: preview.planId, autoRepair: true })
-  assert.equal(result.isError, undefined, JSON.stringify(applied))
+  const { result: startedResult, body: started } = await call('studio_edit', { ...args, previewOnly: false, planId: preview.planId, autoRepair: true })
+  assert.equal(startedResult.isError, undefined, JSON.stringify(started))
+  assert.deepEqual([typeof started.jobId, started.status, started.versionId], ['string', 'running', started.version.id])
+  const phases = new Set()
+  let job
+  for (;;) {
+    ;({ body: job } = await call('studio_get_job_status', { jobId: started.jobId }))
+    phases.add(`${job.phase} ${job.round}`)
+    if (job.status !== 'running') break
+    await new Promise((resolve) => setTimeout(resolve, 250))
+  }
+  assert.equal(job.status, 'done', JSON.stringify(job.error))
+  assert.ok(phases.has('keyframes 1'), [...phases].join(', '))
+  const applied = job.result
+  assert.ok(applied.cards.length > 0 && applied.reportText, 'the finished job carries the final cards and report')
   const { rounds, stoppedBecause, qa } = applied.autoRepair
   assert.ok(!/not available yet/.test(stoppedBecause), stoppedBecause)
   assert.ok(rounds.length >= 2 && rounds.length <= 3, JSON.stringify(rounds))
   assert.equal(rounds[1].kind, 'repair')
   assert.ok(qa && Array.isArray(qa.issues))
   assert.ok(!qa.issues.some((issue) => issue.type === 'music_over_dialogue'), JSON.stringify({ rounds, stoppedBecause, music: qa.issues.filter((i) => i.type === 'music_over_dialogue') }))
-  console.log(`# autoRepair: ${JSON.stringify(rounds)}; stopped: ${stoppedBecause}`)
+  console.log(`# autoRepair job ${started.jobId}: phases seen ${[...phases].join(', ')}; rounds ${JSON.stringify(rounds)}; stopped: ${stoppedBecause}; ${job.done}/${job.total}`)
 })
 
 test('studio_render_preview: scene 3 as a 720p file with its keyframes and a QA result, over MCP', async () => {

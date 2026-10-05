@@ -82,7 +82,7 @@ export const CAPABILITY_AGENT_TOOLS = [
   { name: 'studio_check_updates', mode: 'read', description: 'Changed shots in StoryBook since the pull (needs FILM-2011).', arguments: '{}' },
   { name: 'studio_apply_updates', mode: 'write', description: 'Replace changed shots into a new version (needs FILM-2011).', arguments: '{ "previewOnly": true }' },
   { name: 'studio_open_episode', mode: 'write', description: 'Pull a StoryBook episode; returns a jobId (needs FILM-2011).', arguments: '{ "episodeId": "..." }' },
-  { name: 'studio_get_job_status', mode: 'read', description: 'Progress of a pull, render or deliver job.', arguments: '{ "jobId": "..." }' },
+  { name: 'studio_get_job_status', mode: 'read', description: 'Progress of a pull, render, deliver or autoRepair edit job.', arguments: '{ "jobId": "..." }' },
   { name: 'studio_check_readiness', mode: 'read', description: 'Media, codecs, captions, policy and target checks: pass or issues.', arguments: '{}' },
   { name: 'studio_create_version', mode: 'write', description: 'Save the timeline as a named version.', arguments: '{ "name": "Before music pass" }' },
   { name: 'studio_restore_version', mode: 'write', description: 'Go back to a version (undoes a plan).', arguments: '{ "versionId": "v2" }' },
@@ -108,6 +108,23 @@ async function callCapability(name, args) {
     parsed = { text: response?.content?.[0]?.text ?? '' }
   }
   return response?.isError ? { isError: true, ...(parsed && typeof parsed === 'object' ? parsed : { error: parsed }) } : parsed
+}
+
+// An autoRepair apply answers with a job (FILM-2013): the agent waits for it,
+// polling studio_get_job_status, and sees the finished apply like any other.
+export const JOB_POLL = { intervalMs: 1000, maxMs: 30 * 60 * 1000 }
+
+async function followJob(started) {
+  const deadline = Date.now() + JOB_POLL.maxMs
+  let job = null
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, JOB_POLL.intervalMs))
+    job = await callCapability('studio_get_job_status', { jobId: started.jobId })
+    if (job?.isError) return job
+    if (job?.status === 'done') return { jobId: started.jobId, ...job.result }
+    if (job?.status === 'failed') return { isError: true, jobId: started.jobId, versionId: started.versionId, error: { code: 'VALIDATION_FAILED', message: job.error } }
+  }
+  return { ...started, phase: job?.phase ?? null, message: `Still running after ${Math.round(JOB_POLL.maxMs / 60000)} minutes; follow it with studio_get_job_status.` }
 }
 
 // The cards, planId, notes and report text are what the agent needs; the
@@ -568,7 +585,11 @@ export async function runAgentTool(name, args = {}) {
   const toolName = normalizeString(name)
   if (!toolName) throw new Error('Missing tool name.')
 
-  if (CAPABILITY_TOOL_NAMES.has(toolName)) return clampResult(compactCapabilityResult(await callCapability(toolName, args)))
+  if (CAPABILITY_TOOL_NAMES.has(toolName)) {
+    let result = await callCapability(toolName, args)
+    if (result?.jobId && result.status === 'running' && result.followWith?.tool === 'studio_get_job_status') result = await followJob(result)
+    return clampResult(compactCapabilityResult(result))
+  }
 
   switch (toolName) {
     case 'get_project':

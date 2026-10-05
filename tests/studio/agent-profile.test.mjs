@@ -128,3 +128,31 @@ test('the in-app agent applies a plan the same way: one logged line per step wit
   assert.equal(applied.applied, true, JSON.stringify(applied.error))
   assert.deepEqual(applied.opLog.map((entry) => entry.reason), sdkPreview.plan.reasons)
 })
+
+test('an autoRepair apply is a job: the in-app agent polls it to the finished cards; an SDK client with a progressToken gets progress naming the job, then the result', async () => {
+  const args = { intent: 'remove_dead_air', scope: { scene: 2 }, params: {} }
+  if (m.agentTools.JOB_POLL) m.agentTools.JOB_POLL.intervalMs = 50
+  const preview = await viaAgent('studio_edit', args)
+  const applied = await viaAgent('studio_edit', { ...args, previewOnly: false, planId: preview.planId, autoRepair: true })
+  assert.equal(applied.applied, true, JSON.stringify(applied))
+  assert.equal(typeof applied.jobId, 'string')
+  assert.ok(applied.cards.length > 0)
+  assert.match(applied.autoRepair.stoppedBecause, /not available yet/, 'this harness has no preview renderer')
+
+  // Back to the timeline before that plan, so the SDK client has the same cuts to make.
+  await viaAgent('studio_restore_version', { versionId: applied.version.id })
+  const sdkPreview = await viaSdk('studio_edit', args)
+  const progress = []
+  const result = await client.callTool({ name: 'studio_edit', arguments: { ...args, previewOnly: false, planId: sdkPreview.planId, autoRepair: true } }, undefined, { onprogress: (event) => progress.push(event), resetTimeoutOnProgress: true })
+  const body = parseToolResult(result)
+  assert.equal(result.isError, undefined, JSON.stringify(body))
+  assert.equal(body.applied, true)
+  const messages = progress.map((event) => event.message.replace(/ \(job .*/, ''))
+  assert.deepEqual(messages.slice(0, 2), ['Applying the plan', 'Writing the report'])
+  assert.match(messages[2], /^Done: QA and repair are not available yet/)
+  assert.equal(messages.length, 3)
+  assert.ok(progress.every((event) => event.message.includes(`(job ${body.jobId}, version ${body.version.id})`)), JSON.stringify(progress))
+  assert.ok(progress.every((event, index) => index === 0 || event.progress > progress[index - 1].progress))
+  assert.equal(progress.at(-1).progress, progress.at(-1).total)
+  console.log(`# progress over MCP: ${JSON.stringify(progress)}`)
+})

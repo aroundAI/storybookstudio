@@ -227,7 +227,7 @@ The card with `scene: null` is the whole timeline (caption re-timing, beds, mark
 | `studio_check_updates` | agent | Has the episode changed in StoryBook? Proposes a replacement plan | built over FILM-2011's re-sync |
 | `studio_apply_updates` | agent | Previews and applies that plan into a "Sync from StoryBook" version; a regenerated shot's old sound is removed; `TARGET_CHANGED` when StoryBook changed again since the proposal | built |
 | `studio_open_episode` | agent, expert | Starts the FILM-2011 pull; returns a `jobId`. `{episodeId}` | built over FILM-2011 |
-| `studio_get_job_status` | agent, expert | `{jobId}` → the job's phase and progress | built over FILM-2011 |
+| `studio_get_job_status` | agent, expert | `{jobId}` → the job's status, phase and progress; an autoRepair edit job's `result` is the finished apply | built (edit jobs) and over FILM-2011 (pull, deliver) |
 | `studio_check_readiness` | agent, expert | Package, policy, target, media present and probed, codecs, captions, coverage, media health, export readiness → pass or issues | built |
 | `studio_create_version` | agent, expert | `{name, prompt?}` | built |
 | `studio_restore_version` | agent, expert | `{versionId, reason?}` | built |
@@ -259,6 +259,18 @@ A tool another spec builds answers `isError` with `{"error": {"code": "VALIDATIO
 Bounds come from `storybook/policy.json` (StoryBook's edit policy, else its defaults); no compiler hard-codes a policy bound. A cut is a ripple `extract_range` because StorybookStudio's `trim_clips` does not ripple: a trim alone leaves a gap and slips dialogue off its picture. Cuts run latest first, so each step's times are those of the timeline it was planned on.
 
 `autoRepair: true` runs apply → QA → repair up to 3 rounds inside the one version and returns only the final cards; the review and the repair are FILM-2014's `studio_review` and repair intent. A server started without the preview renderer runs one round and says why.
+
+That loop renders and reviews the cut up to three times, which takes minutes, and an MCP client gives up on a request after 60 s by default. So an autoRepair apply is a job. The call answers at once with `{jobId, status: 'running', versionId, version, followWith}`, and `studio_get_job_status({jobId})` reports it:
+
+```json
+{ "kind": "edit", "status": "running", "phase": "keyframes", "round": 1, "message": "QA round 1: rendering keyframes, the preview and the mix", "done": 2, "total": 16, "versionId": "v4" }
+```
+
+`phase` is `apply`, then per round `qa` with its steps `keyframes` (the renders), `qa` (the checks) and `critic`, then `repair` between rounds, then `finish`; `round` is the QA round. `done` counts the phases entered and `total` is the most a job can have, so `done` jumps to `total` when the loop stops early. When `status` is `done`, `result` is what a synchronous apply returns: the final cards, the report, `autoRepair.rounds` and `stoppedBecause`. When it is `failed`, `error` says why; the version stays, and `studio_restore_version` undoes it.
+
+A client that sends `_meta.progressToken` with the call has asked to follow it: the server answers with an event stream of `notifications/progress` (`progress` is `done`, `total` as above, and `message` names the phase, the job and the version), ending with the finished result rather than the job. A client that times out anyway still has the job id from the first notification and can poll it. With the TypeScript SDK, pass `onprogress` and `resetTimeoutOnProgress: true`.
+
+Without `autoRepair`, and as a step of `run_mcp_action_plan`, an apply stays synchronous. The in-app agent polls the job and shows the finished apply.
 
 The in-app agent (the Agent tab, `src/services/agentTools.js`) lists the same 19 tools and calls them through `studio:callCapability`, the same handler an MCP client reaches, so both get the same cards.
 

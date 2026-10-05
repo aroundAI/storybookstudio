@@ -37,7 +37,21 @@ function fakes({ refusePreviewOf = null, failStep = null } = {}) {
 }
 
 const preview = async (tools) => body(await tools.call('studio_edit', { intent: 'tighten_pacing', scope: { scene: 1 } }))
-const apply = async (tools, planId, extra = {}) => body(await tools.call('studio_edit', { intent: 'tighten_pacing', scope: { scene: 1 }, previewOnly: false, planId, ...extra }))
+const applyNow = async (tools, planId, extra = {}) => body(await tools.call('studio_edit', { intent: 'tighten_pacing', scope: { scene: 1 }, previewOnly: false, planId, ...extra }))
+// autoRepair answers with a job; the finished job's result is the apply body.
+async function waitForJob(tools, jobId) {
+  for (;;) {
+    const job = body(await tools.call('studio_get_job_status', { jobId }))
+    if (job.status !== 'running') return job
+    await new Promise((resolve) => setTimeout(resolve, 5))
+  }
+}
+const apply = async (tools, planId, extra = {}) => {
+  const started = await applyNow(tools, planId, extra)
+  if (!started.jobId) return started
+  const job = await waitForJob(tools, started.jobId)
+  return job.status === 'done' ? job.result : job
+}
 
 test('autoRepair: QA failing twice then passing runs three rounds inside the one version; studioMeta rides every step', async () => {
   const { calls, performAction, callPrimitive } = fakes()
@@ -152,4 +166,74 @@ test('autoRepair needs only FILM-2014\'s review: the repair plan comes from the 
   assert.deepEqual(result.autoRepair.rounds.map((round) => round.kind), ['plan', 'repair'])
   assert.equal(result.autoRepair.stoppedBecause, 'QA passed')
   assert.equal(calls.plans[1].steps[0].arguments.studioMeta.reason, 'Loudness -18 LUFS, target -14')
+})
+
+test('autoRepair answers at once with a job: studio_get_job_status reports the phase and round, then the final cards and report', { timeout: 5000 }, async () => {
+  const { calls, performAction, callPrimitive } = fakes()
+  let release
+  const gate = new Promise((resolve) => { release = resolve })
+  const reviews = []
+  const review = async (args, { onPhase } = {}) => {
+    reviews.push(args)
+    onPhase?.('keyframes')
+    await gate
+    onPhase?.('qa')
+    return { pass: true, issues: [] }
+  }
+  const tools = createCapabilityTools({ performAction, callPrimitive, review })
+  const { planId } = await preview(tools)
+  const started = await applyNow(tools, planId, { autoRepair: true })
+  assert.equal(typeof started.jobId, 'string')
+  assert.equal(started.versionId, 'v2')
+  assert.equal(started.status, 'running')
+  assert.deepEqual(started.followWith, { tool: 'studio_get_job_status', arguments: { jobId: started.jobId } })
+  assert.equal(started.cards, undefined, 'the cards come with the finished job')
+
+  await new Promise((resolve) => setImmediate(resolve))
+  const running = body(await tools.call('studio_get_job_status', { jobId: started.jobId }))
+  assert.deepEqual([running.kind, running.status, running.phase, running.round, running.versionId], ['edit', 'running', 'keyframes', 1, 'v2'])
+  assert.match(running.message, /QA round 1/)
+  assert.ok(running.done > 0 && running.done < running.total, JSON.stringify(running))
+  assert.equal(calls.renderer.includes('studio_finish_apply'), false, 'nothing is finished while QA runs')
+
+  release()
+  const job = await waitForJob(tools, started.jobId)
+  assert.deepEqual([job.status, job.phase, job.done], ['done', 'done', job.total])
+  assert.equal(job.result.applied, true)
+  assert.deepEqual(job.result.cards, [{ scene: 1, changes: [] }])
+  assert.equal(job.result.reportText, 'final')
+  assert.equal(job.result.autoRepair.stoppedBecause, 'QA passed')
+  assert.deepEqual(reviews, [{ versionId: 'v2' }])
+})
+
+test('autoRepair reports each phase to onProgress with a rising count; a failure fails the job with its message', { timeout: 5000 }, async () => {
+  const { performAction, callPrimitive } = fakes()
+  const qaResults = [{ pass: false, issues: [{ type: 'loudness' }] }, { pass: true, issues: [] }]
+  const review = async (args, { onPhase } = {}) => { onPhase?.('keyframes'); onPhase?.('qa'); onPhase?.('critic'); return qaResults.shift() }
+  const repair = async () => ({ plan: { steps: [{ tool: 'set_clip_audio', arguments: {} }], reasons: ['Fix'], scenes: [null] } })
+  const tools = createCapabilityTools({ performAction, callPrimitive, review, repair })
+  const events = []
+  const result = body(await tools.call('studio_edit', { intent: 'tighten_pacing', scope: { scene: 1 }, previewOnly: false, planId: (await preview(tools)).planId, autoRepair: true }, { onProgress: (job) => events.push(job) }))
+  assert.equal(result.applied, true, 'a caller following progress gets the finished result')
+  assert.equal(typeof result.jobId, 'string')
+  assert.deepEqual(events.map((job) => [job.phase, job.round]), [['apply', 0], ['qa', 1], ['keyframes', 1], ['qa', 1], ['critic', 1], ['repair', 1], ['qa', 2], ['keyframes', 2], ['qa', 2], ['critic', 2], ['finish', 2], ['done', 2]])
+  assert.ok(events.every((job, index) => index === 0 || job.done > events[index - 1].done), JSON.stringify(events.map((job) => job.done)))
+  assert.equal(events.at(-1).done, events.at(-1).total)
+
+  const broken = fakes()
+  const failing = createCapabilityTools({ performAction: broken.performAction, callPrimitive: broken.callPrimitive, review: async () => { throw new Error('ffmpeg exited 1') } })
+  const started = await applyNow(failing, (await preview(failing)).planId, { autoRepair: true })
+  const job = await waitForJob(failing, started.jobId)
+  assert.deepEqual([job.status, job.error], ['failed', 'ffmpeg exited 1'])
+})
+
+test('without autoRepair, and as a run_mcp_action_plan step, apply stays synchronous', { timeout: 5000 }, async () => {
+  const { performAction, callPrimitive } = fakes()
+  const review = async () => ({ pass: true, issues: [] })
+  const tools = createCapabilityTools({ performAction, callPrimitive, review })
+  const plain = await applyNow(tools, (await preview(tools)).planId)
+  assert.deepEqual([plain.applied, plain.jobId], [true, undefined])
+  const step = body(await tools.call('studio_edit', { intent: 'tighten_pacing', scope: { scene: 1 }, previewOnly: false, planId: (await preview(tools)).planId, autoRepair: true }, { source: 'plan' }))
+  assert.deepEqual([step.applied, step.jobId, step.autoRepair.stoppedBecause], [true, undefined, 'QA passed'])
+  assert.equal(body(await tools.call('studio_get_job_status', { jobId: 'nope' })).error.code, 'NOT_FOUND')
 })

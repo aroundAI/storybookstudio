@@ -19,6 +19,7 @@
 const crypto = require('crypto')
 const fs = require('fs')
 const path = require('path')
+const { createJobRegistry } = require('./jobs')
 
 const STUDIO_EDIT_INTENTS = Object.freeze([
   'hit_duration', 'tighten_pacing', 'remove_dead_air', 'open_with_strongest_line', 'keep_music_under_dialogue',
@@ -29,6 +30,11 @@ const STUDIO_EDIT_INTENTS = Object.freeze([
 const AUDIO_INTENTS = Object.freeze(['balance', 'duck', 'normalize', 'fade'])
 const VARIANT_KINDS = Object.freeze(['short', 'language', 'hook'])
 const MAX_REPAIR_ROUNDS = 3
+// An autoRepair job's phases, at most: apply; per QA round qa, keyframes,
+// qa, critic; a repair between rounds; finish. `done` counts the phases
+// entered and reaches `total` when the job ends, early or not.
+const JOB_PHASES_MAX = 1 + 4 * MAX_REPAIR_ROUNDS + (MAX_REPAIR_ROUNDS - 1) + 1
+const REVIEW_PHASE_TEXT = Object.freeze({ keyframes: 'rendering keyframes, the preview and the mix', qa: 'checks', critic: 'critic' })
 const PLAN_TTL_MS = 30 * 60 * 1000
 const MAX_STORED_PLANS = 50
 
@@ -101,7 +107,7 @@ const CAPABILITY_TOOLS = Object.freeze([
         },
         previewOnly: previewOnlySchema,
         planId: { type: 'string', description: 'From the preview. Required to apply.' },
-        autoRepair: { type: 'boolean', default: false, description: 'After apply, run QA and repair up to 3 rounds inside the same version (QA is FILM-2014; until then one round).' },
+        autoRepair: { type: 'boolean', default: false, description: 'After apply, run QA and repair up to 3 rounds inside the same version. The call answers at once with {jobId, versionId}: follow it with studio_get_job_status, whose finished job carries the final cards and report.' },
       },
       additionalProperties: false,
     },
@@ -247,7 +253,7 @@ const CAPABILITY_TOOLS = Object.freeze([
     owner: 'FILM-2011',
     available: true,
     annotations: read,
-    description: 'Status of a pull, render or deliver job: {phase, done, total, bytes, error?}.',
+    description: 'Status of a pull, render, deliver or autoRepair edit job: {status, phase, done, total, bytes, error?}. An edit job also names its round and versionId, and when done carries the final cards and report in result.',
     inputSchema: { type: 'object', required: ['jobId'], properties: { jobId: { type: 'string' } }, additionalProperties: false },
   },
   {
@@ -384,10 +390,12 @@ function createCapabilityTools({
   reviewTools = null,
   clock = () => Date.now(),
   newId = () => crypto.randomUUID(),
+  // autoRepair edit jobs; studio_get_job_status reads them before FILM-2011's pull and deliver jobs.
+  jobs = createJobRegistry(),
 } = {}) {
   const plans = new Map()
   // The autoRepair loop's review: the one passed in, else FILM-2014's studio_review handler.
-  const reviewRound = review || (reviewTools ? (args) => reviewTools.review(args) : null)
+  const reviewRound = review || (reviewTools ? (args, options) => reviewTools.review(args, options) : null)
   // The autoRepair loop's repair: the one passed in, else FILM-2014's compiler in the renderer.
   const repairPlan = repair || (async ({ issues }) => {
     const compiled = await compileWithReads({ intent: 'repair', scope: {}, params: { issues }, writable: writable() })
@@ -552,7 +560,7 @@ function createCapabilityTools({
     })
   }
 
-  async function applyPlan(kind, args, { source }) {
+  async function applyPlan(kind, args, { source, onProgress = null }) {
     const flow = PLAN_KINDS[kind]
     const stored = args.planId ? plans.get(args.planId) : null
     if (!stored || stored.kind !== kind) return failure('VALIDATION_FAILED', `Preview first (previewOnly true) and apply with the planId it returns; plans are kept 30 minutes.`)
@@ -574,19 +582,67 @@ function createCapabilityTools({
     const versionRefused = fromRenderer(created)
     if (versionRefused) return versionRefused
     const version = created.version
+    const context = { kind, args, source, key, compiled, versionName, version }
+    // autoRepair renders and reviews up to three times: minutes, past an MCP
+    // client's 60 s request timeout. It runs as a job; inside a
+    // run_mcp_action_plan step it stays synchronous, so the next step sees it.
+    if (args.autoRepair !== true || source === 'plan') return runApply(context)
+    const job = jobs.create('edit', { planId: args.planId, versionId: version.id, intent: key.intent, round: 0, message: 'Applying the plan', total: JOB_PHASES_MAX })
+    let done = 0
+    const report = (patch) => {
+      job.update({ ...patch, done: Math.min(done, JOB_PHASES_MAX - 1) })
+      done += 1
+      if (onProgress) try { onProgress(job.record) } catch { /* the stream may have closed */ }
+    }
+    const finished = runApply({ ...context, report }).then(
+      (result) => {
+        const parsed = parseResult(result)
+        if (result?.isError) {
+          job.update({ message: `Failed: ${parsed?.error?.message || 'the apply failed'}` })
+          job.fail(Object.assign(new Error(parsed?.error?.message || 'The apply failed.'), { code: parsed?.error?.code }))
+        } else {
+          job.update({ done: JOB_PHASES_MAX, message: `Done: ${parsed?.autoRepair?.stoppedBecause || 'applied'}` })
+          job.complete(parsed)
+        }
+        return result
+      },
+      (error) => {
+        job.update({ message: `Failed: ${error?.message || error}` })
+        job.fail(error)
+        return failure(ERROR_CODES.includes(error?.code) ? error.code : 'VALIDATION_FAILED', error?.message || String(error))
+      },
+    ).then((result) => {
+      if (onProgress) try { onProgress(job.record) } catch { /* closed */ }
+      return result
+    })
+    const started = { previewOnly: false, jobId: job.id, status: 'running', planId: args.planId, versionId: version.id, version, followWith: { tool: 'studio_get_job_status', arguments: { jobId: job.id } } }
+    // A caller following progress (an MCP request with a progressToken) gets
+    // the finished result on the same request; the job id rides every update.
+    if (onProgress) {
+      const result = await finished
+      return result.isError ? result : ok({ jobId: job.id, ...parseResult(result) })
+    }
+    return ok(started)
+  }
+
+  async function runApply({ kind, args, source, key, compiled, versionName, version, report = () => {} }) {
     const session = `studio-plan-${args.planId}`
+    report({ phase: 'apply', round: 0, message: 'Applying the plan' })
     const run = await runSteps(compiled, { label: versionName, session })
 
     const rounds = [{ round: 1, kind: 'plan', steps: compiled.plan.steps.length, failed: run.failed }]
     let qa = null
     let stoppedBecause = null
+    let round = 0
     if (args.autoRepair === true && !run.failed) {
-      for (let round = 1; round <= MAX_REPAIR_ROUNDS; round += 1) {
+      for (round = 1; round <= MAX_REPAIR_ROUNDS; round += 1) {
         if (typeof reviewRound !== 'function' || typeof repairPlan !== 'function') {
           stoppedBecause = 'QA and repair are not available yet (FILM-2014: studio_render_preview, studio_review, studio_repair); one round ran'
           break
         }
-        qa = await reviewRound({ versionId: version.id })
+        const qaRound = round
+        report({ phase: 'qa', round: qaRound, message: `QA round ${qaRound}` })
+        qa = await reviewRound({ versionId: version.id }, { onPhase: (phase) => report({ phase, round: qaRound, message: `QA round ${qaRound}: ${REVIEW_PHASE_TEXT[phase] || phase}` }) })
         if (qa?.pass || !qa?.issues?.length) {
           stoppedBecause = qa?.pass ? 'QA passed' : 'QA found nothing to repair'
           break
@@ -595,6 +651,7 @@ function createCapabilityTools({
           stoppedBecause = `QA still has ${qa.issues.length} issue${qa.issues.length === 1 ? '' : 's'} after ${MAX_REPAIR_ROUNDS} rounds; they are left as cards`
           break
         }
+        report({ phase: 'repair', round, message: `Repair round ${round}: ${qa.issues.length} issue${qa.issues.length === 1 ? '' : 's'}` })
         const fix = await repairPlan({ issues: qa.issues, versionId: version.id })
         if (!fix?.plan?.steps?.length) {
           stoppedBecause = 'No repair plan for the remaining issues; they are left as cards'
@@ -609,6 +666,7 @@ function createCapabilityTools({
       }
     }
 
+    report({ phase: 'finish', round: Math.min(round, MAX_REPAIR_ROUNDS), message: 'Writing the report' })
     const packagePromoted = kind === 'resync' && !run.failed ? promoteResyncPackage(getProjectPath()) : undefined
     const finished = await renderer('studio_finish_apply', { versionId: version.id, hookType: compiled.plan.hookType ?? null })
     const finishRefused = fromRenderer(finished)
@@ -669,7 +727,7 @@ function createCapabilityTools({
     }
   }
 
-  async function call(name, args = {}, { source = 'mcp' } = {}) {
+  async function call(name, args = {}, { source = 'mcp', onProgress = null } = {}) {
     const tool = BY_NAME.get(name)
     if (!tool) return failure('NOT_FOUND', `Unknown capability tool ${name}.`)
     const problems = checkArguments(tool, args || {})
@@ -688,7 +746,7 @@ function createCapabilityTools({
         return fromRenderer(result) || ok(result)
       }
       case 'studio_edit':
-        return studioEdit(args, { source })
+        return studioEdit(args, { source, onProgress })
       case 'studio_check_readiness':
         return readiness()
       case 'studio_create_version': {
@@ -723,7 +781,7 @@ function createCapabilityTools({
         }
       }
       case 'studio_repair':
-        return planTool('repair')(args, { source })
+        return planTool('repair')(args, { source, onProgress })
       case 'studio_review':
       case 'studio_render_preview': {
         if (!reviewTools) return failure('VALIDATION_FAILED', `${name} is not available yet: FILM-2014's preview renderer was not passed to this server (main.js passes reviewTools).`, { availableAfter: 'FILM-2014' })
@@ -735,14 +793,19 @@ function createCapabilityTools({
       }
       case 'studio_open_episode':
         return cloudCall(tool, 'openEpisode', { episodeId: args.episodeId })
-      case 'studio_get_job_status':
+      case 'studio_get_job_status': {
+        const job = jobs.get(args.jobId)
+        if (job) return ok(job)
+        const cloud = getCloud()
+        if (!cloud || typeof cloud.getJobStatus !== 'function') return failure('NOT_FOUND', `No job ${args.jobId}.`)
         return cloudCall(tool, 'getJobStatus', args.jobId)
+      }
       case 'studio_check_updates':
         return cloudCall(tool, 'checkUpdates', {})
       case 'studio_apply_updates':
         return applyUpdates(args, { source })
       case 'studio_edit_audio':
-        return planTool('audio')(args, { source })
+        return planTool('audio')(args, { source, onProgress })
       case 'studio_add_captions':
         return planTool('captions')(args, { source })
       default:
