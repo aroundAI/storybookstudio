@@ -7,7 +7,7 @@
 //
 // Actions: studio_get_context, studio_compile, studio_search_assets,
 // studio_readiness_local, studio_create_version, studio_restore_version,
-// studio_finish_apply, studio_deliver_summary.
+// studio_finish_apply, studio_deliver_summary, studio_choose_visual (FILM-2018).
 import { useProjectStore } from '../stores/projectStore'
 import { buildStudioContext, documentFingerprint, searchAssets, summarizeContext } from './context.js'
 import { COMPILER_TOOLS, STUDIO_EDIT_INTENTS, buildDraftReport, buildPlanCards, listIntents, previewIntent, readsFor, validatePlan } from './compile.js'
@@ -18,6 +18,7 @@ import { STORYBOOK_FILES } from './projectBuilder.js'
 import { RENDER_PRESETS, RENDER_PRESET_NAMES } from './contracts/render-presets.mjs'
 import { finishPlan, pictureEnd, shotLabel } from './intents/shared.js'
 import { registerExternalIntents } from './externalIntents.js'
+import { chooseVisualRepresentation } from './visualRepresentation.js'
 
 // FILM-2016's audio and caption compilers, when this build has them.
 export const EXTERNAL_INTENTS = registerExternalIntents(import.meta.glob('./intents/{audio,captions,repair}.js', { eager: true }))
@@ -26,7 +27,7 @@ const EXTERNAL_OWNERS = { audio: 'FILM-2016', captions: 'FILM-2016', repair: 'FI
 export const STUDIO_RENDERER_ACTIONS = Object.freeze([
   'studio_get_context', 'studio_compile', 'studio_search_assets', 'studio_readiness_local',
   'studio_create_version', 'studio_restore_version', 'studio_finish_apply', 'studio_deliver_summary', 'studio_resync_plan',
-  'studio_review_context', 'studio_append_oplog', 'studio_compile_reads',
+  'studio_review_context', 'studio_append_oplog', 'studio_compile_reads', 'studio_choose_visual',
 ])
 export const RESYNC_PLAN_PATH = 'storybook/resync-plan.json'
 export const LAST_QA_PATH = 'edits/qa/latest.json'
@@ -364,6 +365,10 @@ export async function handleStudioAction(action, payload = {}) {
     case 'studio_search_assets': {
       const { context } = await loadStudioContext()
       return { results: searchAssets(context, payload) }
+    }
+    case 'studio_choose_visual': {
+      const { context } = await loadStudioContext()
+      return chooseVisualRepresentation(context, payload.sceneOrPoint || {})
     }
     case 'studio_readiness_local':
       return readinessLocal()

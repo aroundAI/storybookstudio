@@ -53,7 +53,7 @@ The same server and the same bearer serve two tool lists (FILM-2013):
 
 | Profile | URL | Lists | For |
 | --- | --- | --- | --- |
-| `agent` (default) | `http://127.0.0.1:19790/mcp` or `/mcp?profile=agent` | the 18 `studio_*` capability tools ([below](#the-agent-profile-capability-tools)) | editing a StoryBook episode by intent: plan, preview as cards, apply into a version, explain |
+| `agent` (default) | `http://127.0.0.1:19790/mcp` or `/mcp?profile=agent` | the 19 `studio_*` capability tools ([below](#the-agent-profile-capability-tools)) | editing a StoryBook episode by intent: plan, preview as cards, apply into a version, explain |
 | `expert` | `http://127.0.0.1:19790/mcp?profile=expert` | StorybookStudio's tools (133 on fork main 438fdb9) plus the 6 `studio_*` lifecycle tools | everything StorybookStudio can do, one primitive at a time |
 
 The profile can also be sent as an `X-MCP-Profile: agent|expert` header; any other value is a `400`. Each profile refuses the other's tools. The bearer is required on both: a missing or wrong one is a `401` before the profile is read.
@@ -218,6 +218,7 @@ The card with `scene: null` is the whole timeline (caption re-timing, beds, mark
 | `studio_edit` | agent | Intent → plan cards → apply into a version. `{intent, scope?, params?, previewOnly?, planId?, autoRepair?}` | built |
 | `studio_edit_audio` | agent | `balance`, `duck`, `normalize`, `fade` over the buses, same preview/apply flow | built: FILM-2016's `intents/audio.js` compiles, FILM-2013 previews and applies; `balance` and `normalize` need measured loudness |
 | `studio_add_captions` | agent | Brand-styled captions inside the aspect's safe area. `{language, style?}` | built over FILM-2016's `intents/captions.js`; styles the cues on the language's captions clip (a StoryBook rough cut has them); with none, transcribe first |
+| `studio_choose_visual_representation` | agent | Ranks how to show a scene or point: generated_video, stock_video, archival_image, chart, map, diagram, timeline, text_graphic, each with a one-line reason and the tool to act with. Read-only; the agent decides. `{sceneOrPoint: {scene} \| {lineId} \| {sequenceNumber} \| {atSeconds} \| {text, scene?}}` | built (FILM-2018, `src/studio/visualRepresentation.js`) |
 | `studio_add_graphic` | agent | Brand graphics | not available yet (FILM-2018) |
 | `studio_create_variant` | agent | `short` (a 9:16 cut of a shorts candidate, the strongest line or a range, reframed on the subject, captions in the 9:16 safe area) and `hook` (N five-second openings, each exported) variants | built (FILM-2017); `language` is FILM-2019 |
 | `studio_review` | agent | Renders the scope (keyframes, 720p preview, bus mix with stems), runs QA, then the critic. `{scope?, versionId?}` → `{pass, issues, qa, critic, skipped}` | built (FILM-2014, `electron/studio/reviewTools.js`); the visual critic is skipped, and says so, without a configured vision model |
@@ -249,12 +250,17 @@ A tool another spec builds answers `isError` with `{"error": {"code": "VALIDATIO
 | `match_brand` | scenes | | `add_transition` / `add_dip_to_black` / `remove_transitions` at scene changes, by `brand.transitionStyle` |
 | `reorder_scenes` | episode | `order` (every scene once) | `move_clips` per scene block |
 | `recut_around_drops` | episode | | silence cuts within 5 s of each measured drop in `analyticsHints.retention`; none when unmeasured, and it says so |
+| `punch_in` | scene, clip | `atSeconds` or `clipId` or `lineId` (else the strongest line), `holdSeconds`, `zoomPercent` | `set_clip_keyframes` scale, `hold` keyframes: a cut in on the moment, back at its end |
+| `ken_burns` | clips | `clipId` / `scope.clipIds` (else the stills in scope), `direction` (`in`), `pan` (`right`), `zoomPercent` | `set_clip_keyframes` scale and position, inside the frame |
+| `speed_ramp` | scene, clip | the moment as `punch_in`, `speed` (0.5), `rampSeconds` (0.25), `holdSeconds` (1), `resync` (true) | `split_clip` where the ramp ends + `set_clip_keyframes` `speed`; slow motion only |
+| `freeze_frame` | scene, clip | the moment as `punch_in`, `holdSeconds` (1) | `split_clip` where the hold ends + `set_clip_keyframes` `speed` at the 0.05x floor |
+| `color_grade` | scenes, clips | `look` (`kodak2395`, `agfa1978`, `polaroid`, `bw`), `blend` | `add_glsl_effect` `glslFilmLook` per shot, replacing an earlier one |
 
 Bounds come from `storybook/policy.json` (StoryBook's edit policy, else its defaults); no compiler hard-codes a policy bound. A cut is a ripple `extract_range` because StorybookStudio's `trim_clips` does not ripple: a trim alone leaves a gap and slips dialogue off its picture. Cuts run latest first, so each step's times are those of the timeline it was planned on.
 
 `autoRepair: true` runs apply → QA → repair up to 3 rounds inside the one version and returns only the final cards; the review and the repair are FILM-2014's `studio_review` and repair intent. A server started without the preview renderer runs one round and says why.
 
-The in-app agent (the Agent tab, `src/services/agentTools.js`) lists the same 18 tools and calls them through `studio:callCapability`, the same handler an MCP client reaches, so both get the same cards.
+The in-app agent (the Agent tab, `src/services/agentTools.js`) lists the same 19 tools and calls them through `studio:callCapability`, the same handler an MCP client reaches, so both get the same cards.
 
 ### Nightly AI eval
 
@@ -376,7 +382,7 @@ For interchange, preview `export_fcpxml` before writing a file. Use `format: "fc
 
 ## Tool Catalog
 
-StorybookStudio exposes 133 MCP tools in the `expert` profile (130 upstream, plus `set_audio_buses` from FILM-2016 and two from FILM-2017; `node scripts/capability-matrix.mjs` counts them); the `agent` profile serves the 18 capability tools above instead.
+StorybookStudio exposes 133 MCP tools in the `expert` profile (130 upstream, plus `set_audio_buses` from FILM-2016 and two from FILM-2017; `node scripts/capability-matrix.mjs` counts them); the `agent` profile serves the 19 capability tools above instead.
 
 StorybookStudio's AI editor builds on these tools: [AI_EDITOR_CONTRACT.md](AI_EDITOR_CONTRACT.md) defines what an agent may do, and [CAPABILITY_MATRIX.md](CAPABILITY_MATRIX.md) maps every tool onto it.
 

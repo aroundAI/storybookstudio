@@ -43,16 +43,16 @@ after(async () => {
   await server.stop()
 })
 
-test('the agent profile is the default and lists only the 18 capability tools, each with annotations', async () => {
+test('the agent profile is the default and lists only the 19 capability tools, each with annotations', async () => {
   const plain = await rpc('tools/list')
   const agent = await rpc('tools/list', {}, { profile: 'agent' })
   assert.equal(plain.status, 200)
   assert.deepEqual(plain.body.result.tools.map((tool) => tool.name), agent.body.result.tools.map((tool) => tool.name))
   const names = agent.body.result.tools.map((tool) => tool.name)
-  assert.equal(names.length, 18)
+  assert.equal(names.length, 19)
   assert.ok(names.every((name) => name.startsWith('studio_')))
   assert.deepEqual([...names].sort(), [
-    'studio_add_captions', 'studio_add_graphic', 'studio_apply_updates', 'studio_check_readiness', 'studio_check_updates',
+    'studio_add_captions', 'studio_add_graphic', 'studio_apply_updates', 'studio_check_readiness', 'studio_check_updates', 'studio_choose_visual_representation',
     'studio_create_variant', 'studio_create_version', 'studio_deliver', 'studio_edit', 'studio_edit_audio', 'studio_get_context',
     'studio_get_job_status', 'studio_open_episode', 'studio_render_preview', 'studio_repair', 'studio_restore_version',
     'studio_review', 'studio_search_assets',
@@ -133,7 +133,7 @@ test('arguments are checked against the schema before anything runs', async () =
   const missing = callText((await rpc('tools/call', { name: 'studio_edit', arguments: {} })).body)
   assert.deepEqual([missing.error.code, missing.error.details.problems], ['VALIDATION_FAILED', ['intent is required']])
   const wrong = callText((await rpc('tools/call', { name: 'studio_edit', arguments: { intent: 'make_it_pop', colour: 'red' } })).body)
-  assert.deepEqual(wrong.error.details.problems.sort(), ['intent must be one of hit_duration, tighten_pacing, remove_dead_air, open_with_strongest_line, keep_music_under_dialogue, add_broll, emphasize, add_cta, match_brand, reorder_scenes, recut_around_drops', 'unknown argument colour'].sort())
+  assert.deepEqual(wrong.error.details.problems.sort(), ['intent must be one of hit_duration, tighten_pacing, remove_dead_air, open_with_strongest_line, keep_music_under_dialogue, add_broll, emphasize, add_cta, match_brand, reorder_scenes, recut_around_drops, punch_in, ken_burns, speed_ramp, freeze_frame, color_grade', 'unknown argument colour'].sort())
 })
 
 test('the plan-writable set has every studio_* write tool but studio_deliver, and the five G3 primitives', () => {

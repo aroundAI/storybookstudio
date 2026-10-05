@@ -47,9 +47,14 @@ const EDITS = {
   match_brand: { scope: {}, params: {} },
   reorder_scenes: { scope: {}, params: { order: [2, 1, 3, 4, 5] } },
   recut_around_drops: { scope: {}, params: {} },
+  punch_in: { scope: { scene: 4 }, params: {} },
+  ken_burns: { scope: {}, params: { clipId: 'clip-5' } },
+  speed_ramp: { scope: { scene: 2 }, params: {} },
+  freeze_frame: { scope: { scene: 2 }, params: { holdSeconds: 1.5 } },
+  color_grade: { scope: { scene: 3 }, params: { look: 'agfa1978' } },
 }
 
-test('the in-app agent sees the same 18 tools as the agent profile, and its instructions start from studio_get_context', () => {
+test('the in-app agent sees the same 19 tools as the agent profile, and its instructions start from studio_get_context', () => {
   const agentNames = m.agentTools.CAPABILITY_AGENT_TOOLS.map((tool) => tool.name).sort()
   const profileNames = capabilities.definitionsFor('agent').map((tool) => tool.name).sort()
   assert.deepEqual(agentNames, profileNames)
@@ -83,6 +88,7 @@ test('every other capability tool: same result from both clients (the stubs refu
   const calls = {
     studio_get_context: { scope: { scene: 3 } },
     studio_search_assets: { query: 'Line 18', role: 'dialogue' },
+    studio_choose_visual_representation: { sceneOrPoint: { scene: 2 } },
     studio_check_readiness: {},
     studio_deliver: { presets: ['youtube_16x9'] },
     studio_add_graphic: { kind: 'lower_third', text: 'Maya', at: 1, duration: 2 },
